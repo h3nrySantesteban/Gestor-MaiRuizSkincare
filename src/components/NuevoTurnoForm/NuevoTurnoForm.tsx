@@ -146,7 +146,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   return (
     <>
       <Modal open onClose={onClose} title={turno ? 'Editar turno' : 'Nuevo turno'} widthClassName="max-w-xl">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
           <Field label="Fecha y hora" required error={errors.fecha}>
             <input
               type="datetime-local"

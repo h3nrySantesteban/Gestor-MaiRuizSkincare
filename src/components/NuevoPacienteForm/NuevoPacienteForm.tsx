@@ -77,7 +77,7 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
       title={paciente ? 'Editar paciente' : 'Nuevo paciente'}
       widthClassName="max-w-md"
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
         <Field label="Nombre y apellido" required error={errors.nombreCompleto}>
           <input
             autoFocus
