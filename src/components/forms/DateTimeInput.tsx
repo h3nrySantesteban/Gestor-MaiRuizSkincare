@@ -26,7 +26,10 @@ export function DateTimeInput({ value, onChange }: DateTimeInputProps) {
         type="datetime-local"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 h-full w-full min-w-0 rounded-lg border border-border bg-surface px-3 py-2 text-base text-ink outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        // appearance-none: sin esto iOS dibuja su propio "chrome" nativo
+        // sobre el control (fondo/borde propios) que pisa el border/bg de
+        // acá y se termina viendo más fino/incompleto que los demás inputs
+        className="absolute inset-0 h-full w-full min-w-0 appearance-none rounded-lg border border-border bg-surface px-3 py-2 text-base text-ink outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
       />
     </div>
   )
