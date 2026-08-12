@@ -5,7 +5,6 @@ import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
 import { DateTimeInput } from '../forms/DateTimeInput'
-import { ComboboxCreatable } from '../ComboboxCreatable/ComboboxCreatable'
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { NuevoTratamientoForm } from '../NuevoTratamientoForm/NuevoTratamientoForm'
 import { usePacientes } from '../../hooks/usePacientes'
@@ -67,13 +66,9 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const [nuevoPacienteQuery, setNuevoPacienteQuery] = useState<string | null>(null)
-  const [nuevoTratamientoQuery, setNuevoTratamientoQuery] = useState<string | null>(null)
+  const [nuevoPacienteOpen, setNuevoPacienteOpen] = useState(false)
+  const [nuevoTratamientoOpen, setNuevoTratamientoOpen] = useState(false)
 
-  // completar un campo avanza el foco al siguiente para cargar turnos más
-  // rápido — cada ref es el próximo destino en el orden del formulario
-  const pacienteInputRef = useRef<HTMLInputElement>(null)
-  const tratamientoInputRef = useRef<HTMLInputElement>(null)
   const precioInputRef = useRef<HTMLInputElement>(null)
   const medioPagoRef = useRef<HTMLSelectElement>(null)
   const estadoRef = useRef<HTMLSelectElement>(null)
@@ -85,13 +80,6 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
     (t) => t.activo || seleccion.some((s) => s.tratamientoId === t.id),
   )
 
-  function handlePacienteChange(ids: string[]) {
-    setPacienteId(ids[0] ?? null)
-    // ojo: NO enfocamos el picker de tratamiento acá — su input abre el
-    // desplegable en onFocus, y hacerlo automático tapaba el resto del
-    // formulario apenas se elegía paciente (ver historial de commits)
-  }
-
   function handlePrecioKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -99,12 +87,12 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
     }
   }
 
-  function handleTratamientosChange(newIds: string[]) {
+  function handleTratamientoToggle(id: string) {
     setSeleccion((prev) => {
-      const next = newIds.map((id) => prev.find((s) => s.tratamientoId === id) ?? {
-        tratamientoId: id,
-        precioAplicado: tratamientosById.get(id)?.precio ?? 0,
-      })
+      const exists = prev.some((s) => s.tratamientoId === id)
+      const next = exists
+        ? prev.filter((s) => s.tratamientoId !== id)
+        : [...prev, { tratamientoId: id, precioAplicado: tratamientosById.get(id)?.precio ?? 0 }]
       if (!precioDirty) {
         setPrecio(String(next.reduce((acc, s) => acc + s.precioAplicado, 0)))
       }
@@ -115,15 +103,13 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   async function handlePacienteCreated(p: Paciente) {
     await refetchPacientes()
     setPacienteId(p.id)
-    setNuevoPacienteQuery(null)
+    setNuevoPacienteOpen(false)
   }
 
   async function handleTratamientoCreated(t: Tratamiento) {
     await refetchTratamientos()
-    // no reusamos handleTratamientosChange acá: su lookup de precio pasa por
-    // tratamientosById, que quedó capturado (stale) en el closure de este
-    // handler desde antes del refetch — usamos t.precio directo, que es el
-    // objeto recién creado y siempre correcto.
+    // usamos t.precio directo (el objeto recién creado) en vez de buscarlo en
+    // tratamientosById, que puede haber quedado desactualizado de antes del refetch
     setSeleccion((prev) => {
       const next = [...prev, { tratamientoId: t.id, precioAplicado: t.precio }]
       if (!precioDirty) {
@@ -131,7 +117,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       }
       return next
     })
-    setNuevoTratamientoQuery(null)
+    setNuevoTratamientoOpen(false)
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -176,34 +162,55 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
           </Field>
 
           <Field label="Paciente" required error={errors.pacienteId}>
-            <ComboboxCreatable
-              inputRef={pacienteInputRef}
-              items={pacientes}
-              selectedIds={pacienteId ? [pacienteId] : []}
-              multiple={false}
-              getId={(p) => p.id}
-              getLabel={(p) => p.nombreCompleto}
-              placeholder="Buscar paciente..."
-              onChange={handlePacienteChange}
-              onCreateNew={setNuevoPacienteQuery}
-              createLabel={(q) => `+ Crear paciente "${q}"`}
-            />
+            {/* select nativo a propósito: el picker custom tenía bugs de foco
+                en iOS que nunca terminamos de cazar del todo; el nativo lo
+                maneja el propio sistema operativo, cero JS de por medio */}
+            <select
+              value={pacienteId ?? ''}
+              onChange={(e) => setPacienteId(e.target.value || null)}
+              className={inputClass}
+            >
+              <option value="">Seleccionar paciente...</option>
+              {pacientes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombreCompleto}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => setNuevoPacienteOpen(true)}
+              className="mt-1.5 text-xs font-medium text-primary-600 hover:underline"
+            >
+              + Nuevo paciente
+            </button>
           </Field>
 
           <Field label="Tratamiento">
-            <ComboboxCreatable
-              inputRef={tratamientoInputRef}
-              items={tratamientosDisponibles}
-              selectedIds={seleccion.map((s) => s.tratamientoId)}
-              multiple
-              getId={(t) => t.id}
-              getLabel={(t) => t.nombre}
-              getSublabel={(t) => formatCurrency(t.precio)}
-              placeholder="Buscar tratamiento..."
-              onChange={handleTratamientosChange}
-              onCreateNew={setNuevoTratamientoQuery}
-              createLabel={(q) => `+ Crear tratamiento "${q}"`}
-            />
+            <div className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-lg border border-border p-3">
+              {tratamientosDisponibles.length === 0 && (
+                <p className="text-sm text-ink-muted">Todavía no hay tratamientos cargados.</p>
+              )}
+              {tratamientosDisponibles.map((t) => (
+                <label key={t.id} className="flex items-center gap-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={seleccion.some((s) => s.tratamientoId === t.id)}
+                    onChange={() => handleTratamientoToggle(t.id)}
+                    className="h-4 w-4 shrink-0 rounded border-border text-primary-500 focus:ring-primary-500"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{t.nombre}</span>
+                  <span className="shrink-0 text-xs text-ink-muted">{formatCurrency(t.precio)}</span>
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setNuevoTratamientoOpen(true)}
+              className="mt-1.5 text-xs font-medium text-primary-600 hover:underline"
+            >
+              + Nuevo tratamiento
+            </button>
           </Field>
 
           <Field label="Precio" required error={errors.precio} hint="Se completa solo según el tratamiento; se puede editar">
@@ -282,17 +289,11 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
         </form>
       </Modal>
 
-      <NuevoPacienteForm
-        open={nuevoPacienteQuery !== null}
-        onClose={() => setNuevoPacienteQuery(null)}
-        onSaved={handlePacienteCreated}
-        initialNombre={nuevoPacienteQuery ?? undefined}
-      />
+      <NuevoPacienteForm open={nuevoPacienteOpen} onClose={() => setNuevoPacienteOpen(false)} onSaved={handlePacienteCreated} />
       <NuevoTratamientoForm
-        open={nuevoTratamientoQuery !== null}
-        onClose={() => setNuevoTratamientoQuery(null)}
+        open={nuevoTratamientoOpen}
+        onClose={() => setNuevoTratamientoOpen(false)}
         onSaved={handleTratamientoCreated}
-        initialNombre={nuevoTratamientoQuery ?? undefined}
       />
     </>
   )

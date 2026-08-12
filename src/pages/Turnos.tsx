@@ -3,7 +3,6 @@ import { endOfDay } from 'date-fns'
 import { useTurnos } from '../hooks/useTurnos'
 import { usePacientes } from '../hooks/usePacientes'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
-import { ComboboxCreatable } from '../components/ComboboxCreatable/ComboboxCreatable'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
 import { WhatsAppIcon } from '../components/icons'
@@ -79,18 +78,21 @@ export function Turnos() {
               className={inputClass}
             />
           </label>
-          <div>
+          <label className="block">
             <span className="mb-1 block text-xs font-medium text-ink-muted">Paciente</span>
-            <ComboboxCreatable
-              items={pacientes}
-              selectedIds={pacienteId ? [pacienteId] : []}
-              multiple={false}
-              getId={(p) => p.id}
-              getLabel={(p) => p.nombreCompleto}
-              placeholder="Todos"
-              onChange={(ids) => setPacienteId(ids[0] ?? null)}
-            />
-          </div>
+            <select
+              value={pacienteId ?? ''}
+              onChange={(e) => setPacienteId(e.target.value || null)}
+              className={inputClass}
+            >
+              <option value="">Todos</option>
+              {pacientes.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombreCompleto}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
