@@ -36,7 +36,7 @@ export function Modal({ open, onClose, title, children, widthClassName = 'max-w-
       onClick={onClose}
     >
       <div
-        className={`my-8 flex max-h-[85dvh] w-full ${widthClassName} flex-col overflow-hidden rounded-2xl bg-surface shadow-xl sm:my-0`}
+        className={`my-8 flex max-h-[85dvh] w-full ${widthClassName} min-w-0 flex-col overflow-hidden rounded-2xl bg-surface shadow-xl sm:my-0`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
@@ -50,7 +50,12 @@ export function Modal({ open, onClose, title, children, widthClassName = 'max-w-
             <XIcon className="h-4 w-4" />
           </button>
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
+        {/* overflow-x-hidden a propósito: un input datetime-local en iOS tiene
+            un ancho mínimo intrínseco que puede exceder el modal si algo en la
+            cadena de flex no puede achicarse — esto evita que eso empuje el
+            modal (o la página) a un scroll horizontal, aunque el fix real es
+            min-w-0 en cada nivel de la cadena. */}
+        <div className="min-w-0 overflow-y-auto overflow-x-hidden px-5 py-4">{children}</div>
       </div>
     </div>
   )
