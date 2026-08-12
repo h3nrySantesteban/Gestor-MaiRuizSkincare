@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
+import { DateTimeInput } from '../forms/DateTimeInput'
 import { ComboboxCreatable } from '../ComboboxCreatable/ComboboxCreatable'
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { NuevoTratamientoForm } from '../NuevoTratamientoForm/NuevoTratamientoForm'
@@ -148,12 +149,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       <Modal open onClose={onClose} title={turno ? 'Editar turno' : 'Nuevo turno'} widthClassName="max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
           <Field label="Fecha y hora" required error={errors.fecha}>
-            <input
-              type="datetime-local"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className={inputClass}
-            />
+            <DateTimeInput value={fecha} onChange={setFecha} />
           </Field>
 
           <Field label="Paciente" required error={errors.pacienteId}>
