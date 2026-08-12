@@ -52,8 +52,12 @@ export function AppLayout() {
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
 
   return (
-    <div className="flex min-h-svh bg-surface-muted">
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface py-5 md:flex">
+    // h-svh + overflow-hidden a propósito: sin esto los flex children (que
+    // por default no bajan de su min-height de contenido) hacen que la
+    // página entera crezca y sea el body el que scrollea, no <main> — en iOS
+    // eso dispara el rebote elástico nativo y se siente "trabado" al hacer scroll.
+    <div className="flex h-svh overflow-hidden bg-surface-muted">
+      <aside className="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface py-5 md:flex">
         <div className="mb-6 px-5">
           <p className="text-sm font-semibold text-ink">Mai Ruiz Skincare</p>
           <p className="text-xs text-ink-muted">Gestor de turnos</p>
@@ -104,8 +108,8 @@ export function AppLayout() {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-6">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-6">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
@@ -120,7 +124,7 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 md:p-6">
           <Outlet />
         </main>
       </div>

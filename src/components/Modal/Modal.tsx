@@ -27,9 +27,16 @@ export function Modal({ open, onClose, title, children, widthClassName = 'max-w-
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    // items-start en mobile (no items-center): con el teclado abierto, vh no
+    // se achica pero dvh sí — con center, el modal queda centrado según el
+    // viewport "de layout" (ignora el teclado) y los campos de abajo terminan
+    // fuera del área realmente visible, sin forma de alcanzarlos con scroll.
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center"
+      onClick={onClose}
+    >
       <div
-        className={`flex max-h-[90vh] w-full ${widthClassName} flex-col overflow-hidden rounded-2xl bg-surface shadow-xl`}
+        className={`my-8 flex max-h-[85dvh] w-full ${widthClassName} flex-col overflow-hidden rounded-2xl bg-surface shadow-xl sm:my-0`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">

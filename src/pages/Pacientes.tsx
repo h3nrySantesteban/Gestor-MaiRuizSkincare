@@ -48,7 +48,7 @@ export function Pacientes() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por nombre..."
-          className="w-full text-sm text-ink outline-none"
+          className="w-full text-base text-ink outline-none"
         />
       </div>
 
