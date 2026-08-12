@@ -91,7 +91,7 @@ export function ComboboxCreatable<T>({
             }}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="w-full text-sm text-ink outline-none"
+            className="w-full text-base text-ink outline-none"
           />
         </div>
       )}
