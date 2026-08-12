@@ -70,10 +70,6 @@ export function ComboboxCreatable<T>({
     )
     setOpen(false)
     setQuery('')
-    // fuerza a cerrar el teclado / sacar el foco de la opción tocada — en iOS
-    // un foco que queda flotando después del tap a veces le devuelve el foco
-    // al buscador (que reabre por onFocus) y el desplegable no se termina de cerrar
-    ;(document.activeElement as HTMLElement | null)?.blur()
   }
 
   function remove(id: string) {
@@ -104,6 +100,11 @@ export function ComboboxCreatable<T>({
               setOpen(true)
             }}
             onFocus={() => setOpen(true)}
+            // en multiple, después de elegir el input se queda enfocado (a
+            // propósito, ver toggle/onMouseDown de las opciones) — un segundo
+            // toque sobre un input ya enfocado no dispara onFocus de nuevo,
+            // así que onClick es lo que reabre la lista para sumar otro
+            onClick={() => setOpen(true)}
             placeholder={placeholder}
             className="w-full text-base text-ink outline-none"
           />
@@ -142,7 +143,15 @@ export function ComboboxCreatable<T>({
               <button
                 key={id}
                 type="button"
-                onClick={() => toggle(id)}
+                // onMouseDown + preventDefault (no onClick): así el botón nunca
+                // le saca el foco al input de búsqueda. Si el input pierde el
+                // foco al tocar la opción, el cierre de teclado en iOS puede
+                // devolverle el foco (por onFocus) y el dropdown no termina de
+                // cerrarse — con el foco intacto ese problema no existe.
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  toggle(id)
+                }}
                 className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-surface-muted ${
                   isSelected ? 'text-primary-700' : 'text-ink'
                 }`}
