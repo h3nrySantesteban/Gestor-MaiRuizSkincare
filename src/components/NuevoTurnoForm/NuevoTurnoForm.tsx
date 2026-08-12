@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useRef, useState } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
 import { format } from 'date-fns'
 import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
@@ -70,11 +70,39 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   const [nuevoPacienteQuery, setNuevoPacienteQuery] = useState<string | null>(null)
   const [nuevoTratamientoQuery, setNuevoTratamientoQuery] = useState<string | null>(null)
 
+  // completar un campo avanza el foco al siguiente para cargar turnos más
+  // rápido — cada ref es el próximo destino en el orden del formulario
+  const pacienteInputRef = useRef<HTMLInputElement>(null)
+  const tratamientoInputRef = useRef<HTMLInputElement>(null)
+  const precioInputRef = useRef<HTMLInputElement>(null)
+  const medioPagoRef = useRef<HTMLSelectElement>(null)
+  const estadoRef = useRef<HTMLSelectElement>(null)
+  const submitRef = useRef<HTMLButtonElement>(null)
+
   const tratamientosById = new Map(tratamientos.map((t) => [t.id, t]))
   // un tratamiento desactivado sigue apareciendo si este turno ya lo tenía cargado
   const tratamientosDisponibles = tratamientos.filter(
     (t) => t.activo || seleccion.some((s) => s.tratamientoId === t.id),
   )
+
+  function handleFechaChange(value: string) {
+    setFecha(value)
+    // el onChange de datetime-local solo dispara con una fecha+hora completa
+    // y válida, así que este es un buen momento para avanzar solo
+    pacienteInputRef.current?.focus()
+  }
+
+  function handlePacienteChange(ids: string[]) {
+    setPacienteId(ids[0] ?? null)
+    tratamientoInputRef.current?.focus()
+  }
+
+  function handlePrecioKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      medioPagoRef.current?.focus()
+    }
+  }
 
   function handleTratamientosChange(newIds: string[]) {
     setSeleccion((prev) => {
@@ -149,18 +177,19 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       <Modal open onClose={onClose} title={turno ? 'Editar turno' : 'Nuevo turno'} widthClassName="max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
           <Field label="Fecha y hora" required error={errors.fecha}>
-            <DateTimeInput value={fecha} onChange={setFecha} />
+            <DateTimeInput value={fecha} onChange={handleFechaChange} />
           </Field>
 
           <Field label="Paciente" required error={errors.pacienteId}>
             <ComboboxCreatable
+              inputRef={pacienteInputRef}
               items={pacientes}
               selectedIds={pacienteId ? [pacienteId] : []}
               multiple={false}
               getId={(p) => p.id}
               getLabel={(p) => p.nombreCompleto}
               placeholder="Buscar paciente..."
-              onChange={(ids) => setPacienteId(ids[0] ?? null)}
+              onChange={handlePacienteChange}
               onCreateNew={setNuevoPacienteQuery}
               createLabel={(q) => `+ Crear paciente "${q}"`}
             />
@@ -168,6 +197,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
 
           <Field label="Tratamiento">
             <ComboboxCreatable
+              inputRef={tratamientoInputRef}
               items={tratamientosDisponibles}
               selectedIds={seleccion.map((s) => s.tratamientoId)}
               multiple
@@ -183,6 +213,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
 
           <Field label="Precio" required error={errors.precio} hint="Se completa solo según el tratamiento; se puede editar">
             <input
+              ref={precioInputRef}
               type="number"
               min="0"
               step="0.01"
@@ -192,6 +223,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
                 setPrecio(e.target.value)
                 setPrecioDirty(true)
               }}
+              onKeyDown={handlePrecioKeyDown}
               className={inputClass}
             />
           </Field>
@@ -207,8 +239,12 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
 
           <Field label="Medio de pago">
             <select
+              ref={medioPagoRef}
               value={medioPago}
-              onChange={(e) => setMedioPago(e.target.value as MedioPago | '')}
+              onChange={(e) => {
+                setMedioPago(e.target.value as MedioPago | '')
+                estadoRef.current?.focus()
+              }}
               className={inputClass}
             >
               <option value="">—</option>
@@ -222,8 +258,12 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
 
           <Field label="Estado del turno" required>
             <select
+              ref={estadoRef}
               value={estado}
-              onChange={(e) => setEstado(e.target.value as EstadoTurno)}
+              onChange={(e) => {
+                setEstado(e.target.value as EstadoTurno)
+                submitRef.current?.focus()
+              }}
               className={inputClass}
             >
               {ESTADOS_TURNO.map((e) => (
@@ -240,7 +280,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
             <button type="button" onClick={onClose} className={secondaryBtnClass}>
               Cancelar
             </button>
-            <button type="submit" disabled={submitting} className={primaryBtnClass}>
+            <button ref={submitRef} type="submit" disabled={submitting} className={primaryBtnClass}>
               {submitting ? 'Guardando...' : 'Guardar'}
             </button>
           </div>

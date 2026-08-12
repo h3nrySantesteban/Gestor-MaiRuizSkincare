@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import { CheckIcon, PlusIcon, SearchIcon, XIcon } from '../icons'
 
 interface ComboboxCreatableProps<T> {
@@ -13,6 +14,8 @@ interface ComboboxCreatableProps<T> {
   /** Omitir cuando se usa como filtro de búsqueda, donde "crear nuevo" no aplica. */
   onCreateNew?: (query: string) => void
   createLabel?: (query: string) => string
+  /** Para poder enfocar este picker desde afuera (ej: avanzar acá al completar el campo anterior). */
+  inputRef?: RefObject<HTMLInputElement | null>
 }
 
 /**
@@ -32,10 +35,13 @@ export function ComboboxCreatable<T>({
   onChange,
   onCreateNew,
   createLabel,
+  inputRef,
 }: ComboboxCreatableProps<T>) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
+  const internalInputRef = useRef<HTMLInputElement>(null)
+  const searchInputRef = inputRef ?? internalInputRef
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -56,6 +62,10 @@ export function ComboboxCreatable<T>({
   function toggle(id: string) {
     if (multiple) {
       onChange(selectedIds.includes(id) ? selectedIds.filter((i) => i !== id) : [...selectedIds, id])
+      // el dropdown se queda abierto para seguir eligiendo, pero clickear el
+      // botón de la opción le robó el foco al input — se lo devolvemos para
+      // poder seguir escribiendo el siguiente sin tocar de nuevo la pantalla
+      searchInputRef.current?.focus()
     } else {
       onChange([id])
       setOpen(false)
@@ -84,6 +94,7 @@ export function ComboboxCreatable<T>({
         <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500">
           <SearchIcon className="h-4 w-4 shrink-0 text-ink-muted" />
           <input
+            ref={searchInputRef}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)

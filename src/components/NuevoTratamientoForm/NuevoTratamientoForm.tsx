@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useRef, useState } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
 import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
@@ -35,6 +35,23 @@ function NuevoTratamientoFormInner({ onClose, onSaved, tratamiento, initialNombr
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  const precioRef = useRef<HTMLInputElement>(null)
+  const descripcionRef = useRef<HTMLTextAreaElement>(null)
+
+  function handleNombreKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      precioRef.current?.focus()
+    }
+  }
+
+  function handlePrecioKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      descripcionRef.current?.focus()
+    }
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -77,21 +94,30 @@ function NuevoTratamientoFormInner({ onClose, onSaved, tratamiento, initialNombr
     >
       <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
         <Field label="Nombre" required error={errors.nombre}>
-          <input autoFocus value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
+          <input
+            autoFocus
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            onKeyDown={handleNombreKeyDown}
+            className={inputClass}
+          />
         </Field>
         <Field label="Precio" required error={errors.precio}>
           <input
+            ref={precioRef}
             type="number"
             min="0"
             step="0.01"
             inputMode="decimal"
             value={precio}
             onChange={(e) => setPrecio(e.target.value)}
+            onKeyDown={handlePrecioKeyDown}
             className={inputClass}
           />
         </Field>
         <Field label="Descripción" error={errors.descripcion}>
           <textarea
+            ref={descripcionRef}
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
             rows={3}

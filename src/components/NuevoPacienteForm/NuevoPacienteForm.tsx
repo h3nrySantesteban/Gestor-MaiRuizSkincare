@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useRef, useState } from 'react'
+import type { FormEvent, KeyboardEvent } from 'react'
 import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
@@ -37,6 +37,23 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+
+  const telefonoRef = useRef<HTMLInputElement>(null)
+  const instagramRef = useRef<HTMLInputElement>(null)
+
+  function handleNombreKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      telefonoRef.current?.focus()
+    }
+  }
+
+  function handleTelefonoKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      instagramRef.current?.focus()
+    }
+  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -83,14 +100,26 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
             autoFocus
             value={nombreCompleto}
             onChange={(e) => setNombreCompleto(e.target.value)}
+            onKeyDown={handleNombreKeyDown}
             className={inputClass}
           />
         </Field>
         <Field label="Número de teléfono" error={errors.telefono} hint="Con código de país, ej: 5493424123456">
-          <input value={telefono} onChange={(e) => setTelefono(e.target.value)} className={inputClass} />
+          <input
+            ref={telefonoRef}
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            onKeyDown={handleTelefonoKeyDown}
+            className={inputClass}
+          />
         </Field>
         <Field label="Instagram" error={errors.instagram} hint="Usuario, sin @">
-          <input value={instagram} onChange={(e) => setInstagram(e.target.value)} className={inputClass} />
+          <input
+            ref={instagramRef}
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            className={inputClass}
+          />
         </Field>
 
         {formError && <p className="text-sm text-danger">{formError}</p>}
