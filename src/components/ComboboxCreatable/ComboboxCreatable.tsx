@@ -107,7 +107,11 @@ export function ComboboxCreatable<T>({
         </div>
       )}
 
-      {multiple && selectedItems.length > 0 && (
+      {/* solo con el dropdown cerrado: mientras está abierto, el check junto a
+          cada opción ya muestra qué está elegido — mostrar los chips además
+          tapaba el resto del formulario (el dropdown, absolute, no empuja lo
+          que viene después) */}
+      {multiple && !open && selectedItems.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {selectedItems.map((item) => (
             <span

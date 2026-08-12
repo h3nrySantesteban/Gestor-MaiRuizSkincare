@@ -85,16 +85,11 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
     (t) => t.activo || seleccion.some((s) => s.tratamientoId === t.id),
   )
 
-  function handleFechaChange(value: string) {
-    setFecha(value)
-    // el onChange de datetime-local solo dispara con una fecha+hora completa
-    // y válida, así que este es un buen momento para avanzar solo
-    pacienteInputRef.current?.focus()
-  }
-
   function handlePacienteChange(ids: string[]) {
     setPacienteId(ids[0] ?? null)
-    tratamientoInputRef.current?.focus()
+    // ojo: NO enfocamos el picker de tratamiento acá — su input abre el
+    // desplegable en onFocus, y hacerlo automático tapaba el resto del
+    // formulario apenas se elegía paciente (ver historial de commits)
   }
 
   function handlePrecioKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -177,7 +172,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       <Modal open onClose={onClose} title={turno ? 'Editar turno' : 'Nuevo turno'} widthClassName="max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
           <Field label="Fecha y hora" required error={errors.fecha}>
-            <DateTimeInput value={fecha} onChange={handleFechaChange} />
+            <DateTimeInput value={fecha} onChange={setFecha} />
           </Field>
 
           <Field label="Paciente" required error={errors.pacienteId}>
