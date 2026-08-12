@@ -19,10 +19,11 @@ interface ComboboxCreatableProps<T> {
 }
 
 /**
- * Picker buscable con "crear nuevo" inline. multiple=false: elegir cierra el
- * dropdown y muestra el valor elegido (paciente). multiple=true: los
- * elegidos quedan como chips removibles y el dropdown sigue abierto
- * (tratamientos).
+ * Picker buscable con "crear nuevo" inline. Elegir una opción siempre cierra
+ * el dropdown (single o multiple). multiple=true acumula en chips removibles
+ * (tratamientos) — para sumar otro se vuelve a tocar el buscador, que lo
+ * reabre; multiple=false (paciente) muestra el valor elegido con un botón
+ * "cambiar" para volver a abrirlo.
  */
 export function ComboboxCreatable<T>({
   items,
@@ -60,17 +61,19 @@ export function ComboboxCreatable<T>({
   const exactMatch = items.some((item) => getLabel(item).toLowerCase() === normalizedQuery)
 
   function toggle(id: string) {
-    if (multiple) {
-      onChange(selectedIds.includes(id) ? selectedIds.filter((i) => i !== id) : [...selectedIds, id])
-      // el dropdown se queda abierto para seguir eligiendo, pero clickear el
-      // botón de la opción le robó el foco al input — se lo devolvemos para
-      // poder seguir escribiendo el siguiente sin tocar de nuevo la pantalla
-      searchInputRef.current?.focus()
-    } else {
-      onChange([id])
-      setOpen(false)
-      setQuery('')
-    }
+    onChange(
+      multiple
+        ? selectedIds.includes(id)
+          ? selectedIds.filter((i) => i !== id)
+          : [...selectedIds, id]
+        : [id],
+    )
+    setOpen(false)
+    setQuery('')
+    // fuerza a cerrar el teclado / sacar el foco de la opción tocada — en iOS
+    // un foco que queda flotando después del tap a veces le devuelve el foco
+    // al buscador (que reabre por onFocus) y el desplegable no se termina de cerrar
+    ;(document.activeElement as HTMLElement | null)?.blur()
   }
 
   function remove(id: string) {
