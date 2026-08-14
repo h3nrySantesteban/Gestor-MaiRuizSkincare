@@ -180,3 +180,39 @@ create policy "auth manage notificaciones" on public.notificaciones for all
 -- reflejar en vivo lo que hace el bot mientras Mai tiene la app abierta.
 alter publication supabase_realtime add table public.notificaciones;
 alter publication supabase_realtime add table public.turnos;
+
+-- ============================================================
+-- Auto-finalizar turnos vencidos
+--
+-- Esto es una migración incremental sobre el schema de arriba — si tu
+-- proyecto ya corrió todo lo anterior, solo hace falta correr desde acá
+-- para abajo en el SQL Editor.
+--
+-- Un turno pasa de 'Agendado' a 'Finalizado' solo cuando ya pasó 1 hora
+-- desde su fecha — no hay forma de detectar esto "al vuelo" en el
+-- frontend (nadie tiene por qué tener la app abierta en ese momento), así
+-- que corre adentro de la base con pg_cron en vez de un cron de Vercel:
+-- el plan Hobby de Vercel solo permite crons de una vez por día, muy poco
+-- frecuente para esto.
+-- ============================================================
+create extension if not exists pg_cron;
+
+create or replace function public.finalizar_turnos_vencidos()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.turnos
+  set estado = 'Finalizado'
+  where estado = 'Agendado'
+    and fecha + interval '1 hour' <= now();
+$$;
+
+-- corre cada 15 minutos; cron.schedule con job_name hace upsert, así que
+-- volver a correr este bloque no duplica el job
+select cron.schedule(
+  'finalizar-turnos-vencidos',
+  '*/15 * * * *',
+  $$ select public.finalizar_turnos_vencidos(); $$
+);

@@ -37,6 +37,15 @@ functions under `/api`.
   — it's Mai's list, don't add a 5th value. WhatsApp "confirmar" sets the
   separate `confirmado_paciente` boolean instead of inventing a "Confirmado"
   state.
+- `finalizar_turnos_vencidos()`: a `pg_cron` job (every 15 min, scheduled in
+  `supabase-setup.sql`) flips `Agendado` → `Finalizado` once `fecha + 1h <=
+  now()`. Runs inside Postgres, not a Vercel Cron — Vercel's Hobby plan only
+  allows daily crons, far too coarse for this. Revenue aggregation
+  ([useDashboardStats.ts](src/hooks/useDashboardStats.ts),
+  [useTopTratamientos.ts](src/hooks/useTopTratamientos.ts)) only sums
+  `precio`/`precio_aplicado` for turnos already `Finalizado` — an `Agendado`
+  turno can still be cancelled or no-show, so it doesn't count as revenue yet.
+  `cantidad` (activity counts) still includes any non-`Cancelado` turno.
 - `notificaciones`: written only by `api/whatsapp-webhook.ts`, read/marked-read
   by the frontend. `turno_id` is nullable — an unrecognized sender or an
   unmatched reply still produces a row so nothing silently drops.

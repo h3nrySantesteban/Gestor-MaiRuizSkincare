@@ -14,7 +14,7 @@ interface TurnoTratamientoRow {
   tratamientos: { nombre: string } | null
 }
 
-/** Ranking de tratamientos por ingresos en un rango de fechas (turnos cancelados no cuentan). */
+/** Ranking de tratamientos por ingresos en un rango de fechas — solo turnos Finalizados cuentan como ingreso. */
 export function useTopTratamientos(desde: string, hasta: string) {
   const [top, setTop] = useState<TopTratamiento[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,7 +28,7 @@ export function useTopTratamientos(desde: string, hasta: string) {
       .select('tratamiento_id, precio_aplicado, tratamientos ( nombre ), turnos!inner ( fecha, estado )')
       .gte('turnos.fecha', desde)
       .lte('turnos.fecha', hasta)
-      .neq('turnos.estado', 'Cancelado')
+      .eq('turnos.estado', 'Finalizado')
 
     if (fetchError) {
       setError(fetchError.message)

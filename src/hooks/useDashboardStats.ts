@@ -22,7 +22,12 @@ export interface RangoStats {
 /**
  * Próximo turno, totales de la semana/mes en curso y una serie de 6 meses
  * (mes actual + 5 anteriores) para el gráfico del dashboard. Turnos
- * cancelados no cuentan para ninguno de estos totales.
+ * cancelados no cuentan para ninguno de estos totales. "cantidad" cuenta
+ * cualquier turno no cancelado (actividad), pero "ingresos"/"ingresosAlaFecha"
+ * solo suman turnos ya Finalizados — un turno Agendado todavía puede
+ * cancelarse o no concretarse, así que no se factura hasta que se cumple
+ * (ver api/../finalizar_turnos_vencidos en supabase-setup.sql, que pasa un
+ * turno de Agendado a Finalizado solo cuando ya pasó 1h de su fecha).
  */
 export function useDashboardStats() {
   const [proximoTurno, setProximoTurno] = useState<Turno | null>(null)
@@ -85,19 +90,25 @@ export function useDashboardStats() {
 
     for (const turno of turnos) {
       const fecha = new Date(turno.fecha)
+      const facturable = turno.estado === 'Finalizado'
       const bucket = bucketByKey.get(format(fecha, 'yyyy-MM'))
       if (bucket) {
-        bucket.ingresos += turno.precio
         bucket.cantidad += 1
-        if (fecha.getDate() <= diaDeHoy) {
-          bucket.ingresosAlaFecha += turno.precio
+        if (facturable) {
+          bucket.ingresos += turno.precio
+          if (fecha.getDate() <= diaDeHoy) {
+            bucket.ingresosAlaFecha += turno.precio
+          }
         }
       }
       if (isWithinInterval(fecha, semanaInterval)) {
-        semanaAcc = { cantidad: semanaAcc.cantidad + 1, ingresos: semanaAcc.ingresos + turno.precio }
+        semanaAcc = {
+          cantidad: semanaAcc.cantidad + 1,
+          ingresos: semanaAcc.ingresos + (facturable ? turno.precio : 0),
+        }
       }
       if (isWithinInterval(fecha, mesInterval)) {
-        mesAcc = { cantidad: mesAcc.cantidad + 1, ingresos: mesAcc.ingresos + turno.precio }
+        mesAcc = { cantidad: mesAcc.cantidad + 1, ingresos: mesAcc.ingresos + (facturable ? turno.precio : 0) }
       }
     }
 
