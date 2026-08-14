@@ -7,6 +7,35 @@ interface MonthlyChartProps {
   data: MesSerie[]
 }
 
+type SortColumn = 'mes' | 'cantidad' | 'ingresos' | 'ingresosAlaFecha'
+type SortDirection = 'asc' | 'desc'
+
+function SortButton({
+  label,
+  column,
+  sort,
+  onSort,
+  align = 'left',
+}: {
+  label: string
+  column: SortColumn
+  sort: { column: SortColumn; direction: SortDirection } | null
+  onSort: (column: SortColumn) => void
+  align?: 'left' | 'right'
+}) {
+  const active = sort?.column === column
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(column)}
+      className={`flex items-center gap-1 font-medium hover:text-ink ${align === 'right' ? 'ml-auto' : ''}`}
+    >
+      {label}
+      <span className="w-3 text-[10px]">{active ? (sort.direction === 'asc' ? '▲' : '▼') : ''}</span>
+    </button>
+  )
+}
+
 interface ChartTooltipProps {
   active?: boolean
   payload?: { payload: MesSerie }[]
@@ -38,7 +67,23 @@ function ChartTooltip({ active, payload, diaDeHoy }: ChartTooltipProps) {
  */
 export function MonthlyChart({ data }: MonthlyChartProps) {
   const [view, setView] = useState<'chart' | 'tabla'>('chart')
+  const [sort, setSort] = useState<{ column: SortColumn; direction: SortDirection } | null>(null)
   const diaDeHoy = new Date().getDate()
+
+  function handleSort(column: SortColumn) {
+    setSort((prev) =>
+      prev?.column === column ? { column, direction: prev.direction === 'asc' ? 'desc' : 'asc' } : { column, direction: 'asc' },
+    )
+  }
+
+  const sortedData = sort
+    ? [...data].sort((a, b) => {
+        // mesKey es "yyyy-MM": ordena cronológicamente como string, a
+        // diferencia de "mes" (ene, feb...) que ordenaría alfabético
+        const cmp = sort.column === 'mes' ? a.mesKey.localeCompare(b.mesKey) : a[sort.column] - b[sort.column]
+        return sort.direction === 'asc' ? cmp : -cmp
+      })
+    : data
 
   return (
     <div>
@@ -99,14 +144,28 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-ink-muted">
-                <th className="py-2 font-medium">Mes</th>
-                <th className="py-2 font-medium">Turnos</th>
-                <th className="py-2 text-right font-medium">Total del mes</th>
-                <th className="py-2 text-right font-medium">Al día {diaDeHoy}</th>
+                <th className="py-2 font-medium">
+                  <SortButton label="Mes" column="mes" sort={sort} onSort={handleSort} />
+                </th>
+                <th className="py-2 font-medium">
+                  <SortButton label="Turnos" column="cantidad" sort={sort} onSort={handleSort} />
+                </th>
+                <th className="py-2 text-right font-medium">
+                  <SortButton label="Total del mes" column="ingresos" sort={sort} onSort={handleSort} align="right" />
+                </th>
+                <th className="py-2 text-right font-medium">
+                  <SortButton
+                    label={`Al día ${diaDeHoy}`}
+                    column="ingresosAlaFecha"
+                    sort={sort}
+                    onSort={handleSort}
+                    align="right"
+                  />
+                </th>
               </tr>
             </thead>
             <tbody>
-              {data.map((row) => (
+              {sortedData.map((row) => (
                 <tr key={row.mesKey} className="border-b border-border last:border-0">
                   <td className="py-2 capitalize text-ink">{row.mes}</td>
                   <td className="py-2 tabular-nums text-ink">{row.cantidad}</td>
