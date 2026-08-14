@@ -3,13 +3,16 @@ import type { FormEvent, KeyboardEvent } from 'react'
 import { format } from 'date-fns'
 import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
+import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
 import { DateTimeInput } from '../forms/DateTimeInput'
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { NuevoTratamientoForm } from '../NuevoTratamientoForm/NuevoTratamientoForm'
+import { TrashIcon } from '../icons'
 import { usePacientes } from '../../hooks/usePacientes'
 import { useTratamientos } from '../../hooks/useTratamientos'
 import { useSaveTurno, type TurnoInput } from '../../hooks/useSaveTurno'
+import { useDeleteTurno } from '../../hooks/useDeleteTurno'
 import { formatCurrency } from '../../lib/format'
 import { ESTADOS_TURNO, MEDIOS_PAGO, type EstadoTurno, type MedioPago, type Turno } from '../../types/turno'
 import type { Paciente } from '../../types/paciente'
@@ -47,6 +50,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   const { pacientes, refetch: refetchPacientes } = usePacientes()
   const { tratamientos, refetch: refetchTratamientos } = useTratamientos()
   const save = useSaveTurno()
+  const deleteTurno = useDeleteTurno()
 
   const [fecha, setFecha] = useState(turno ? toDatetimeLocal(turno.fecha) : '')
   const [pacienteId, setPacienteId] = useState<string | null>(turno?.pacienteId ?? null)
@@ -68,6 +72,8 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
 
   const [nuevoPacienteOpen, setNuevoPacienteOpen] = useState(false)
   const [nuevoTratamientoOpen, setNuevoTratamientoOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const precioInputRef = useRef<HTMLInputElement>(null)
   const medioPagoRef = useRef<HTMLSelectElement>(null)
@@ -118,6 +124,22 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       return next
     })
     setNuevoTratamientoOpen(false)
+  }
+
+  async function handleDelete() {
+    if (!turno) return
+    setDeleting(true)
+    setFormError(null)
+    try {
+      await deleteTurno(turno.id)
+      onSaved?.()
+      onClose()
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo borrar el turno.')
+      setConfirmDeleteOpen(false)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -278,13 +300,27 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
 
           {formError && <p className="text-sm text-danger">{formError}</p>}
 
-          <div className="mt-2 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className={secondaryBtnClass}>
-              Cancelar
-            </button>
-            <button ref={submitRef} type="submit" disabled={submitting} className={primaryBtnClass}>
-              {submitting ? 'Guardando...' : 'Guardar'}
-            </button>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            {turno ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteOpen(true)}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger-bg"
+              >
+                <TrashIcon className="h-4 w-4" />
+                Borrar turno
+              </button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <button type="button" onClick={onClose} className={secondaryBtnClass}>
+                Cancelar
+              </button>
+              <button ref={submitRef} type="submit" disabled={submitting} className={primaryBtnClass}>
+                {submitting ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
           </div>
         </form>
       </Modal>
@@ -294,6 +330,16 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
         open={nuevoTratamientoOpen}
         onClose={() => setNuevoTratamientoOpen(false)}
         onSaved={handleTratamientoCreated}
+      />
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="Borrar turno"
+        message={`¿Estás segura de que querés borrar el turno de ${turno?.paciente?.nombreCompleto ?? 'este paciente'}? Esta acción no se puede deshacer.`}
+        confirmLabel="Borrar"
+        danger
+        submitting={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDeleteOpen(false)}
       />
     </>
   )
