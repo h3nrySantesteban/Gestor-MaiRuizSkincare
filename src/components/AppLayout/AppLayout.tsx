@@ -78,7 +78,7 @@ export function AppLayout() {
             Cerrar sesión
           </button>
         </div>
-        <p className="px-5 pt-4 text-center text-[11px] text-ink-muted">Hecho con amor para mi amor</p>
+        <p className="px-5 pt-4 text-left text-[11px] text-ink-muted">Hecho con amor para mi amor &lt;3</p>
       </aside>
 
       {drawerOpen && (
@@ -115,7 +115,7 @@ export function AppLayout() {
                 Cerrar sesión
               </button>
             </div>
-            <p className="px-5 pt-4 text-center text-[11px] text-ink-muted">Hecho con amor para mi amor</p>
+            <p className="px-5 pt-4 text-left text-[11px] text-ink-muted">Hecho con amor para mi amor &lt;3</p>
           </aside>
         </div>
       )}

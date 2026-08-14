@@ -144,6 +144,11 @@ export function Turnos() {
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium text-ink">{turno.paciente?.nombreCompleto ?? 'Paciente'}</p>
                 <EstadoBadge estado={turno.estado} />
+                {turno.senado && (
+                  <span className="rounded-full bg-warning-bg px-2.5 py-1 text-xs font-medium text-warning">
+                    Señado
+                  </span>
+                )}
                 {turno.confirmadoPaciente && <span className="text-xs font-medium text-success">✓ confirmó</span>}
               </div>
               <p className="text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>

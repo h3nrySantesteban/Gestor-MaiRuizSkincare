@@ -10,6 +10,19 @@ export interface TurnoFilters {
   estados?: EstadoTurno[]
 }
 
+// Agendados primero (los más próximos primero, para ver qué viene ahora);
+// el resto (Finalizado/Cancelado/Otro) después, del más reciente al más
+// lejano en el pasado.
+function compareTurnos(a: Turno, b: Turno): number {
+  const aAgendado = a.estado === 'Agendado'
+  const bAgendado = b.estado === 'Agendado'
+  if (aAgendado !== bAgendado) return aAgendado ? -1 : 1
+
+  const aTime = new Date(a.fecha).getTime()
+  const bTime = new Date(b.fecha).getTime()
+  return aAgendado ? aTime - bTime : bTime - aTime
+}
+
 export function useTurnos(filters: TurnoFilters = {}) {
   const [turnos, setTurnos] = useState<Turno[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,7 +45,7 @@ export function useTurnos(filters: TurnoFilters = {}) {
       setError(fetchError.message)
     } else {
       setError(null)
-      setTurnos((data as unknown as TurnoRow[]).map(mapTurnoRow))
+      setTurnos((data as unknown as TurnoRow[]).map(mapTurnoRow).sort(compareTurnos))
     }
     setLoading(false)
     // estados se resume en estadosKey; excluirlo evita refetch cuando el caller pasa un array nuevo con el mismo contenido
