@@ -58,9 +58,14 @@ export function AppLayout() {
     // eso dispara el rebote elástico nativo y se siente "trabado" al hacer scroll.
     <div className="flex h-svh overflow-hidden bg-surface-muted">
       <aside className="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface py-5 md:flex">
-        <div className="mb-6 px-5">
-          <p className="text-sm font-semibold text-ink">Mai Ruiz Skincare</p>
-          <p className="text-xs text-ink-muted">Gestor de turnos</p>
+        <div className="mb-6 flex items-center gap-2 px-5">
+          <span className="text-2xl" aria-hidden="true">
+            🌼
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-ink">Mai Ruiz Skincare</p>
+            <p className="text-xs text-ink-muted">Gestor de turnos</p>
+          </div>
         </div>
         <NavLinks />
         <div className="px-3 pt-4">
@@ -73,6 +78,7 @@ export function AppLayout() {
             Cerrar sesión
           </button>
         </div>
+        <p className="px-5 pt-4 text-center text-[11px] text-ink-muted">Hecho con amor para mi amor</p>
       </aside>
 
       {drawerOpen && (
@@ -80,9 +86,14 @@ export function AppLayout() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
           <aside className="relative flex h-full w-64 flex-col bg-surface py-5 shadow-xl">
             <div className="mb-6 flex items-center justify-between px-5">
-              <div>
-                <p className="text-sm font-semibold text-ink">Mai Ruiz Skincare</p>
-                <p className="text-xs text-ink-muted">Gestor de turnos</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl" aria-hidden="true">
+                  🌼
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-ink">Mai Ruiz Skincare</p>
+                  <p className="text-xs text-ink-muted">Gestor de turnos</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -104,6 +115,7 @@ export function AppLayout() {
                 Cerrar sesión
               </button>
             </div>
+            <p className="px-5 pt-4 text-center text-[11px] text-ink-muted">Hecho con amor para mi amor</p>
           </aside>
         </div>
       )}
