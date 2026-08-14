@@ -103,17 +103,20 @@ function NuevoTratamientoFormInner({ onClose, onSaved, tratamiento, initialNombr
           />
         </Field>
         <Field label="Precio" required error={errors.precio}>
-          <input
-            ref={precioRef}
-            type="number"
-            min="0"
-            step="0.01"
-            inputMode="decimal"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-            onKeyDown={handlePrecioKeyDown}
-            className={inputClass}
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">$</span>
+            <input
+              ref={precioRef}
+              type="number"
+              min="0"
+              step="1000"
+              inputMode="decimal"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              onKeyDown={handlePrecioKeyDown}
+              className={`${inputClass} !pl-7`}
+            />
+          </div>
         </Field>
         <Field label="Descripción" error={errors.descripcion}>
           <textarea

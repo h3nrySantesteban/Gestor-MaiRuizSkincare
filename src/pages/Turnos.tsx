@@ -5,9 +5,9 @@ import { usePacientes } from '../hooks/usePacientes'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
-import { ChevronDownIcon, WhatsAppIcon } from '../components/icons'
+import { ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
-import { waLink } from '../lib/links'
+import { instagramLink, waLink } from '../lib/links'
 import { ESTADOS_TURNO, type EstadoTurno, type Turno } from '../types/turno'
 
 export function Turnos() {
@@ -188,17 +188,30 @@ export function Turnos() {
             </div>
             <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
               <p className="font-semibold text-ink">{formatCurrency(turno.precio)}</p>
-              {turno.paciente?.telefono && (
-                <a
-                  href={waLink(turno.paciente.telefono)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1 text-xs font-medium text-success hover:underline"
-                >
-                  <WhatsAppIcon className="h-3.5 w-3.5" /> WhatsApp
-                </a>
-              )}
+              <div className="flex items-center gap-3">
+                {turno.paciente?.telefono && (
+                  <a
+                    href={waLink(turno.paciente.telefono)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 text-xs font-medium text-success hover:underline"
+                  >
+                    <WhatsAppIcon className="h-3.5 w-3.5" /> WhatsApp
+                  </a>
+                )}
+                {turno.paciente?.instagram && (
+                  <a
+                    href={instagramLink(turno.paciente.instagram)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline"
+                  >
+                    <InstagramIcon className="h-3.5 w-3.5" /> Instagram
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         ))}
