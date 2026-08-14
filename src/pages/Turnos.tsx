@@ -5,7 +5,7 @@ import { usePacientes } from '../hooks/usePacientes'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
-import { WhatsAppIcon } from '../components/icons'
+import { ChevronDownIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { waLink } from '../lib/links'
 import { ESTADOS_TURNO, type EstadoTurno, type Turno } from '../types/turno'
@@ -15,6 +15,7 @@ export function Turnos() {
   const [fechaHasta, setFechaHasta] = useState('')
   const [pacienteId, setPacienteId] = useState<string | null>(null)
   const [estados, setEstados] = useState<EstadoTurno[]>([])
+  const [filtrosOpen, setFiltrosOpen] = useState(false)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingTurno, setEditingTurno] = useState<Turno | null>(null)
@@ -27,7 +28,9 @@ export function Turnos() {
     estados: estados.length > 0 ? estados : undefined,
   })
 
-  const hasFilters = fechaDesde || fechaHasta || pacienteId || estados.length > 0
+  const activeFilterCount =
+    (fechaDesde ? 1 : 0) + (fechaHasta ? 1 : 0) + (pacienteId ? 1 : 0) + estados.length
+  const hasFilters = activeFilterCount > 0
 
   function openNuevo() {
     setEditingTurno(null)
@@ -58,71 +61,96 @@ export function Turnos() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-ink-muted">Desde</span>
-            <input
-              type="date"
-              value={fechaDesde}
-              onChange={(e) => setFechaDesde(e.target.value)}
-              className={inputClass}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-ink-muted">Hasta</span>
-            <input
-              type="date"
-              value={fechaHasta}
-              onChange={(e) => setFechaHasta(e.target.value)}
-              className={inputClass}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-ink-muted">Paciente</span>
-            <select
-              value={pacienteId ?? ''}
-              onChange={(e) => setPacienteId(e.target.value || null)}
-              className={inputClass}
-            >
-              <option value="">Todos</option>
-              {pacientes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombreCompleto}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+      <div className="flex flex-col rounded-2xl border border-border bg-surface">
+        <button
+          type="button"
+          onClick={() => setFiltrosOpen((v) => !v)}
+          className="flex items-center justify-between px-4 py-3"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium text-ink">
+            Filtros
+            {hasFilters && (
+              <span className="rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-semibold text-primary-700">
+                {activeFilterCount}
+              </span>
+            )}
+          </span>
+          <ChevronDownIcon
+            className={`h-4 w-4 text-ink-muted transition-transform ${filtrosOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {ESTADOS_TURNO.map((e) => {
-            const active = estados.includes(e)
-            return (
-              <button
-                key={e}
-                type="button"
-                onClick={() => setEstados((prev) => (active ? prev.filter((x) => x !== e) : [...prev, e]))}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  active
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-border text-ink-muted hover:bg-surface-muted'
-                }`}
-              >
-                {e}
-              </button>
-            )
-          })}
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="text-xs font-medium text-ink-muted hover:text-ink hover:underline"
-            >
-              Limpiar filtros
-            </button>
-          )}
-        </div>
+        {filtrosOpen && (
+          <div className="flex flex-col gap-4 border-t border-border p-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-ink-muted">Desde</span>
+                <input
+                  type="date"
+                  value={fechaDesde}
+                  onChange={(e) => setFechaDesde(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-ink-muted">Hasta</span>
+                <input
+                  type="date"
+                  value={fechaHasta}
+                  onChange={(e) => setFechaHasta(e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-ink-muted">Paciente</span>
+                <select
+                  value={pacienteId ?? ''}
+                  onChange={(e) => setPacienteId(e.target.value || null)}
+                  className={inputClass}
+                >
+                  <option value="">Todos</option>
+                  {pacientes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombreCompleto}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {ESTADOS_TURNO.map((e) => {
+                const active = estados.includes(e)
+                return (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEstados((prev) => (active ? prev.filter((x) => x !== e) : [...prev, e]))}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      active
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-border text-ink-muted hover:bg-surface-muted'
+                    }`}
+                  >
+                    {e}
+                  </button>
+                )
+              })}
+            </div>
+
+            {hasFilters && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={limpiarFiltros}
+                  className="text-xs font-medium text-ink-muted hover:text-ink hover:underline"
+                >
+                  Limpiar filtros
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
