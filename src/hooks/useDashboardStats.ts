@@ -9,6 +9,8 @@ export interface MesSerie {
   mes: string
   mesKey: string
   ingresos: number
+  /** ingresos de ese mes contando solo días 1..N, con N = el día del mes de hoy — compara cada mes "a la misma altura" */
+  ingresosAlaFecha: number
   cantidad: number
 }
 
@@ -69,10 +71,12 @@ export function useDashboardStats() {
         mes: format(mesDate, 'MMM', { locale: es }),
         mesKey: format(mesDate, 'yyyy-MM'),
         ingresos: 0,
+        ingresosAlaFecha: 0,
         cantidad: 0,
       }
     })
     const bucketByKey = new Map(buckets.map((b) => [b.mesKey, b]))
+    const diaDeHoy = now.getDate()
 
     const semanaInterval = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) }
     const mesInterval = { start: startOfMonth(now), end: endOfMonth(now) }
@@ -85,6 +89,9 @@ export function useDashboardStats() {
       if (bucket) {
         bucket.ingresos += turno.precio
         bucket.cantidad += 1
+        if (fecha.getDate() <= diaDeHoy) {
+          bucket.ingresosAlaFecha += turno.precio
+        }
       }
       if (isWithinInterval(fecha, semanaInterval)) {
         semanaAcc = { cantidad: semanaAcc.cantidad + 1, ingresos: semanaAcc.ingresos + turno.precio }

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import type { ReactNode } from 'react'
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { MesSerie } from '../../hooks/useDashboardStats'
 import { formatCurrency, formatCurrencyCompact } from '../../lib/format'
 
@@ -11,16 +10,18 @@ interface MonthlyChartProps {
 interface ChartTooltipProps {
   active?: boolean
   payload?: { payload: MesSerie }[]
+  diaDeHoy: number
 }
 
-function ChartTooltip({ active, payload }: ChartTooltipProps) {
+function ChartTooltip({ active, payload, diaDeHoy }: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null
   const row = payload[0].payload
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
       <p className="text-xs font-medium capitalize text-ink">{row.mes}</p>
-      <p className="text-sm font-semibold text-ink">{formatCurrency(row.ingresos)}</p>
-      <p className="text-xs text-ink-muted">
+      <p className="text-sm font-semibold text-ink">{formatCurrency(row.ingresos)} total</p>
+      <p className="text-xs text-ink-muted">Al día {diaDeHoy}: {formatCurrency(row.ingresosAlaFecha)}</p>
+      <p className="mt-1 text-xs text-ink-muted">
         {row.cantidad} turno{row.cantidad === 1 ? '' : 's'}
       </p>
     </div>
@@ -28,16 +29,20 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
 }
 
 /**
- * Un solo eje/serie (ingresos) a propósito: la cantidad de turnos por mes se
- * ve en el tooltip y en la vista de tabla, nunca como segundo eje Y en el
- * mismo gráfico (un dual-axis inventa una correlación que no está en los datos).
+ * Un solo eje/unidad a propósito (siempre pesos): las dos barras comparan la
+ * misma magnitud de dos formas — total del mes vs. lo acumulado a la misma
+ * altura del mes (mismo día que hoy) — así el mes en curso, todavía
+ * incompleto, se puede comparar contra meses cerrados sin que la comparación
+ * sea injusta. La cantidad de turnos por mes se ve en el tooltip y en la
+ * tabla, no como tercer eje.
  */
 export function MonthlyChart({ data }: MonthlyChartProps) {
   const [view, setView] = useState<'chart' | 'tabla'>('chart')
+  const diaDeHoy = new Date().getDate()
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-1 flex items-center justify-between">
         <p className="text-sm font-medium text-ink-muted">Ingresos — últimos 6 meses</p>
         <button
           type="button"
@@ -48,10 +53,21 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
         </button>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--color-primary-700)' }} />
+          Total del mes
+        </span>
+        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--color-primary-500)' }} />
+          Acumulado al día {diaDeHoy}
+        </span>
+      </div>
+
       {view === 'chart' ? (
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 24, right: 8, left: 0, bottom: 0 }}>
+            <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="var(--color-border)" />
               <XAxis
                 dataKey="mes"
@@ -66,15 +82,15 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
                 tickLine={false}
                 width={56}
               />
-              <Tooltip cursor={{ fill: 'var(--color-surface-muted)' }} content={<ChartTooltip />} />
-              <Bar dataKey="ingresos" fill="var(--color-primary-600)" radius={[4, 4, 0, 0]} maxBarSize={24}>
-                <LabelList
-                  dataKey="ingresos"
-                  position="top"
-                  formatter={(v: ReactNode) => formatCurrencyCompact(Number(v))}
-                  style={{ fill: 'var(--color-ink-muted)', fontSize: 11 }}
-                />
-              </Bar>
+              <Tooltip cursor={{ fill: 'var(--color-surface-muted)' }} content={<ChartTooltip diaDeHoy={diaDeHoy} />} />
+              <Bar dataKey="ingresos" name="Total del mes" fill="var(--color-primary-700)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+              <Bar
+                dataKey="ingresosAlaFecha"
+                name={`Acumulado al día ${diaDeHoy}`}
+                fill="var(--color-primary-500)"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={20}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -85,7 +101,8 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
               <tr className="border-b border-border text-left text-ink-muted">
                 <th className="py-2 font-medium">Mes</th>
                 <th className="py-2 font-medium">Turnos</th>
-                <th className="py-2 text-right font-medium">Ingresos</th>
+                <th className="py-2 text-right font-medium">Total del mes</th>
+                <th className="py-2 text-right font-medium">Al día {diaDeHoy}</th>
               </tr>
             </thead>
             <tbody>
@@ -94,6 +111,7 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
                   <td className="py-2 capitalize text-ink">{row.mes}</td>
                   <td className="py-2 tabular-nums text-ink">{row.cantidad}</td>
                   <td className="py-2 text-right tabular-nums text-ink">{formatCurrency(row.ingresos)}</td>
+                  <td className="py-2 text-right tabular-nums text-ink">{formatCurrency(row.ingresosAlaFecha)}</td>
                 </tr>
               ))}
             </tbody>
