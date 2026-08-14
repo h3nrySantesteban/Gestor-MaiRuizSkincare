@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #fbf2f0;
-  --color-primary-100: #f4dee0;
-  --color-primary-200: #e8c0c6;
-  --color-primary-500: #b5566a;
-  --color-primary-600: #9c4457;
-  --color-primary-700: #7e3547;
+  /* Violeta (basado en el ramp "violet" de Tailwind, ya probado en accesibilidad) */
+  --color-primary-50: #f5f3ff;
+  --color-primary-100: #ede9fe;
+  --color-primary-200: #ddd6fe;
+  --color-primary-300: #c4b5fd;
+  --color-primary-500: #8b5cf6;
+  --color-primary-600: #7c3aed;
+  --color-primary-700: #6d28d9;
 
   --color-ink: #2b2321;
   --color-ink-muted: #7a6f6a;
@@ -24,6 +26,56 @@
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 
+/*
+ * Modo oscuro: solo se redefinen los tokens de "extremo" (tints muy claros,
+ * y primary-700 que solo se usa como texto sobre esos tints) — primary-500/
+ * 600 y success/warning/danger se dejan igual en los dos modos porque son
+ * tonos medios que ya funcionan bien tanto sobre superficie clara como
+ * oscura (y bg-primary-500/bg-danger llevan texto blanco encima, así que no
+ * conviene aclararlos para el modo oscuro).
+ *
+ * Dos bloques a propósito: uno por preferencia de sistema (se ignora si el
+ * usuario eligió explícitamente "claro" con el toggle) y uno por atributo
+ * explícito (gana siempre, sin importar el sistema).
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-primary-50: #241d38;
+    --color-primary-100: #2c2444;
+    --color-primary-200: #3d3260;
+    --color-primary-300: #6d5a99;
+    --color-primary-700: #c4b5fd;
+
+    --color-ink: #f0edf7;
+    --color-ink-muted: #a89fb8;
+    --color-surface: #1e1b26;
+    --color-surface-muted: #131117;
+    --color-border: #322d3f;
+
+    --color-success-bg: #14291d;
+    --color-warning-bg: #2e2410;
+    --color-danger-bg: #2e1616;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-primary-50: #241d38;
+  --color-primary-100: #2c2444;
+  --color-primary-200: #3d3260;
+  --color-primary-300: #6d5a99;
+  --color-primary-700: #c4b5fd;
+
+  --color-ink: #f0edf7;
+  --color-ink-muted: #a89fb8;
+  --color-surface: #1e1b26;
+  --color-surface-muted: #131117;
+  --color-border: #322d3f;
+
+  --color-success-bg: #14291d;
+  --color-warning-bg: #2e2410;
+  --color-danger-bg: #2e1616;
+}
+
 html,
 body,
 #root {
@@ -35,4 +87,5 @@ body {
   font-family: var(--font-sans);
   color: var(--color-ink);
   background: var(--color-surface-muted);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }

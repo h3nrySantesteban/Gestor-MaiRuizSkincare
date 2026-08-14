@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useTheme } from '../../hooks/useTheme'
 import { NotificationBell } from '../NotificationBell/NotificationBell'
 import { NuevoTurnoForm } from '../NuevoTurnoForm/NuevoTurnoForm'
 import {
@@ -9,8 +10,10 @@ import {
   HomeIcon,
   LogOutIcon,
   MenuIcon,
+  MoonIcon,
   PackageIcon,
   PlusIcon,
+  SunIcon,
   UsersIcon,
   XIcon,
 } from '../icons'
@@ -48,6 +51,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AppLayout() {
   const { signOut } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
 
@@ -131,7 +135,15 @@ export function AppLayout() {
             <MenuIcon className="h-5 w-5" />
           </button>
           <p className="text-sm font-medium text-ink md:hidden">Mai Ruiz Skincare</p>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
+            >
+              {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+            </button>
             <NotificationBell />
           </div>
         </header>
