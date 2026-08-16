@@ -1,10 +1,10 @@
 import { useDashboardStats } from '../hooks/useDashboardStats'
-import { StatCard } from '../components/StatCard/StatCard'
+import { SplitStatCard } from '../components/StatCard/SplitStatCard'
 import { MonthlyChart } from '../components/MonthlyChart/MonthlyChart'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 
 export function Dashboard() {
-  const { proximoTurno, semana, mes, serieSeisMeses, loading } = useDashboardStats()
+  const { proximoTurno, semana, mes, agendadosSemana, agendadosMes, serieSeisMeses, loading } = useDashboardStats()
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,15 +31,29 @@ export function Dashboard() {
           )}
         </div>
 
-        <StatCard
-          label="Esta semana"
-          value={`${semana.cantidad} turno${semana.cantidad === 1 ? '' : 's'}`}
-          secondary={formatCurrency(semana.ingresos)}
+        <SplitStatCard
+          left={{
+            label: 'Esta semana',
+            value: `${semana.cantidad} turno${semana.cantidad === 1 ? '' : 's'}`,
+            secondary: formatCurrency(semana.ingresos),
+          }}
+          right={{
+            label: 'Agendados',
+            value: `${agendadosSemana.cantidad} turno${agendadosSemana.cantidad === 1 ? '' : 's'}`,
+            secondary: `~${formatCurrency(agendadosSemana.ingresoAprox)}`,
+          }}
         />
-        <StatCard
-          label="Este mes"
-          value={`${mes.cantidad} turno${mes.cantidad === 1 ? '' : 's'}`}
-          secondary={formatCurrency(mes.ingresos)}
+        <SplitStatCard
+          left={{
+            label: 'Este mes',
+            value: `${mes.cantidad} turno${mes.cantidad === 1 ? '' : 's'}`,
+            secondary: formatCurrency(mes.ingresos),
+          }}
+          right={{
+            label: 'Agendados',
+            value: `${agendadosMes.cantidad} turno${agendadosMes.cantidad === 1 ? '' : 's'}`,
+            secondary: `~${formatCurrency(agendadosMes.ingresoAprox)}`,
+          }}
         />
       </div>
 
