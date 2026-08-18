@@ -19,7 +19,7 @@ import {
 } from '../icons'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: HomeIcon, end: true },
+  { to: '/dashboard', label: 'Dashboard', icon: HomeIcon, end: true },
   { to: '/turnos', label: 'Turnos', icon: CalendarIcon, end: false },
   { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false },
   { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false },

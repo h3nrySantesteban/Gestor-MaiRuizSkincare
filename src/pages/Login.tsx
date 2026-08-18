@@ -12,7 +12,7 @@ export function Login() {
   const [submitting, setSubmitting] = useState(false)
 
   if (!loading && session) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -25,7 +25,7 @@ export function Login() {
       setError('Email o contraseña incorrectos.')
       return
     }
-    navigate('/')
+    navigate('/dashboard')
   }
 
   return (
