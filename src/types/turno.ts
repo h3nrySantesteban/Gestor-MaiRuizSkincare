@@ -24,6 +24,7 @@ export interface Turno {
   estado: EstadoTurno
   confirmadoPaciente: boolean
   reminderSentAt: string | null
+  googleEventId: string | null
   tratamientos: TurnoTratamiento[]
   createdAt: string
   updatedAt: string
@@ -41,6 +42,7 @@ export interface TurnoRow {
   estado: EstadoTurno
   confirmado_paciente: boolean
   reminder_sent_at: string | null
+  google_event_id: string | null
   created_at: string
   updated_at: string
   pacientes: {
@@ -76,6 +78,7 @@ export function mapTurnoRow(row: TurnoRow): Turno {
     estado: row.estado,
     confirmadoPaciente: row.confirmado_paciente,
     reminderSentAt: row.reminder_sent_at,
+    googleEventId: row.google_event_id,
     tratamientos: row.turno_tratamientos.map((t) => ({
       tratamientoId: t.tratamiento_id,
       nombre: t.tratamientos?.nombre ?? '',

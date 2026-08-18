@@ -13,6 +13,7 @@ import { usePacientes } from '../../hooks/usePacientes'
 import { useTratamientos } from '../../hooks/useTratamientos'
 import { useSaveTurno, type TurnoInput } from '../../hooks/useSaveTurno'
 import { useDeleteTurno } from '../../hooks/useDeleteTurno'
+import { syncCalendarDelete, syncCalendarTurno } from '../../lib/googleCalendarSync'
 import { formatCurrency } from '../../lib/format'
 import { ESTADOS_TURNO, MEDIOS_PAGO, type EstadoTurno, type MedioPago, type Turno } from '../../types/turno'
 import type { Paciente } from '../../types/paciente'
@@ -131,6 +132,13 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
     setDeleting(true)
     setFormError(null)
     try {
+      if (turno.googleEventId) {
+        // si falla, seguimos igual con el borrado — un evento huérfano en
+        // Calendar es mucho menos grave que no poder borrar el turno
+        await syncCalendarDelete(turno.googleEventId).catch((err) =>
+          console.error('No se pudo borrar el evento de Google Calendar', err),
+        )
+      }
       await deleteTurno(turno.id)
       onSaved?.()
       onClose()
@@ -165,9 +173,12 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       tratamientos: seleccion,
     }
     try {
-      await save(input, turno?.id)
+      const turnoId = await save(input, turno?.id)
       onSaved?.()
       onClose()
+      // la sync a Calendar nunca bloquea ni revierte el guardado en
+      // Supabase, que ya se hizo — un fallo acá solo queda en la consola
+      syncCalendarTurno(turnoId).catch((err) => console.error('No se pudo sincronizar con Google Calendar', err))
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'No se pudo guardar el turno.')
     } finally {

@@ -3,6 +3,7 @@ export interface Paciente {
   nombreCompleto: string
   telefono: string | null
   instagram: string | null
+  email: string | null
   createdAt: string
 }
 
@@ -11,6 +12,7 @@ export interface PacienteRow {
   nombre_completo: string
   telefono: string | null
   instagram: string | null
+  email: string | null
   created_at: string
 }
 
@@ -20,6 +22,7 @@ export function mapPacienteRow(row: PacienteRow): Paciente {
     nombreCompleto: row.nombre_completo,
     telefono: row.telefono,
     instagram: row.instagram,
+    email: row.email,
     createdAt: row.created_at,
   }
 }

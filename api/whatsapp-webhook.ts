@@ -4,6 +4,7 @@ import { sendText, verifySignature } from '../server/whatsappClient'
 import { parseReply, type ReplyIntent } from '../server/replyParser'
 import { normalizePhone } from '../server/phone'
 import { requireEnv } from '../server/env'
+import { deleteTurnoEvent } from '../server/googleCalendar'
 
 // necesitamos el body crudo (sin parsear) para poder validar la firma
 // X-Hub-Signature-256 byte a byte
@@ -58,6 +59,22 @@ async function handleMessage(message: IncomingMessage): Promise<void> {
 
   if (turnoId && intent === 'cancelado') {
     await supabaseAdmin.from('turnos').update({ estado: 'Cancelado' }).eq('id', turnoId)
+    // si no, el calendario de Mai queda con turnos cancelados por WhatsApp
+    // que nunca se sacan — un fallo acá no debe frenar el resto del flujo
+    const { data: turnoCancelado } = await supabaseAdmin
+      .from('turnos')
+      .select('google_event_id')
+      .eq('id', turnoId)
+      .single()
+    const googleEventId = (turnoCancelado as { google_event_id: string | null } | null)?.google_event_id
+    if (googleEventId) {
+      try {
+        await deleteTurnoEvent(googleEventId)
+        await supabaseAdmin.from('turnos').update({ google_event_id: null }).eq('id', turnoId)
+      } catch (err) {
+        console.error('No se pudo borrar el evento de Google Calendar', err)
+      }
+    }
   } else if (turnoId && intent === 'confirmado') {
     await supabaseAdmin.from('turnos').update({ confirmado_paciente: true }).eq('id', turnoId)
   }
