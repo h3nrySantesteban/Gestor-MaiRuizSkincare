@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Git workflow
+
+Always work directly on `main` — never create feature branches, and never
+open PRs, even via `/create-pr` or similar. Commit finished work to `main`
+locally, but **never `git push`** — pushing is the user's own manual step,
+always left to them.
+
 ## Commands
 
 ```bash
