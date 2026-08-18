@@ -25,3 +25,5 @@ dist-ssr
 
 # Local Claude Code permission settings (per-user, not shared)
 .claude/settings.local.json
+
+.vercel

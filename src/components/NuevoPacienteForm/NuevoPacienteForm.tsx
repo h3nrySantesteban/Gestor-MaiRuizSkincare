@@ -10,6 +10,7 @@ const schema = z.object({
   nombreCompleto: z.string().trim().min(1, 'Ingresá un nombre y apellido.'),
   telefono: z.string().trim(),
   instagram: z.string().trim(),
+  email: z.string().trim().refine((v) => v === '' || z.string().email().safeParse(v).success, 'Email inválido.'),
 })
 
 interface NuevoPacienteFormProps {
@@ -34,12 +35,14 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
   const [nombreCompleto, setNombreCompleto] = useState(paciente?.nombreCompleto ?? initialNombre ?? '')
   const [telefono, setTelefono] = useState(paciente?.telefono ?? '')
   const [instagram, setInstagram] = useState(paciente?.instagram ?? '')
+  const [email, setEmail] = useState(paciente?.email ?? '')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
   const telefonoRef = useRef<HTMLInputElement>(null)
   const instagramRef = useRef<HTMLInputElement>(null)
+  const emailRef = useRef<HTMLInputElement>(null)
 
   function handleNombreKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
@@ -55,9 +58,16 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
     }
   }
 
+  function handleInstagramKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      emailRef.current?.focus()
+    }
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    const result = schema.safeParse({ nombreCompleto, telefono, instagram })
+    const result = schema.safeParse({ nombreCompleto, telefono, instagram, email })
     if (!result.success) {
       const fieldErrors: Record<string, string> = {}
       for (const issue of result.error.issues) fieldErrors[String(issue.path[0])] = issue.message
@@ -71,6 +81,7 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
       nombreCompleto: result.data.nombreCompleto,
       telefono: result.data.telefono || null,
       instagram: result.data.instagram || null,
+      email: result.data.email || null,
     }
     try {
       if (paciente) {
@@ -118,6 +129,16 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
             ref={instagramRef}
             value={instagram}
             onChange={(e) => setInstagram(e.target.value)}
+            onKeyDown={handleInstagramKeyDown}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Email" error={errors.email} hint="Opcional — para invitarlo al turno en Google Calendar">
+          <input
+            ref={emailRef}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className={inputClass}
           />
         </Field>

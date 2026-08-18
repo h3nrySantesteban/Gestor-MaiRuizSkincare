@@ -48,7 +48,21 @@ una vez), ya que Vite solo sirve el frontend.
    Una vez deployado, en Meta → WhatsApp → Configuration → Webhook, cargá
    `https://<tu-dominio>.vercel.app/api/whatsapp-webhook` con el mismo
    `WHATSAPP_VERIFY_TOKEN`, y suscribite al campo `messages`.
-4. Copiá `.env.example` a `.env.local` con los valores reales para desarrollo local.
+4. **Google Calendar**: creá un proyecto en
+   [Google Cloud Console](https://console.cloud.google.com/), habilitá la
+   Google Calendar API. Configurá la pantalla de consentimiento OAuth (tipo
+   "Externo") y arrancá el trámite de verificación del scope
+   `calendar.events` — sin verificar, el refresh token vence a los 7 días y
+   la sync se corta sola. Creá credenciales OAuth 2.0 tipo "Web application",
+   con `https://<tu-dominio>.vercel.app/api/google-oauth-callback` como
+   "Authorized redirect URI" — copiá el Client ID/Secret a
+   `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, y esa misma URL a
+   `GOOGLE_OAUTH_REDIRECT_URI`. Deployá con esas 3 variables cargadas, después
+   visitá `/api/google-oauth-start` vos misma (logueada con la cuenta de
+   Google donde querés que vivan los turnos), copiá el refresh token que te
+   muestra la página, y cargalo como `GOOGLE_CALENDAR_REFRESH_TOKEN` en
+   Vercel. Redeployá para que tome efecto.
+5. Copiá `.env.example` a `.env.local` con los valores reales para desarrollo local.
 
 ## Arquitectura
 

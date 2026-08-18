@@ -20,8 +20,8 @@ export interface TurnoInput {
  * suscripción realtime — eso es cosa de quien renderiza un listado.
  */
 export function useSaveTurno() {
-  return useCallback(async (input: TurnoInput, id?: string) => {
-    const { error } = await supabase.rpc('upsert_turno', {
+  return useCallback(async (input: TurnoInput, id?: string): Promise<string> => {
+    const { data, error } = await supabase.rpc('upsert_turno', {
       p_id: id ?? null,
       p_fecha: input.fecha,
       p_paciente_id: input.pacienteId,
@@ -34,5 +34,6 @@ export function useSaveTurno() {
       p_tratamiento_precios: input.tratamientos.map((t) => t.precioAplicado),
     })
     if (error) throw error
+    return data as string
   }, [])
 }

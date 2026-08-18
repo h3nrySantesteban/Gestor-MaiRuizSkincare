@@ -216,3 +216,19 @@ select cron.schedule(
   '*/15 * * * *',
   $$ select public.finalizar_turnos_vencidos(); $$
 );
+
+-- ============================================================
+-- Google Calendar
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- email: opcional, se usa para invitar al paciente como asistente del
+-- evento de Google Calendar (si no lo carga, el turno igual se agrega al
+-- calendario de Mai, solo no se invita a nadie más).
+-- google_event_id: el id del evento en Google Calendar correspondiente a
+-- este turno, para poder editarlo/borrarlo en vez de duplicarlo cada vez
+-- que se guarda (ver api/sync-calendar.ts).
+-- ============================================================
+alter table public.pacientes add column if not exists email text;
+alter table public.turnos add column if not exists google_event_id text;

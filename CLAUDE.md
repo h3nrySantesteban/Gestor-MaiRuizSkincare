@@ -134,6 +134,40 @@ session).
 - `server/` holds shared logic; `api/*.ts` files stay thin orchestration only,
   so anything testable lives in `server/` (see below).
 
+### Google Calendar sync (`server/googleCalendar.ts`, `api/`)
+
+Every turno syncs to Mai's Google Calendar (`primary` calendar of whichever
+account did the one-time OAuth setup); the paciente is added as an attendee
+(and gets Google's own invite email) when `pacientes.email` is set — no email
+means the turno still lands on Mai's calendar, just without inviting anyone.
+
+- One-time setup (see README): `api/google-oauth-start.ts` redirects to
+  Google's consent screen (`access_type=offline`, `prompt=consent` — forces a
+  refresh token even on a re-consent); `api/google-oauth-callback.ts` swaps
+  the `code` for tokens and **displays the refresh token on the page** for
+  Mai to copy into `GOOGLE_CALENDAR_REFRESH_TOKEN` by hand — it's never
+  persisted by the app itself, only lives in Vercel env vars.
+- `server/googleCalendar.ts`: thin wrapper, same shape as
+  `server/whatsappClient.ts`. `getAccessToken()` exchanges the refresh token
+  for a fresh access token on every call (no caching — call volume is low).
+  `syncTurnoEvent(turno)` builds the event (title, `+1h` duration — same
+  assumption as `finalizar_turnos_vencidos`, `America/Argentina/Buenos_Aires`
+  timezone) and does `events.insert`/`events.update`/`events.delete`
+  depending on whether `google_event_id` already exists and whether
+  `estado === 'Cancelado'`.
+- `api/sync-calendar.ts`: the only thing the frontend talks to — thin
+  orchestration via `server/supabaseAdmin.ts`, reads the full turno (paciente
+  + tratamientos), calls `syncTurnoEvent`, writes the resulting
+  `google_event_id` back. `NuevoTurnoForm.tsx` fires this after `save()`
+  resolves and in `handleDelete` before `deleteTurno()` — **never** await-blocks
+  or reverts the Supabase write if the Calendar call fails, it just logs to
+  the console, since a turno living in the app but not in Calendar is a far
+  smaller problem than losing the turno data over a Google API hiccup.
+  `api/whatsapp-webhook.ts` does the same delete-on-cancel when a patient
+  replies "cancelar".
+- Needs Google's sensitive-scope verification (`calendar.events`) to avoid
+  the refresh token expiring every 7 days — see README setup steps.
+
 ### Styling
 
 Tailwind v4 via `@tailwindcss/vite` (not `@tailwindcss/postcss` —
