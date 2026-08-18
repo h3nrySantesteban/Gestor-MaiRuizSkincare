@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute'
 import { AppLayout } from './components/AppLayout/AppLayout'
 import { Login } from './pages/Login'
+import { PrivacyPolicy } from './pages/PrivacyPolicy'
+import { TermsOfService } from './pages/TermsOfService'
 
 // lazy: Dashboard/Analytics arrastran recharts, que es la parte más pesada
 // del bundle — no tiene sentido bajarla antes de loguearse
@@ -23,6 +25,11 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          {/* públicas a propósito: Google exige que la política de privacidad y
+              los términos de servicio sean accesibles sin login para la revisión
+              del scope sensible de Calendar */}
+          <Route path="/privacidad" element={<PrivacyPolicy />} />
+          <Route path="/terminos" element={<TermsOfService />} />
           <Route
             element={
               <ProtectedRoute>
