@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../server/supabaseAdmin'
-import { sendReminderTemplate } from '../server/whatsappClient'
-import { requireEnv } from '../server/env'
-import { formatArgentinaDate, formatArgentinaTime, getArgentinaTomorrowRangeUtc } from '../server/argentinaTime'
+import { supabaseAdmin } from '../server/supabaseAdmin.js'
+import { sendReminderTemplate } from '../server/whatsappClient.js'
+import { requireEnv } from '../server/env.js'
+import { formatArgentinaDate, formatArgentinaTime, getArgentinaTomorrowRangeUtc } from '../server/argentinaTime.js'
 
 interface TurnoParaRecordar {
   id: string

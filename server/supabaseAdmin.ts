@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { requireEnv } from './env'
+import { requireEnv } from './env.js'
 
 // service role: bypassa RLS a propósito (uso exclusivo server-side, nunca
 // llega al bundle del cliente porque SUPABASE_SERVICE_ROLE_KEY no tiene

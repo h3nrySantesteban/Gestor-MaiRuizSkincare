@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { requireEnv } from './env'
+import { requireEnv } from './env.js'
 
 const GRAPH_VERSION = 'v21.0'
 

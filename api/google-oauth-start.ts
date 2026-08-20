@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { requireEnv } from '../server/env'
+import { requireEnv } from '../server/env.js'
 
 // Paso 1 del setup manual de una sola vez (ver README): Mai visita este
 // endpoint logueada con la cuenta de Google donde quiere que vivan los

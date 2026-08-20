@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../server/supabaseAdmin'
-import { syncTurnoEvent, deleteTurnoEvent } from '../server/googleCalendar'
+import { supabaseAdmin } from '../server/supabaseAdmin.js'
+import { syncTurnoEvent, deleteTurnoEvent } from '../server/googleCalendar.js'
 
 interface TurnoConRelaciones {
   id: string

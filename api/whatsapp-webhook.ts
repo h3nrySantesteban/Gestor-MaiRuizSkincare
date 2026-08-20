@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { supabaseAdmin } from '../server/supabaseAdmin'
-import { sendText, verifySignature } from '../server/whatsappClient'
-import { parseReply, type ReplyIntent } from '../server/replyParser'
-import { normalizePhone } from '../server/phone'
-import { requireEnv } from '../server/env'
-import { deleteTurnoEvent } from '../server/googleCalendar'
+import { supabaseAdmin } from '../server/supabaseAdmin.js'
+import { sendText, verifySignature } from '../server/whatsappClient.js'
+import { parseReply, type ReplyIntent } from '../server/replyParser.js'
+import { normalizePhone } from '../server/phone.js'
+import { requireEnv } from '../server/env.js'
+import { deleteTurnoEvent } from '../server/googleCalendar.js'
 
 // necesitamos el body crudo (sin parsear) para poder validar la firma
 // X-Hub-Signature-256 byte a byte

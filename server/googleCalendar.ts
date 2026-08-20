@@ -1,4 +1,4 @@
-import { requireEnv } from './env'
+import { requireEnv } from './env.js'
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3'
 // mismo supuesto de duración que usa finalizar_turnos_vencidos en supabase-setup.sql
