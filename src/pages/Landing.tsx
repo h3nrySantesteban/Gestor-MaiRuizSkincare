@@ -1,9 +1,17 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
-// Página pública de inicio — a propósito no requiere sesión. Google exige
-// que la "página principal" de una app que pide scopes sensibles (Calendar)
-// sea accesible sin login y explique el propósito de la app.
+// Página pública de inicio — a propósito no requiere sesión (el crawler de
+// verificación de Google la ve siempre así). Pero si Mai ya está logueada,
+// no tiene sentido mostrarle esta pantalla de presentación: la mandamos
+// directo al dashboard.
 export function Landing() {
+  const { session, loading } = useAuth()
+
+  if (!loading && session) {
+    return <Navigate to="/dashboard" replace />
+  }
+
   return (
     <div className="flex min-h-svh flex-col bg-surface-muted">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 px-6 py-16">
