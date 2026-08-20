@@ -26,7 +26,10 @@ export function Analytics() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-lg font-semibold text-ink">Analytics</h1>
-        <p className="text-sm text-ink-muted">Este mes comparado con el anterior, y qué tratamientos rinden más</p>
+        {/* en mobile el header ya muestra "Analytics" — esto sería redundante */}
+        <p className="hidden text-sm text-ink-muted md:block">
+          Este mes comparado con el anterior, y qué tratamientos rinden más
+        </p>
       </div>
 
       {!loadingStats && mesActual && mesAnterior && (

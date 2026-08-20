@@ -89,3 +89,21 @@ body {
   background: var(--color-surface-muted);
   transition: background-color 0.15s ease, color 0.15s ease;
 }
+
+@keyframes drawer-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawer-panel-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

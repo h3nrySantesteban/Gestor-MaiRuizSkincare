@@ -10,7 +10,8 @@ export function Dashboard() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-lg font-semibold text-ink">Dashboard</h1>
-        <p className="text-sm text-ink-muted">Resumen general del consultorio</p>
+        {/* en mobile el header ya muestra "Dashboard" — esto sería redundante */}
+        <p className="hidden text-sm text-ink-muted md:block">Resumen general del consultorio</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
