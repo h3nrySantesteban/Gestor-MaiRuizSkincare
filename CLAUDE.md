@@ -205,10 +205,21 @@ keeping out of the initial bundle for a login screen nobody stays on.
 Same `eslint-plugin-react-hooks` v7 (React Compiler rules) config as
 LornaEvans, including `react-hooks/set-state-in-effect`, which is stricter
 than most React projects. `tsconfig.server.json` covers `api/` + `server/`
-separately from the app (`moduleResolution: "bundler"`, matching how
-Vercel's esbuild-based function builder actually resolves imports — not
-`nodenext`, which would require explicit `.js` extensions on every relative
-import for no benefit here).
+separately from the app (`moduleResolution: "bundler"`).
+
+**Every relative import between `api/` and `server/` needs an explicit
+`.js` extension** (e.g. `from '../server/env.js'`, even though the file on
+disk is `env.ts`) — `moduleResolution: "bundler"` tolerates this (maps the
+`.js` specifier back to the real `.ts` file, same as Vite), but it is not
+what actually builds the deployed functions. Vercel compiles `api/*.ts`
+with its own internal `nodenext`-style resolution, which *requires* the
+extension; without it, the function still deploys (`vercel build` doesn't
+hard-fail) but crashes on every invocation in production with
+`ERR_MODULE_NOT_FOUND` for the un-resolved sibling file. This was a live
+bug from the first WhatsApp-bot deploy until 2026-08-20, caught only once
+the Google Calendar endpoints were added and one crashed loudly enough to
+investigate (`vercel inspect <deployment> --logs` is what surfaces the
+real `tsc` errors — `vercel logs` only shows the runtime crash, not why).
 
 ### Environment variables
 
