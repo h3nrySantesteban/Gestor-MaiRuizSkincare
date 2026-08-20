@@ -79,6 +79,7 @@ export interface TurnoParaCalendar {
 function buildDescription(turno: TurnoParaCalendar): string {
   const tratamientosTexto = turno.tratamientos.length > 0 ? turno.tratamientos.join(', ') : 'sin especificar'
   const lineas = [
+    'Piso 4, oficina 2',
     `Tratamiento: ${tratamientosTexto}`,
     `Precio: ${currencyFormatter.format(turno.precio)}`,
     `Medio de pago: ${turno.medioPago ?? '—'}`,
