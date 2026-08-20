@@ -5,6 +5,10 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google-site-verification" content="msQUl-LfxNNIlzqOg6iG_vGfxrfNZL9FfEXvXEn0krI" />
+    <meta
+      name="description"
+      content="Gestor de Turnos — Mai Ruiz Skincare es un sistema de uso interno para administrar la agenda de un consultorio de skincare: pacientes, tratamientos y turnos, con recordatorios por WhatsApp y sincronización con Google Calendar."
+    />
     <title>Gestor de Turnos — Mai Ruiz Skincare</title>
     <!-- valor por defecto; el script de abajo lo corrige antes del primer
          paint, y useTheme.ts lo mantiene sincronizado con el toggle -->
@@ -24,7 +28,27 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Fallback visible para revisores/crawlers que no ejecutan JS (es
+           una SPA de React, así que sin esto el <body> queda vacío hasta
+           que React monta) — React reemplaza este contenido al hidratar. -->
+      <main style="max-width: 640px; margin: 64px auto; padding: 0 24px; font-family: system-ui, sans-serif">
+        <h1>Gestor de Turnos — Mai Ruiz Skincare</h1>
+        <p>
+          Gestor de Turnos — Mai Ruiz Skincare es un sistema de uso interno para administrar la agenda de un
+          consultorio de skincare: pacientes, tratamientos y turnos. Permite registrar turnos, enviar recordatorios
+          automáticos por WhatsApp y sincronizar cada turno con Google Calendar.
+        </p>
+        <p>
+          Es una herramienta de uso exclusivo de la administradora del consultorio — no tiene registro público ni
+          usuarios externos.
+        </p>
+        <p>
+          <a href="/login">Iniciar sesión</a> · <a href="/privacidad">Política de Privacidad</a> ·
+          <a href="/terminos">Condiciones del Servicio</a>
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
