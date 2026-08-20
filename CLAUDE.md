@@ -143,10 +143,13 @@ session).
 
 ### Google Calendar sync (`server/googleCalendar.ts`, `api/`)
 
-Every turno syncs to Mai's Google Calendar (`primary` calendar of whichever
-account did the one-time OAuth setup); the paciente is added as an attendee
-(and gets Google's own invite email) when `pacientes.email` is set — no email
-means the turno still lands on Mai's calendar, just without inviting anyone.
+Every turno syncs to a **secondary** calendar named "Turnos" (not `primary`)
+in whichever Google account did the one-time OAuth setup — `GOOGLE_CALENDAR_ID`
+points at it, since our `calendar.events` scope can't create calendars, so
+Mai creates "Turnos" by hand once (see README) and gives us its id. The
+paciente is added as an attendee (and gets Google's own invite email) when
+`pacientes.email` is set — no email means the turno still lands on the
+calendar, just without inviting anyone.
 
 - One-time setup (see README): `api/google-oauth-start.ts` redirects to
   Google's consent screen (`access_type=offline`, `prompt=consent` — forces a
@@ -157,11 +160,17 @@ means the turno still lands on Mai's calendar, just without inviting anyone.
 - `server/googleCalendar.ts`: thin wrapper, same shape as
   `server/whatsappClient.ts`. `getAccessToken()` exchanges the refresh token
   for a fresh access token on every call (no caching — call volume is low).
-  `syncTurnoEvent(turno)` builds the event (title, `+1h` duration — same
-  assumption as `finalizar_turnos_vencidos`, `America/Argentina/Buenos_Aires`
-  timezone) and does `events.insert`/`events.update`/`events.delete`
-  depending on whether `google_event_id` already exists and whether
-  `estado === 'Cancelado'`.
+  `syncTurnoEvent(turno)` builds the event — title is always
+  `"Turno: {paciente} — Mailén Ruiz | Técnica Cosmetóloga"` (no tratamiento in
+  the title, since the patient's own calendar shows it under someone else's
+  name and needs to be self-explanatory at a glance); `description` carries
+  everything else (tratamientos, precio, medio de pago, gift card, and
+  explicitly whether it's `senado`); fixed `location` (consultorio address);
+  `colorId: '3'` (Grape, closest built-in match to the app's primary purple);
+  a 60-minute popup reminder; `+1h` duration — same assumption as
+  `finalizar_turnos_vencidos`, `America/Argentina/Buenos_Aires` timezone —
+  and does `events.insert`/`events.update`/`events.delete` depending on
+  whether `google_event_id` already exists and whether `estado === 'Cancelado'`.
 - `api/sync-calendar.ts`: the only thing the frontend talks to — thin
   orchestration via `server/supabaseAdmin.ts`, reads the full turno (paciente
   + tratamientos), calls `syncTurnoEvent`, writes the resulting

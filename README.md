@@ -57,9 +57,19 @@ una vez), ya que Vite solo sirve el frontend.
    con `https://<tu-dominio>.vercel.app/api/google-oauth-callback` como
    "Authorized redirect URI" — copiá el Client ID/Secret a
    `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, y esa misma URL a
-   `GOOGLE_OAUTH_REDIRECT_URI`. Deployá con esas 3 variables cargadas, después
-   visitá `/api/google-oauth-start` vos misma (logueada con la cuenta de
-   Google donde querés que vivan los turnos), copiá el refresh token que te
+   `GOOGLE_OAUTH_REDIRECT_URI`.
+
+   En Google Calendar (la cuenta donde van a vivir los turnos), creá un
+   calendario nuevo llamado **"Turnos"** (Configuración → Agregar calendario
+   → Crear nuevo calendario) — nuestro scope `calendar.events` no permite
+   crear calendarios por código, así que este paso es manual. Entrá a ese
+   calendario nuevo → Configuración → "Integrar calendario" → copiá el **Id
+   de calendario** (termina en `@group.calendar.google.com`) a
+   `GOOGLE_CALENDAR_ID`.
+
+   Deployá con esas 4 variables cargadas, después visitá
+   `/api/google-oauth-start` vos misma (logueada con la cuenta de Google
+   donde creaste el calendario "Turnos"), copiá el refresh token que te
    muestra la página, y cargalo como `GOOGLE_CALENDAR_REFRESH_TOKEN` en
    Vercel. Redeployá para que tome efecto.
 5. Copiá `.env.example` a `.env.local` con los valores reales para desarrollo local.

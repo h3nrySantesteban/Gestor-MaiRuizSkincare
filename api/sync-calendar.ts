@@ -7,6 +7,10 @@ interface TurnoConRelaciones {
   fecha: string
   estado: string
   google_event_id: string | null
+  precio: number
+  medio_pago: string | null
+  gift_card: boolean
+  senado: boolean
   pacientes: { nombre_completo: string; email: string | null } | null
   turno_tratamientos: { tratamientos: { nombre: string } | null }[]
 }
@@ -42,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data, error } = await supabaseAdmin
       .from('turnos')
       .select(
-        'id, fecha, estado, google_event_id, pacientes ( nombre_completo, email ), turno_tratamientos ( tratamientos ( nombre ) )',
+        'id, fecha, estado, google_event_id, precio, medio_pago, gift_card, senado, pacientes ( nombre_completo, email ), turno_tratamientos ( tratamientos ( nombre ) )',
       )
       .eq('id', body.turnoId)
       .single()
@@ -60,6 +64,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pacienteNombre: turno.pacientes?.nombre_completo ?? 'Paciente',
       pacienteEmail: turno.pacientes?.email ?? null,
       tratamientos: turno.turno_tratamientos.map((t) => t.tratamientos?.nombre).filter((n): n is string => Boolean(n)),
+      precio: turno.precio,
+      medioPago: turno.medio_pago,
+      giftCard: turno.gift_card,
+      senado: turno.senado,
     })
 
     if (googleEventId !== turno.google_event_id) {

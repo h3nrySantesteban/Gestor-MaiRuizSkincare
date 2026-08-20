@@ -4,6 +4,28 @@ const CALENDAR_API = 'https://www.googleapis.com/calendar/v3'
 // mismo supuesto de duración que usa finalizar_turnos_vencidos en supabase-setup.sql
 const DURATION_MS = 60 * 60 * 1000
 
+// dirección del consultorio — no es un dato sensible, se hardcodea acá en
+// vez de agregar otra env var
+const DIRECCION_CONSULTORIO = 'Sarmiento 756, S2000 Rosario, Santa Fe, Argentina'
+
+// colorId de Google Calendar para "Grape" — el morado más parecido al
+// primary-500 de la app (ver src/index.css). Lista completa de colorId en
+// https://developers.google.com/calendar/api/v3/reference/colors/get
+const COLOR_ID_PURPURA = '3'
+
+const currencyFormatter = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  maximumFractionDigits: 0,
+})
+
+function getCalendarId(): string {
+  // el calendario "Turnos" lo crea Mai a mano en Google Calendar (nuestro
+  // scope es calendar.events, no alcanza para crear calendarios) — el id
+  // sale de Configuración > ese calendario > Integrar calendario
+  return requireEnv('GOOGLE_CALENDAR_ID')
+}
+
 async function getAccessToken(): Promise<string> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -48,17 +70,39 @@ export interface TurnoParaCalendar {
   pacienteNombre: string
   pacienteEmail: string | null
   tratamientos: string[]
+  precio: number
+  medioPago: string | null
+  giftCard: boolean
+  senado: boolean
+}
+
+function buildDescription(turno: TurnoParaCalendar): string {
+  const tratamientosTexto = turno.tratamientos.length > 0 ? turno.tratamientos.join(', ') : 'sin especificar'
+  const lineas = [
+    `Tratamiento: ${tratamientosTexto}`,
+    `Precio: ${currencyFormatter.format(turno.precio)}`,
+    `Medio de pago: ${turno.medioPago ?? '—'}`,
+    `Gift card: ${turno.giftCard ? 'Sí' : 'No'}`,
+    `Señado: ${turno.senado ? 'Sí' : 'No'}`,
+  ]
+  return lineas.join('\n')
 }
 
 function buildEventBody(turno: TurnoParaCalendar) {
   const start = new Date(turno.fecha)
   const end = new Date(start.getTime() + DURATION_MS)
-  const tratamientosTexto = turno.tratamientos.length > 0 ? turno.tratamientos.join(', ') : 'turno'
   return {
-    summary: `Turno: ${turno.pacienteNombre} — ${tratamientosTexto}`,
+    summary: `Turno: ${turno.pacienteNombre} — Mailén Ruiz | Técnica Cosmetóloga`,
+    description: buildDescription(turno),
+    location: DIRECCION_CONSULTORIO,
+    colorId: COLOR_ID_PURPURA,
     start: { dateTime: start.toISOString(), timeZone: 'America/Argentina/Buenos_Aires' },
     end: { dateTime: end.toISOString(), timeZone: 'America/Argentina/Buenos_Aires' },
     attendees: turno.pacienteEmail ? [{ email: turno.pacienteEmail }] : [],
+    reminders: {
+      useDefault: false,
+      overrides: [{ method: 'popup', minutes: 60 }],
+    },
   }
 }
 
@@ -74,9 +118,10 @@ export async function syncTurnoEvent(turno: TurnoParaCalendar): Promise<string |
   }
 
   const body = JSON.stringify(buildEventBody(turno))
+  const calendarId = encodeURIComponent(getCalendarId())
 
   if (turno.googleEventId) {
-    const updated = await callCalendarApi(`/calendars/primary/events/${turno.googleEventId}?sendUpdates=all`, {
+    const updated = await callCalendarApi(`/calendars/${calendarId}/events/${turno.googleEventId}?sendUpdates=all`, {
       method: 'PUT',
       body,
     })
@@ -85,7 +130,7 @@ export async function syncTurnoEvent(turno: TurnoParaCalendar): Promise<string |
     // — seguimos y creamos uno nuevo en vez de fallar
   }
 
-  const created = (await callCalendarApi('/calendars/primary/events?sendUpdates=all', {
+  const created = (await callCalendarApi(`/calendars/${calendarId}/events?sendUpdates=all`, {
     method: 'POST',
     body,
   })) as { id: string } | null
@@ -93,5 +138,6 @@ export async function syncTurnoEvent(turno: TurnoParaCalendar): Promise<string |
 }
 
 export async function deleteTurnoEvent(googleEventId: string): Promise<void> {
-  await callCalendarApi(`/calendars/primary/events/${googleEventId}?sendUpdates=all`, { method: 'DELETE' })
+  const calendarId = encodeURIComponent(getCalendarId())
+  await callCalendarApi(`/calendars/${calendarId}/events/${googleEventId}?sendUpdates=all`, { method: 'DELETE' })
 }
