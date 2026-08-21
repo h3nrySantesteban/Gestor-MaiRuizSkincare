@@ -92,11 +92,14 @@ picker component defined at the bottom of this same file —
 list can get long) and `TratamientoDropdown` (multi-select via checkboxes,
 since a turno can have several tratamientos) — both styled as a closed-by-
 default dropdown matching `inputClass` rather than a native `<select>`.
-`PacienteCombobox` intentionally skips autofocus-on-open and keyboard
-navigation to keep its iOS footprint small: an earlier, more feature-full
-combobox here was reverted in favor of a native `<select>` over focus bugs
-on iOS that were never fully root-caused, so retest on a real iPhone before
-adding more interactivity to this one. Both pickers have a "+ Nuevo..."
+`PacienteCombobox`'s search input autofocuses on open (confirmed working on
+a real iPhone) so typing can start right from tapping the trigger, no extra
+tap into the search box needed; it still skips keyboard navigation (arrow
+keys to move through results) to keep its iOS footprint small — an earlier,
+more feature-full combobox here was reverted in favor of a native `<select>`
+over focus bugs on iOS that were never fully root-caused, so retest on a
+real iPhone before adding more interactivity to this one. Both pickers have
+a "+ Nuevo..."
 button below them that opens
 [NuevoPacienteForm](src/components/NuevoPacienteForm/NuevoPacienteForm.tsx) /
 [NuevoTratamientoForm](src/components/NuevoTratamientoForm/NuevoTratamientoForm.tsx)

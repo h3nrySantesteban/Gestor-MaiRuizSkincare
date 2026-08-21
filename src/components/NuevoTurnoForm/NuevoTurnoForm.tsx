@@ -422,6 +422,12 @@ function PacienteCombobox({ pacientes, value, onChange }: PacienteComboboxProps)
       {open && (
         <div className="absolute left-0 top-full z-10 mt-1 flex w-full flex-col rounded-lg border border-border bg-surface shadow-lg">
           <input
+            // focus apenas se monta (o sea, apenas se abre el panel): permite
+            // escribir directo desde el click en el trigger, sin tocar el
+            // buscador aparte. el ref-callback dispara en cada montaje, que
+            // es exactamente cuando open pasa a true (este bloque entero
+            // deja de renderizarse mientras open es false)
+            ref={(el) => el?.focus()}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por nombre..."
