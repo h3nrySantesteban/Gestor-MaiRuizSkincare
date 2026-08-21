@@ -4,6 +4,8 @@ export interface Tratamiento {
   precio: number
   descripcion: string | null
   activo: boolean
+  /** el tratamiento que representa el monto de seña — como mucho uno puede tener esto en true */
+  esSena: boolean
   createdAt: string
 }
 
@@ -13,6 +15,7 @@ export interface TratamientoRow {
   precio: number
   descripcion: string | null
   activo: boolean
+  es_sena: boolean
   created_at: string
 }
 
@@ -23,6 +26,7 @@ export function mapTratamientoRow(row: TratamientoRow): Tratamiento {
     precio: row.precio,
     descripcion: row.descripcion,
     activo: row.activo,
+    esSena: row.es_sena,
     createdAt: row.created_at,
   }
 }

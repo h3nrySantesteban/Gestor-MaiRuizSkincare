@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { format } from 'date-fns'
 import { z } from 'zod'
@@ -6,9 +6,10 @@ import { Modal } from '../Modal/Modal'
 import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
 import { DateTimeInput } from '../forms/DateTimeInput'
+import { ToggleSiNo } from '../forms/ToggleSiNo'
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { NuevoTratamientoForm } from '../NuevoTratamientoForm/NuevoTratamientoForm'
-import { TrashIcon } from '../icons'
+import { ChevronDownIcon, TrashIcon } from '../icons'
 import { usePacientes } from '../../hooks/usePacientes'
 import { useTratamientos } from '../../hooks/useTratamientos'
 import { useSaveTurno, type TurnoInput } from '../../hooks/useSaveTurno'
@@ -82,9 +83,11 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   const submitRef = useRef<HTMLButtonElement>(null)
 
   const tratamientosById = new Map(tratamientos.map((t) => [t.id, t]))
-  // un tratamiento desactivado sigue apareciendo si este turno ya lo tenía cargado
+  // la seña no es un tratamiento seleccionable acá — se aplica sola al
+  // cancelar un turno señado (ver aplicarPrecioSena). un tratamiento
+  // desactivado sigue apareciendo si este turno ya lo tenía cargado
   const tratamientosDisponibles = tratamientos.filter(
-    (t) => t.activo || seleccion.some((s) => s.tratamientoId === t.id),
+    (t) => !t.esSena && (t.activo || seleccion.some((s) => s.tratamientoId === t.id)),
   )
 
   function handlePrecioKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -92,6 +95,28 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       e.preventDefault()
       medioPagoRef.current?.focus()
     }
+  }
+
+  // si el turno queda Cancelado y estaba señado, la seña se queda como
+  // ingreso — el precio final pasa a ser el monto de la seña. Se dispara
+  // solo en la transición (acá, no en un efecto) para no pisar un precio
+  // que Mai ya haya ajustado a mano después de este cambio.
+  function aplicarPrecioSenaSiCorresponde(nuevoEstado: EstadoTurno, nuevoSenado: boolean) {
+    if (nuevoEstado !== 'Cancelado' || !nuevoSenado) return
+    const sena = tratamientos.find((t) => t.esSena)
+    if (!sena) return
+    setPrecio(String(sena.precio))
+    setPrecioDirty(true)
+  }
+
+  function handleEstadoChange(nuevoEstado: EstadoTurno) {
+    setEstado(nuevoEstado)
+    aplicarPrecioSenaSiCorresponde(nuevoEstado, senado)
+  }
+
+  function handleSenadoChange(nuevoSenado: boolean) {
+    setSenado(nuevoSenado)
+    aplicarPrecioSenaSiCorresponde(estado, nuevoSenado)
   }
 
   function handleTratamientoToggle(id: string) {
@@ -191,7 +216,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       <Modal open onClose={onClose} title={turno ? 'Editar turno' : 'Nuevo turno'} widthClassName="max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
           <Field label="Fecha y hora" required error={errors.fecha}>
-            <DateTimeInput value={fecha} onChange={setFecha} />
+            <DateTimeInput value={fecha} onChange={setFecha} step={900} />
           </Field>
 
           <Field label="Paciente" required error={errors.pacienteId}>
@@ -220,23 +245,11 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
           </Field>
 
           <Field label="Tratamiento">
-            <div className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-lg border border-border p-3">
-              {tratamientosDisponibles.length === 0 && (
-                <p className="text-sm text-ink-muted">Todavía no hay tratamientos cargados.</p>
-              )}
-              {tratamientosDisponibles.map((t) => (
-                <label key={t.id} className="flex items-center gap-2 text-sm text-ink">
-                  <input
-                    type="checkbox"
-                    checked={seleccion.some((s) => s.tratamientoId === t.id)}
-                    onChange={() => handleTratamientoToggle(t.id)}
-                    className="h-4 w-4 shrink-0 rounded border-border text-primary-500 focus:ring-primary-500"
-                  />
-                  <span className="min-w-0 flex-1 truncate">{t.nombre}</span>
-                  <span className="shrink-0 text-xs text-ink-muted">{formatCurrency(t.precio)}</span>
-                </label>
-              ))}
-            </div>
+            <TratamientoDropdown
+              tratamientos={tratamientosDisponibles}
+              selectedIds={seleccion.map((s) => s.tratamientoId)}
+              onToggle={handleTratamientoToggle}
+            />
             <button
               type="button"
               onClick={() => setNuevoTratamientoOpen(true)}
@@ -268,7 +281,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
               <ToggleSiNo value={giftCard} onChange={setGiftCard} />
             </Field>
             <Field label="Señado" required>
-              <ToggleSiNo value={senado} onChange={setSenado} />
+              <ToggleSiNo value={senado} onChange={handleSenadoChange} />
             </Field>
           </div>
 
@@ -296,7 +309,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
               ref={estadoRef}
               value={estado}
               onChange={(e) => {
-                setEstado(e.target.value as EstadoTurno)
+                handleEstadoChange(e.target.value as EstadoTurno)
                 submitRef.current?.focus()
               }}
               className={inputClass}
@@ -356,27 +369,73 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   )
 }
 
-function ToggleSiNo({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+interface TratamientoDropdownProps {
+  tratamientos: Tratamiento[]
+  selectedIds: string[]
+  onToggle: (id: string) => void
+}
+
+// Mismo patrón que TratamientoFilterDropdown en Turnos.tsx: trigger con el
+// look del <select> nativo de Paciente, panel con checkboxes abajo — un turno
+// puede tener varios tratamientos, así que no alcanza con un <select> simple.
+function TratamientoDropdown({ tratamientos, selectedIds, onToggle }: TratamientoDropdownProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onEscape(e: globalThis.KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [])
+
+  const summary =
+    selectedIds.length === 0
+      ? 'Seleccionar tratamientos...'
+      : tratamientos
+          .filter((t) => selectedIds.includes(t.id))
+          .map((t) => t.nombre)
+          .join(', ')
+
   return (
-    <div className="inline-flex overflow-hidden rounded-lg border border-border">
+    <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => onChange(true)}
-        className={`px-4 py-2 text-sm font-medium transition-colors ${
-          value ? 'bg-primary-500 text-white' : 'bg-surface text-ink-muted hover:bg-surface-muted'
-        }`}
+        onClick={() => setOpen((v) => !v)}
+        className={`${inputClass} flex items-center justify-between gap-2 text-left`}
       >
-        Sí
+        <span className="min-w-0 truncate">{summary}</span>
+        <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-      <button
-        type="button"
-        onClick={() => onChange(false)}
-        className={`px-4 py-2 text-sm font-medium transition-colors ${
-          !value ? 'bg-primary-500 text-white' : 'bg-surface text-ink-muted hover:bg-surface-muted'
-        }`}
-      >
-        No
-      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-10 mt-1 flex max-h-48 w-full flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
+          {tratamientos.length === 0 && <p className="p-1 text-sm text-ink-muted">Todavía no hay tratamientos cargados.</p>}
+          {tratamientos.map((t) => (
+            <label
+              key={t.id}
+              className="flex items-center gap-2 rounded px-1.5 py-1 text-sm text-ink hover:bg-surface-muted"
+            >
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(t.id)}
+                onChange={() => onToggle(t.id)}
+                className="h-4 w-4 shrink-0 rounded border-border text-primary-500 focus:ring-primary-500"
+              />
+              <span className="min-w-0 flex-1 truncate">{t.nombre}</span>
+              <span className="shrink-0 text-xs text-ink-muted">{formatCurrency(t.precio)}</span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

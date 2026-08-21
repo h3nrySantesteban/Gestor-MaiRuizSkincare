@@ -33,13 +33,18 @@ const PROXIMOS_TURNOS_LIMIT = 6
 /**
  * Próximos turnos, totales de la semana/mes en curso, lo que queda agendado
  * para lo que resta de la semana/mes, y una serie de 6 meses (mes actual +
- * 5 anteriores) para el gráfico del dashboard. Turnos cancelados no cuentan
- * para ninguno de estos totales. "cantidad" cuenta cualquier turno no
- * cancelado (actividad), pero "ingresos"/"ingresosAlaFecha" solo suman
- * turnos ya Finalizados — un turno Agendado todavía puede cancelarse o no
- * concretarse, así que no se factura hasta que se cumple (ver
- * finalizar_turnos_vencidos en supabase-setup.sql, que pasa un turno de
- * Agendado a Finalizado solo cuando ya pasó 1h de su fecha).
+ * 5 anteriores) para el gráfico del dashboard.
+ *
+ * "cantidad" (actividad) cuenta cualquier turno no cancelado. "ingresos"/
+ * "ingresosAlaFecha" suman turnos ya Finalizados — un turno Agendado
+ * todavía puede cancelarse o no concretarse, así que no se factura hasta
+ * que se cumple (ver finalizar_turnos_vencidos en supabase-setup.sql, que
+ * pasa un turno de Agendado a Finalizado solo cuando ya pasó 1h de su
+ * fecha) — MÁS un turno Cancelado que estaba señado: la seña queda como
+ * ingreso aunque el turno no se haya concretado (ver
+ * NuevoTurnoForm.aplicarPrecioSenaSiCorresponde, que deja `precio` en el
+ * monto de la seña al cancelar). Un Cancelado nunca cuenta para "cantidad",
+ * señado o no — sigue sin ser actividad real, solo aporta el ingreso de la seña.
  */
 export function useDashboardStats() {
   const [proximosTurnos, setProximosTurnos] = useState<Turno[]>([])
@@ -67,7 +72,8 @@ export function useDashboardStats() {
         .select(TURNO_SELECT)
         .gte('fecha', desde.toISOString())
         .lte('fecha', hasta.toISOString())
-        .neq('estado', 'Cancelado'),
+        // no cancelados + cancelados señados (la seña cuenta como ingreso)
+        .or('estado.neq.Cancelado,and(estado.eq.Cancelado,senado.eq.true)'),
       supabase
         .from('turnos')
         .select(TURNO_SELECT)
@@ -75,7 +81,9 @@ export function useDashboardStats() {
         .eq('estado', 'Agendado')
         .order('fecha', { ascending: true })
         .limit(PROXIMOS_TURNOS_LIMIT),
-      supabase.from('tratamientos').select('precio').eq('activo', true),
+      // es_sena excluido: no es un tratamiento real, incluirlo en el
+      // promedio infla la proyección de ingresos futuros de los agendados
+      supabase.from('tratamientos').select('precio').eq('activo', true).eq('es_sena', false),
     ])
 
     if (historicoRes.error || proximosRes.error || tratamientosRes.error) {
@@ -117,10 +125,12 @@ export function useDashboardStats() {
 
     for (const turno of turnos) {
       const fecha = new Date(turno.fecha)
-      const facturable = turno.estado === 'Finalizado'
+      // Cancelado nunca es actividad real, señado o no
+      const cuentaComoActividad = turno.estado !== 'Cancelado'
+      const facturable = turno.estado === 'Finalizado' || (turno.estado === 'Cancelado' && turno.senado)
       const bucket = bucketByKey.get(format(fecha, 'yyyy-MM'))
       if (bucket) {
-        bucket.cantidad += 1
+        if (cuentaComoActividad) bucket.cantidad += 1
         if (facturable) {
           bucket.ingresos += turno.precio
           if (fecha.getDate() <= diaDeHoy) {
@@ -130,12 +140,15 @@ export function useDashboardStats() {
       }
       if (isWithinInterval(fecha, semanaInterval)) {
         semanaAcc = {
-          cantidad: semanaAcc.cantidad + 1,
+          cantidad: semanaAcc.cantidad + (cuentaComoActividad ? 1 : 0),
           ingresos: semanaAcc.ingresos + (facturable ? turno.precio : 0),
         }
       }
       if (isWithinInterval(fecha, mesInterval)) {
-        mesAcc = { cantidad: mesAcc.cantidad + 1, ingresos: mesAcc.ingresos + (facturable ? turno.precio : 0) }
+        mesAcc = {
+          cantidad: mesAcc.cantidad + (cuentaComoActividad ? 1 : 0),
+          ingresos: mesAcc.ingresos + (facturable ? turno.precio : 0),
+        }
       }
       if (turno.estado === 'Agendado') {
         if (isWithinInterval(fecha, restoSemanaInterval)) agendadosSemanaCount += 1

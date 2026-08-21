@@ -11,17 +11,25 @@ export interface TurnoFilters {
   tratamientoIds?: string[]
 }
 
-// Agendados primero (los más próximos primero, para ver qué viene ahora);
-// el resto (Finalizado/Cancelado/Otro) después, del más reciente al más
-// lejano en el pasado.
+// 3 grupos, en este orden: Agendados (los más próximos primero, para ver
+// qué viene ahora) — Finalizado/Otro/Cancelado sin seña (del más reciente
+// al más lejano) — Cancelado señado al final (la seña quedó como ingreso,
+// pero sigue siendo un turno cancelado, no uno "activo"). Turnos.tsx usa
+// este mismo criterio para dibujar las barras entre grupos.
+function grupo(t: Turno): 0 | 1 | 2 {
+  if (t.estado === 'Agendado') return 0
+  if (t.estado === 'Cancelado' && t.senado) return 2
+  return 1
+}
+
 function compareTurnos(a: Turno, b: Turno): number {
-  const aAgendado = a.estado === 'Agendado'
-  const bAgendado = b.estado === 'Agendado'
-  if (aAgendado !== bAgendado) return aAgendado ? -1 : 1
+  const grupoA = grupo(a)
+  const grupoB = grupo(b)
+  if (grupoA !== grupoB) return grupoA - grupoB
 
   const aTime = new Date(a.fecha).getTime()
   const bTime = new Date(b.fecha).getTime()
-  return aAgendado ? aTime - bTime : bTime - aTime
+  return grupoA === 0 ? aTime - bTime : bTime - aTime
 }
 
 export function useTurnos(filters: TurnoFilters = {}) {

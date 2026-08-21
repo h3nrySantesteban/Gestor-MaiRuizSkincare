@@ -3,6 +3,8 @@ interface DateTimeInputProps {
   onChange: (value: string) => void
   /** default 'datetime-local' */
   type?: 'datetime-local' | 'date'
+  /** segundos entre valores del minutero nativo (ej: 900 = cada 15 min) */
+  step?: number
 }
 
 /**
@@ -18,7 +20,7 @@ interface DateTimeInputProps {
  * para darle al wrapper el alto correcto (mismo padding/font que inputClass)
  * ya que el input absolute no participa del flujo normal.
  */
-export function DateTimeInput({ value, onChange, type = 'datetime-local' }: DateTimeInputProps) {
+export function DateTimeInput({ value, onChange, type = 'datetime-local', step }: DateTimeInputProps) {
   return (
     <div className="relative overflow-hidden rounded-lg">
       <div aria-hidden className="invisible border border-transparent px-3 py-2 text-base">
@@ -27,6 +29,7 @@ export function DateTimeInput({ value, onChange, type = 'datetime-local' }: Date
       <input
         type={type}
         value={value}
+        step={step}
         onChange={(e) => onChange(e.target.value)}
         // appearance-none: sin esto iOS dibuja su propio "chrome" nativo
         // sobre el control (fondo/borde propios) que pisa el border/bg de

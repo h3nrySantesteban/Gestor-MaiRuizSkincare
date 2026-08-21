@@ -38,10 +38,12 @@ export function Turnos() {
     (fechaDesde ? 1 : 0) + (fechaHasta ? 1 : 0) + (pacienteId ? 1 : 0) + estados.length + tratamientoIds.length
   const hasFilters = activeFilterCount > 0
 
-  // useTurnos ya ordena Agendados primero — acá solo se ubica dónde termina
-  // ese grupo para dibujar la barra. -1 (no hay no-agendados) o 0 (no hay
-  // agendados) significa que no hace falta separar nada.
+  // useTurnos ya ordena en 3 grupos (ver grupo() en useTurnos.ts): Agendados
+  // — Finalizado/Otro/Cancelado sin seña — Cancelado señado (la seña quedó
+  // como ingreso). Acá solo se ubica dónde empieza cada grupo siguiente
+  // para dibujar las barras; -1 significa que ese grupo no tiene turnos.
   const primerNoAgendadoIndex = turnos.findIndex((t) => t.estado !== 'Agendado')
+  const primerCanceladoSenadoIndex = turnos.findIndex((t) => t.estado === 'Cancelado' && t.senado)
 
   function openNuevo() {
     setEditingTurno(null)
@@ -170,6 +172,7 @@ export function Turnos() {
         {turnos.map((turno, index) => (
           <Fragment key={turno.id}>
             {index === primerNoAgendadoIndex && index > 0 && <div className="my-1 border-t border-border" />}
+            {index === primerCanceladoSenadoIndex && index > 0 && <div className="my-1 border-t border-border" />}
             <div
               role="button"
               tabIndex={0}

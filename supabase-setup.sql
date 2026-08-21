@@ -232,3 +232,23 @@ select cron.schedule(
 -- ============================================================
 alter table public.pacientes add column if not exists email text;
 alter table public.turnos add column if not exists google_event_id text;
+
+-- ============================================================
+-- Seña como tratamiento especial
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- es_sena: marca el tratamiento que representa el monto de seña. Se
+-- configura desde la pantalla de Tratamientos como uno más (mismo nombre,
+-- precio, activo/inactivo), pero el formulario de Nuevo Turno lo excluye
+-- del selector — no es algo que se le realice a un paciente — y los
+-- cálculos de precio promedio para balances futuros también lo excluyen.
+-- El índice único parcial asegura que haya como mucho uno marcado, ya que
+-- el código asume eso al buscarlo.
+-- ============================================================
+alter table public.tratamientos add column if not exists es_sena boolean not null default false;
+
+create unique index if not exists tratamientos_es_sena_unique
+  on public.tratamientos (es_sena)
+  where es_sena;

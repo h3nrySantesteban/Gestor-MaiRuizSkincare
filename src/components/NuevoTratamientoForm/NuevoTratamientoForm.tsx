@@ -3,6 +3,7 @@ import type { FormEvent, KeyboardEvent } from 'react'
 import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
+import { ToggleSiNo } from '../forms/ToggleSiNo'
 import { useTratamientos, type TratamientoInput } from '../../hooks/useTratamientos'
 import type { Tratamiento } from '../../types/tratamiento'
 
@@ -32,6 +33,7 @@ function NuevoTratamientoFormInner({ onClose, onSaved, tratamiento, initialNombr
   const [nombre, setNombre] = useState(tratamiento?.nombre ?? initialNombre ?? '')
   const [precio, setPrecio] = useState(tratamiento ? String(tratamiento.precio) : '')
   const [descripcion, setDescripcion] = useState(tratamiento?.descripcion ?? '')
+  const [esSena, setEsSena] = useState(tratamiento?.esSena ?? false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -69,6 +71,7 @@ function NuevoTratamientoFormInner({ onClose, onSaved, tratamiento, initialNombr
       nombre: result.data.nombre,
       precio: result.data.precio,
       descripcion: result.data.descripcion || null,
+      esSena,
     }
     try {
       if (tratamiento) {
@@ -126,6 +129,10 @@ function NuevoTratamientoFormInner({ onClose, onSaved, tratamiento, initialNombr
             rows={3}
             className={inputClass}
           />
+        </Field>
+
+        <Field label="Es la seña" hint="Su precio se usa como monto de seña al cancelar un turno señado. Como mucho uno puede ser la seña, y no aparece como opción en Nuevo turno.">
+          <ToggleSiNo value={esSena} onChange={setEsSena} />
         </Field>
 
         {formError && <p className="text-sm text-danger">{formError}</p>}

@@ -45,6 +45,11 @@ export function Tratamientos() {
             <button type="button" onClick={() => openEdit(t)} className="min-w-0 flex-1 text-left">
               <div className="flex items-center gap-2">
                 <p className="font-medium text-ink">{t.nombre}</p>
+                {t.esSena && (
+                  <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+                    Seña
+                  </span>
+                )}
                 {!t.activo && (
                   <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink-muted">
                     Inactivo
