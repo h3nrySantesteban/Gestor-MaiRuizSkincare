@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import { NotificationBell } from '../NotificationBell/NotificationBell'
@@ -54,12 +54,6 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
-  const location = useLocation()
-  // en mobile el header muestra la sección actual en vez del nombre de la
-  // app — ocupa menos espacio y ya se sabe dónde estás por el nav
-  const currentSectionLabel =
-    NAV_ITEMS.find((item) => (item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)))
-      ?.label ?? 'Mai Ruiz Skincare'
 
   return (
     // h-svh + overflow-hidden a propósito: sin esto los flex children (que
@@ -143,7 +137,6 @@ export function AppLayout() {
           >
             <MenuIcon className="h-5 w-5" />
           </button>
-          <p className="text-sm font-medium text-ink md:hidden">{currentSectionLabel}</p>
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"

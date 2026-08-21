@@ -8,10 +8,9 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* en mobile el header ya muestra "Dashboard" — este bloque entero sería redundante */}
-      <div className="hidden md:block">
+      <div>
         <h1 className="text-lg font-semibold text-ink">Dashboard</h1>
-        <p className="text-sm text-ink-muted">Resumen general del consultorio</p>
+        <p className="hidden text-sm text-ink-muted md:block">Resumen general del consultorio</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -21,21 +20,20 @@ export function Dashboard() {
             // auto-fill: cada columna pide un mínimo de 150px, así entran
             // tantas como quepan sin achicarse (2 en un teléfono angosto, 3+
             // a medida que crece el ancho) en vez de un breakpoint fijo.
-            // max-h + overflow-hidden recorta turnos de más a una sola fila
-            // completa, nunca una tarjeta a la mitad. divide-x en vez de
-            // tarjetas individuales: mismo estilo que SplitStatCard.
-            <div className="mt-1 grid max-h-16 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] divide-x divide-border overflow-hidden">
+            // divide-x en vez de tarjetas individuales: mismo estilo que
+            // SplitStatCard. Turnos de más envuelven a una fila 2 igual que
+            // cualquier grid — en vez de adivinar su altura en px con
+            // max-h (frágil: alcanzaba a filtrarse un pixelado de esa fila),
+            // grid-rows-[auto] fija la fila 1 al contenido real y
+            // auto-rows-[0px] fuerza cualquier fila implícita (la 2, 3...) a
+            // 0px, así el overflow-hidden no tiene nada que recortar mal.
+            <div className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] grid-rows-[auto] auto-rows-[0px] divide-x divide-border overflow-hidden">
               {proximosTurnos.map((turno) => (
                 <div key={turno.id} className="min-w-0 px-4 first:pl-0 last:pr-0">
                   <p className="truncate text-sm font-semibold text-ink">
                     {turno.paciente?.nombreCompleto ?? 'Paciente'}
                   </p>
                   <p className="mt-0.5 truncate text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>
-                  {turno.tratamientos.length > 0 && (
-                    <p className="mt-0.5 truncate text-sm text-ink-muted">
-                      {turno.tratamientos.map((t) => t.nombre).join(', ')}
-                    </p>
-                  )}
                 </div>
               ))}
             </div>
