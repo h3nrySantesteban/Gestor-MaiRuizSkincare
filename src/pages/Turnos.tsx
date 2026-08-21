@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { endOfDay } from 'date-fns'
 import { useTurnos } from '../hooks/useTurnos'
 import { usePacientes } from '../hooks/usePacientes'
+import { useTratamientos } from '../hooks/useTratamientos'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
+import { DateTimeInput } from '../components/forms/DateTimeInput'
 import { ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
@@ -15,21 +17,24 @@ export function Turnos() {
   const [fechaHasta, setFechaHasta] = useState('')
   const [pacienteId, setPacienteId] = useState<string | null>(null)
   const [estados, setEstados] = useState<EstadoTurno[]>([])
+  const [tratamientoIds, setTratamientoIds] = useState<string[]>([])
   const [filtrosOpen, setFiltrosOpen] = useState(false)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingTurno, setEditingTurno] = useState<Turno | null>(null)
 
   const { pacientes } = usePacientes()
+  const { tratamientos } = useTratamientos()
   const { turnos, loading } = useTurnos({
     fechaDesde: fechaDesde ? new Date(fechaDesde).toISOString() : undefined,
     fechaHasta: fechaHasta ? endOfDay(new Date(fechaHasta)).toISOString() : undefined,
     pacienteId: pacienteId ?? undefined,
     estados: estados.length > 0 ? estados : undefined,
+    tratamientoIds: tratamientoIds.length > 0 ? tratamientoIds : undefined,
   })
 
   const activeFilterCount =
-    (fechaDesde ? 1 : 0) + (fechaHasta ? 1 : 0) + (pacienteId ? 1 : 0) + estados.length
+    (fechaDesde ? 1 : 0) + (fechaHasta ? 1 : 0) + (pacienteId ? 1 : 0) + estados.length + tratamientoIds.length
   const hasFilters = activeFilterCount > 0
 
   function openNuevo() {
@@ -42,11 +47,16 @@ export function Turnos() {
     setFormOpen(true)
   }
 
+  function toggleTratamiento(id: string) {
+    setTratamientoIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+  }
+
   function limpiarFiltros() {
     setFechaDesde('')
     setFechaHasta('')
     setPacienteId(null)
     setEstados([])
+    setTratamientoIds([])
   }
 
   return (
@@ -85,21 +95,11 @@ export function Turnos() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-ink-muted">Desde</span>
-                <input
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => setFechaDesde(e.target.value)}
-                  className={inputClass}
-                />
+                <DateTimeInput type="date" value={fechaDesde} onChange={setFechaDesde} />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-ink-muted">Hasta</span>
-                <input
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => setFechaHasta(e.target.value)}
-                  className={inputClass}
-                />
+                <DateTimeInput type="date" value={fechaHasta} onChange={setFechaHasta} />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-ink-muted">Paciente</span>
@@ -137,6 +137,28 @@ export function Turnos() {
                 )
               })}
             </div>
+
+            {tratamientos.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {tratamientos.map((t) => {
+                  const active = tratamientoIds.includes(t.id)
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => toggleTratamiento(t.id)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        active
+                          ? 'border-primary-500 bg-primary-50 text-primary-700'
+                          : 'border-border text-ink-muted hover:bg-surface-muted'
+                      }`}
+                    >
+                      {t.nombre}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
 
             {hasFilters && (
               <div className="flex justify-end">

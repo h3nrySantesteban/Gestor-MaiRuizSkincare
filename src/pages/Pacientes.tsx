@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { usePacientes } from '../hooks/usePacientes'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
 import { InstagramIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { instagramLink, waLink } from '../lib/links'
-import type { Paciente } from '../types/paciente'
 
 export function Pacientes() {
   const { pacientes, loading, refetch } = usePacientes()
+  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Paciente | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -19,12 +19,6 @@ export function Pacientes() {
   }, [pacientes, query])
 
   function openNuevo() {
-    setEditing(null)
-    setFormOpen(true)
-  }
-
-  function openEdit(p: Paciente) {
-    setEditing(p)
     setFormOpen(true)
   }
 
@@ -58,11 +52,11 @@ export function Pacientes() {
             key={p.id}
             role="button"
             tabIndex={0}
-            onClick={() => openEdit(p)}
+            onClick={() => navigate(`/pacientes/${p.id}`)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
-                openEdit(p)
+                navigate(`/pacientes/${p.id}`)
               }
             }}
             className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"
@@ -104,7 +98,7 @@ export function Pacientes() {
         )}
       </div>
 
-      <NuevoPacienteForm open={formOpen} onClose={() => setFormOpen(false)} onSaved={() => refetch()} paciente={editing} />
+      <NuevoPacienteForm open={formOpen} onClose={() => setFormOpen(false)} onSaved={() => refetch()} />
     </div>
   )
 }

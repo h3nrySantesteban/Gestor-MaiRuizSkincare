@@ -1,13 +1,15 @@
 interface DateTimeInputProps {
   value: string
   onChange: (value: string) => void
+  /** default 'datetime-local' */
+  type?: 'datetime-local' | 'date'
 }
 
 /**
- * <input type="datetime-local"> a secas ignora w-full en iOS Safari: el
- * control nativo se renderiza con su propio ancho intrínseco (más ancho que
- * el resto de los campos) sin importar el CSS que le pongas, así que
- * min-w-0/max-width no alcanzan para domarlo.
+ * <input type="datetime-local"> o type="date" a secas ignoran w-full en iOS
+ * Safari: el control nativo se renderiza con su propio ancho intrínseco (más
+ * ancho que el resto de los campos) sin importar el CSS que le pongas, así
+ * que min-w-0/max-width no alcanzan para domarlo.
  *
  * Acá el ancho lo define un wrapper normal en flujo (position: relative +
  * overflow: hidden), y el input se posiciona absolute inset-0 encima —
@@ -16,14 +18,14 @@ interface DateTimeInputProps {
  * para darle al wrapper el alto correcto (mismo padding/font que inputClass)
  * ya que el input absolute no participa del flujo normal.
  */
-export function DateTimeInput({ value, onChange }: DateTimeInputProps) {
+export function DateTimeInput({ value, onChange, type = 'datetime-local' }: DateTimeInputProps) {
   return (
     <div className="relative overflow-hidden rounded-lg">
       <div aria-hidden className="invisible border border-transparent px-3 py-2 text-base">
         &nbsp;
       </div>
       <input
-        type="datetime-local"
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         // appearance-none: sin esto iOS dibuja su propio "chrome" nativo

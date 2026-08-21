@@ -13,6 +13,7 @@ import { TermsOfService } from './pages/TermsOfService'
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 const Turnos = lazy(() => import('./pages/Turnos').then((m) => ({ default: m.Turnos })))
 const Pacientes = lazy(() => import('./pages/Pacientes').then((m) => ({ default: m.Pacientes })))
+const PacienteDetalle = lazy(() => import('./pages/PacienteDetalle').then((m) => ({ default: m.PacienteDetalle })))
 const Tratamientos = lazy(() => import('./pages/Tratamientos').then((m) => ({ default: m.Tratamientos })))
 const Analytics = lazy(() => import('./pages/Analytics').then((m) => ({ default: m.Analytics })))
 
@@ -61,6 +62,14 @@ function App() {
               element={
                 <Suspense fallback={<PageFallback />}>
                   <Pacientes />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/pacientes/:id"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <PacienteDetalle />
                 </Suspense>
               }
             />
