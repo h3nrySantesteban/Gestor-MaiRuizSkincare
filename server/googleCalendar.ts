@@ -13,12 +13,6 @@ const DIRECCION_CONSULTORIO = 'Sarmiento 756, S2000 Rosario, Santa Fe, Argentina
 // https://developers.google.com/calendar/api/v3/reference/colors/get
 const COLOR_ID_PURPURA = '3'
 
-const currencyFormatter = new Intl.NumberFormat('es-AR', {
-  style: 'currency',
-  currency: 'ARS',
-  maximumFractionDigits: 0,
-})
-
 function getCalendarId(): string {
   // el calendario "Turnos" lo crea Mai a mano en Google Calendar (nuestro
   // scope es calendar.events, no alcanza para crear calendarios) — el id
@@ -69,24 +63,6 @@ export interface TurnoParaCalendar {
   googleEventId: string | null
   pacienteNombre: string
   pacienteEmail: string | null
-  tratamientos: string[]
-  precio: number
-  medioPago: string | null
-  giftCard: boolean
-  senado: boolean
-}
-
-function buildDescription(turno: TurnoParaCalendar): string {
-  const tratamientosTexto = turno.tratamientos.length > 0 ? turno.tratamientos.join(', ') : 'sin especificar'
-  const lineas = [
-    'Piso 4, oficina 2',
-    `Tratamiento: ${tratamientosTexto}`,
-    `Precio: ${currencyFormatter.format(turno.precio)}`,
-    `Medio de pago: ${turno.medioPago ?? '—'}`,
-    `Gift card: ${turno.giftCard ? 'Sí' : 'No'}`,
-    `Señado: ${turno.senado ? 'Sí' : 'No'}`,
-  ]
-  return lineas.join('\n')
 }
 
 function buildEventBody(turno: TurnoParaCalendar) {
@@ -94,7 +70,6 @@ function buildEventBody(turno: TurnoParaCalendar) {
   const end = new Date(start.getTime() + DURATION_MS)
   return {
     summary: `Turno: ${turno.pacienteNombre} — Mailén Ruiz | Técnica Cosmetóloga`,
-    description: buildDescription(turno),
     location: DIRECCION_CONSULTORIO,
     colorId: COLOR_ID_PURPURA,
     start: { dateTime: start.toISOString(), timeZone: 'America/Argentina/Buenos_Aires' },

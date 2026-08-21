@@ -163,9 +163,10 @@ calendar, just without inviting anyone.
   `syncTurnoEvent(turno)` builds the event — title is always
   `"Turno: {paciente} — Mailén Ruiz | Técnica Cosmetóloga"` (no tratamiento in
   the title, since the patient's own calendar shows it under someone else's
-  name and needs to be self-explanatory at a glance); `description` carries
-  everything else (tratamientos, precio, medio de pago, gift card, and
-  explicitly whether it's `senado`); fixed `location` (consultorio address);
+  name and needs to be self-explanatory at a glance); no `description` — the
+  event carries only title/location/time, nothing about tratamiento, precio,
+  medio de pago, gift card or señado (that stays internal to the app, not on
+  a calendar the patient can see); fixed `location` (consultorio address);
   `colorId: '3'` (Grape, closest built-in match to the app's primary purple);
   a 60-minute popup reminder; `+1h` duration — same assumption as
   `finalizar_turnos_vencidos`, `America/Argentina/Buenos_Aires` timezone —

@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 @theme {
+  /* md por defecto es 768px — a ese ancho el sidebar + contenido todavía se
+     ve apretado (ej. las 3 tarjetas del Dashboard), así que el corte
+     mobile/desktop de toda la app (sidebar vs. hamburguesa en AppLayout,
+     y los "hidden md:block" de Dashboard/Analytics) se corre a 1200px. */
+  --breakpoint-md: 1200px;
+
   /* Violeta (basado en el ramp "violet" de Tailwind, ya probado en accesibilidad) */
   --color-primary-50: #f5f3ff;
   --color-primary-100: #ede9fe;

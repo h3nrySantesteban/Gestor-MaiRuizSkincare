@@ -14,7 +14,7 @@ export function Dashboard() {
         <p className="hidden text-sm text-ink-muted md:block">Resumen general del consultorio</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-surface p-5">
           <p className="text-sm font-medium text-ink-muted">Próximo turno</p>
           {loading ? null : proximoTurno ? (
