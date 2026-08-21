@@ -93,7 +93,7 @@ export function Turnos() {
 
         {filtrosOpen && (
           <div className="flex flex-col gap-4 border-t border-border p-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-ink-muted">Desde</span>
                 <DateTimeInput type="date" value={fechaDesde} onChange={setFechaDesde} />
@@ -117,6 +117,13 @@ export function Turnos() {
                   ))}
                 </select>
               </label>
+              {tratamientos.length > 0 && (
+                <TratamientoFilterDropdown
+                  tratamientos={tratamientos}
+                  selectedIds={tratamientoIds}
+                  onToggle={toggleTratamiento}
+                />
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -137,14 +144,6 @@ export function Turnos() {
                   </button>
                 )
               })}
-
-              {tratamientos.length > 0 && (
-                <TratamientoFilterDropdown
-                  tratamientos={tratamientos}
-                  selectedIds={tratamientoIds}
-                  onToggle={toggleTratamiento}
-                />
-              )}
             </div>
 
             {hasFilters && (
@@ -268,23 +267,24 @@ function TratamientoFilterDropdown({ tratamientos, selectedIds, onToggle }: Trat
     }
   }, [])
 
+  const summary =
+    selectedIds.length === 0
+      ? 'Todos'
+      : tratamientos
+          .filter((t) => selectedIds.includes(t.id))
+          .map((t) => t.nombre)
+          .join(', ')
+
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-          selectedIds.length > 0
-            ? 'border-primary-500 bg-primary-50 text-primary-700'
-            : 'border-border text-ink-muted hover:bg-surface-muted'
-        }`}
-      >
-        Tratamiento{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
-        <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+    <div className="relative block" ref={ref}>
+      <span className="mb-1 block text-xs font-medium text-ink-muted">Tratamiento</span>
+      <button type="button" onClick={() => setOpen((v) => !v)} className={`${inputClass} flex items-center justify-between gap-2 text-left`}>
+        <span className="min-w-0 truncate">{summary}</span>
+        <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 z-10 mt-1 flex max-h-48 w-48 flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
+        <div className="absolute left-0 top-full z-10 mt-1 flex max-h-48 w-full flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
           {tratamientos.map((t) => (
             <label
               key={t.id}
