@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { endOfDay } from 'date-fns'
 import { useTurnos } from '../hooks/useTurnos'
 import { usePacientes } from '../hooks/usePacientes'
@@ -11,6 +11,7 @@ import { ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icon
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
 import { ESTADOS_TURNO, type EstadoTurno, type Turno } from '../types/turno'
+import type { Tratamiento } from '../types/tratamiento'
 
 export function Turnos() {
   const [fechaDesde, setFechaDesde] = useState('')
@@ -136,29 +137,15 @@ export function Turnos() {
                   </button>
                 )
               })}
-            </div>
 
-            {tratamientos.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                {tratamientos.map((t) => {
-                  const active = tratamientoIds.includes(t.id)
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => toggleTratamiento(t.id)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                        active
-                          ? 'border-primary-500 bg-primary-50 text-primary-700'
-                          : 'border-border text-ink-muted hover:bg-surface-muted'
-                      }`}
-                    >
-                      {t.nombre}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+              {tratamientos.length > 0 && (
+                <TratamientoFilterDropdown
+                  tratamientos={tratamientos}
+                  selectedIds={tratamientoIds}
+                  onToggle={toggleTratamiento}
+                />
+              )}
+            </div>
 
             {hasFilters && (
               <div className="flex justify-end">
@@ -251,6 +238,69 @@ export function Turnos() {
       </div>
 
       <NuevoTurnoForm open={formOpen} onClose={() => setFormOpen(false)} turno={editingTurno} />
+    </div>
+  )
+}
+
+interface TratamientoFilterDropdownProps {
+  tratamientos: Tratamiento[]
+  selectedIds: string[]
+  onToggle: (id: string) => void
+}
+
+function TratamientoFilterDropdown({ tratamientos, selectedIds, onToggle }: TratamientoFilterDropdownProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // mismo patrón que NotificationBell: cerrar al clickear afuera o con Escape
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+          selectedIds.length > 0
+            ? 'border-primary-500 bg-primary-50 text-primary-700'
+            : 'border-border text-ink-muted hover:bg-surface-muted'
+        }`}
+      >
+        Tratamiento{selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}
+        <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 z-10 mt-1 flex max-h-48 w-48 flex-col gap-0.5 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
+          {tratamientos.map((t) => (
+            <label
+              key={t.id}
+              className="flex items-center gap-2 rounded px-1.5 py-1 text-sm text-ink hover:bg-surface-muted"
+            >
+              <input
+                type="checkbox"
+                checked={selectedIds.includes(t.id)}
+                onChange={() => onToggle(t.id)}
+                className="h-4 w-4 shrink-0 rounded border-border text-primary-500 focus:ring-primary-500"
+              />
+              <span className="min-w-0 flex-1 truncate">{t.nombre}</span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
