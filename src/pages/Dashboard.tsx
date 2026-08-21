@@ -8,10 +8,10 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
+      {/* en mobile el header ya muestra "Dashboard" — este bloque entero sería redundante */}
+      <div className="hidden md:block">
         <h1 className="text-lg font-semibold text-ink">Dashboard</h1>
-        {/* en mobile el header ya muestra "Dashboard" — esto sería redundante */}
-        <p className="hidden text-sm text-ink-muted md:block">Resumen general del consultorio</p>
+        <p className="text-sm text-ink-muted">Resumen general del consultorio</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
