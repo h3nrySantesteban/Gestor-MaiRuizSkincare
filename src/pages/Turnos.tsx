@@ -172,27 +172,27 @@ export function Turnos() {
               <div className="flex items-center justify-between gap-2">
                 <p className="min-w-0 truncate font-medium text-ink">{turno.paciente?.nombreCompleto ?? 'Paciente'}</p>
                 <div className="flex shrink-0 items-center gap-2">
-                  <EstadoBadge estado={turno.estado} />
                   {/* una vez finalizado ya no aporta info accionable — el pago ya está saldado */}
                   {turno.senado && turno.estado !== 'Finalizado' && (
                     <span className="rounded-full bg-warning-bg px-2.5 py-1 text-xs font-medium text-warning">
                       Señado
                     </span>
                   )}
+                  <EstadoBadge estado={turno.estado} />
                   {turno.confirmadoPaciente && <span className="text-xs font-medium text-success">✓ confirmó</span>}
                 </div>
               </div>
-              <p className="text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>
-            </div>
-            <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-              <div className="min-w-0 sm:text-right">
-                <p className="font-semibold text-ink">{formatCurrency(turno.precio)}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="shrink-0 text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>
                 {turno.tratamientos.length > 0 && (
-                  <p className="truncate text-sm text-ink-muted">
+                  <p className="min-w-0 truncate text-sm text-ink-muted">
                     {turno.tratamientos.map((t) => t.nombre).join(', ')}
                   </p>
                 )}
               </div>
+            </div>
+            <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
+              <p className="font-semibold text-ink">{formatCurrency(turno.precio)}</p>
               <div className="flex items-center gap-3">
                 {turno.paciente?.telefono && (
                   <a
