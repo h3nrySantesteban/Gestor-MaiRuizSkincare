@@ -224,21 +224,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
           </Field>
 
           <Field label="Paciente" required error={errors.pacienteId}>
-            {/* select nativo a propósito: el picker custom tenía bugs de foco
-                en iOS que nunca terminamos de cazar del todo; el nativo lo
-                maneja el propio sistema operativo, cero JS de por medio */}
-            <select
-              value={pacienteId ?? ''}
-              onChange={(e) => setPacienteId(e.target.value || null)}
-              className={inputClass}
-            >
-              <option value="">Seleccionar paciente...</option>
-              {pacientes.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombreCompleto}
-                </option>
-              ))}
-            </select>
+            <PacienteCombobox pacientes={pacientes} value={pacienteId} onChange={setPacienteId} />
             <button
               type="button"
               onClick={() => setNuevoPacienteOpen(true)}
@@ -370,6 +356,95 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
         onCancel={() => setConfirmDeleteOpen(false)}
       />
     </>
+  )
+}
+
+interface PacienteComboboxProps {
+  pacientes: Paciente[]
+  value: string | null
+  onChange: (id: string | null) => void
+}
+
+// Reemplaza al <select> nativo que había acá: con muchos pacientes cargados
+// hace falta poder escribir para filtrar. El nativo se había elegido en su
+// momento por bugs de foco en iOS con un combobox más viejo — este es
+// deliberadamente simple (un input que filtra una lista, click para elegir,
+// sin autofocus ni navegación por teclado) para minimizar esa superficie de
+// bugs, pero probar bien en un iPhone real antes de confiar del todo en esto.
+function PacienteCombobox({ pacientes, value, onChange }: PacienteComboboxProps) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onEscape(e: globalThis.KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [])
+
+  const seleccionado = pacientes.find((p) => p.id === value) ?? null
+  const filtrados = pacientes.filter((p) => p.nombreCompleto.toLowerCase().includes(query.trim().toLowerCase()))
+
+  function handleSelect(id: string) {
+    onChange(id)
+    setOpen(false)
+  }
+
+  function handleTriggerClick() {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    setQuery('')
+    setOpen(true)
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={handleTriggerClick}
+        className={`${inputClass} flex items-center justify-between gap-2 text-left`}
+      >
+        <span className="min-w-0 truncate">{seleccionado?.nombreCompleto ?? 'Seleccionar paciente...'}</span>
+        <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full z-10 mt-1 flex w-full flex-col rounded-lg border border-border bg-surface shadow-lg">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre..."
+            className="border-b border-border px-3 py-2 text-base text-ink outline-none"
+          />
+          <div className="max-h-48 overflow-y-auto p-1">
+            {filtrados.length === 0 && <p className="p-2 text-sm text-ink-muted">Sin resultados.</p>}
+            {filtrados.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleSelect(p.id)}
+                className={`block w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-surface-muted ${
+                  p.id === value ? 'bg-primary-50 text-primary-700' : 'text-ink'
+                }`}
+              >
+                {p.nombreCompleto}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

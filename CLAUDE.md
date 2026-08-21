@@ -86,16 +86,24 @@ of wrapping each page individually.
 [NuevoTurnoForm](src/components/NuevoTurnoForm/NuevoTurnoForm.tsx) is the
 central form (spec'd fields: fecha, paciente, tratamiento(s), precio,
 gift card, medio de pago, señado, estado). It's reused for both create and
-edit — don't fork it. Paciente/tratamiento pickers are
-[ComboboxCreatable](src/components/ComboboxCreatable/ComboboxCreatable.tsx),
-one generic searchable-picker-with-inline-create component parameterized by
-`multiple`, reused for both. Picking "crear nuevo" opens
+edit — don't fork it. Paciente and tratamiento each get their own small
+picker component defined at the bottom of this same file —
+`PacienteCombobox` (single-select, with a text filter since the patient
+list can get long) and `TratamientoDropdown` (multi-select via checkboxes,
+since a turno can have several tratamientos) — both styled as a closed-by-
+default dropdown matching `inputClass` rather than a native `<select>`.
+`PacienteCombobox` intentionally skips autofocus-on-open and keyboard
+navigation to keep its iOS footprint small: an earlier, more feature-full
+combobox here was reverted in favor of a native `<select>` over focus bugs
+on iOS that were never fully root-caused, so retest on a real iPhone before
+adding more interactivity to this one. Both pickers have a "+ Nuevo..."
+button below them that opens
 [NuevoPacienteForm](src/components/NuevoPacienteForm/NuevoPacienteForm.tsx) /
 [NuevoTratamientoForm](src/components/NuevoTratamientoForm/NuevoTratamientoForm.tsx)
 stacked on top; because that nested form uses its **own** `usePacientes`/
 `useTratamientos` hook instance, `NuevoTurnoForm` explicitly `refetch()`s its
 own instance in the `onSaved` callback before selecting the new id — hook
-state isn't shared across instances, so skipping this leaves the combobox
+state isn't shared across instances, so skipping this leaves the picker
 unable to render the just-created item's label.
 
 Price auto-sums from selected tratamientos until the user edits the price

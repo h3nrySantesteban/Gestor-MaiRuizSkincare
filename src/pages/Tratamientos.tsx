@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useTratamientos } from '../hooks/useTratamientos'
 import { NuevoTratamientoForm } from '../components/NuevoTratamientoForm/NuevoTratamientoForm'
 import { primaryBtnClass, secondaryBtnClass } from '../components/forms/FormField'
@@ -20,7 +20,12 @@ export function Tratamientos() {
     setFormOpen(true)
   }
 
-  const ordenados = [...tratamientos].sort((a, b) => Number(b.activo) - Number(a.activo))
+  // la seña primero (a lo sumo hay una), después el resto por activo/inactivo
+  const ordenados = [...tratamientos].sort((a, b) => {
+    if (a.esSena !== b.esSena) return a.esSena ? -1 : 1
+    return Number(b.activo) - Number(a.activo)
+  })
+  const primerNoSenaIndex = ordenados.findIndex((t) => !t.esSena)
 
   return (
     <div className="flex flex-col gap-6">
@@ -35,36 +40,38 @@ export function Tratamientos() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {ordenados.map((t) => (
-          <div
-            key={t.id}
-            className={`flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between ${
-              t.activo ? '' : 'opacity-60'
-            }`}
-          >
-            <button type="button" onClick={() => openEdit(t)} className="min-w-0 flex-1 text-left">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-ink">{t.nombre}</p>
-                {t.esSena && (
-                  <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
-                    Seña
-                  </span>
-                )}
-                {!t.activo && (
-                  <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink-muted">
-                    Inactivo
-                  </span>
-                )}
-              </div>
-              {t.descripcion && <p className="mt-0.5 truncate text-sm text-ink-muted">{t.descripcion}</p>}
-            </button>
-            <div className="flex shrink-0 items-center gap-3">
-              <p className="font-semibold text-ink">{formatCurrency(t.precio)}</p>
-              <button type="button" onClick={() => setActivo(t.id, !t.activo)} className={secondaryBtnClass}>
-                {t.activo ? 'Desactivar' : 'Activar'}
+        {ordenados.map((t, index) => (
+          <Fragment key={t.id}>
+            {index === primerNoSenaIndex && index > 0 && <div className="my-1 border-t border-border" />}
+            <div
+              className={`flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between ${
+                t.activo ? '' : 'opacity-60'
+              }`}
+            >
+              <button type="button" onClick={() => openEdit(t)} className="min-w-0 flex-1 text-left">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-ink">{t.nombre}</p>
+                  {t.esSena && (
+                    <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+                      Seña
+                    </span>
+                  )}
+                  {!t.activo && (
+                    <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink-muted">
+                      Inactivo
+                    </span>
+                  )}
+                </div>
+                {t.descripcion && <p className="mt-0.5 truncate text-sm text-ink-muted">{t.descripcion}</p>}
               </button>
+              <div className="flex shrink-0 items-center gap-3">
+                <p className="font-semibold text-ink">{formatCurrency(t.precio)}</p>
+                <button type="button" onClick={() => setActivo(t.id, !t.activo)} className={secondaryBtnClass}>
+                  {t.activo ? 'Desactivar' : 'Activar'}
+                </button>
+              </div>
             </div>
-          </div>
+          </Fragment>
         ))}
 
         {!loading && tratamientos.length === 0 && (
