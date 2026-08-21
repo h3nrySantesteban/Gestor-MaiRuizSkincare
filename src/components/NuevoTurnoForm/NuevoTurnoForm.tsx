@@ -60,9 +60,13 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
     turno?.tratamientos.map((t) => ({ tratamientoId: t.tratamientoId, precioAplicado: t.precioAplicado })) ?? [],
   )
   const [precio, setPrecio] = useState(turno ? String(turno.precio) : '0')
-  // al editar un turno existente no recalculamos el precio solo con tocar los
-  // tratamientos: Mai puede haberlo ajustado a mano y no queremos pisarlo.
-  const [precioDirty, setPrecioDirty] = useState(Boolean(turno))
+  // false siempre, incluso editando un turno existente: tocar los
+  // tratamientos recalcula el precio activamente hasta que se edite el
+  // campo Precio a mano — recién ahí se congela (ver handleTratamientoToggle
+  // y el input de precio más abajo). Abrir el modal sin tocar nada no
+  // dispara ningún recálculo, así que un precio ya ajustado a mano en una
+  // edición anterior no se pisa solo por reabrir el turno.
+  const [precioDirty, setPrecioDirty] = useState(false)
   const [giftCard, setGiftCard] = useState(turno?.giftCard ?? false)
   const [medioPago, setMedioPago] = useState<MedioPago | ''>(turno?.medioPago ?? '')
   const [senado, setSenado] = useState(turno?.senado ?? false)

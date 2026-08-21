@@ -99,9 +99,12 @@ state isn't shared across instances, so skipping this leaves the combobox
 unable to render the just-created item's label.
 
 Price auto-sums from selected tratamientos until the user edits the price
-field by hand (`precioDirty` flag) — then it stops syncing. Editing an
-*existing* turno starts with `precioDirty = true` (never silently overwrite a
-possibly-manually-set historical price just because the edit modal opened).
+field by hand (`precioDirty` flag) — then it stops syncing. This applies the
+same way when editing an *existing* turno: `precioDirty` still starts
+`false`, so toggling tratamientos actively recalculates the price even on a
+turno that already had one — opening the modal without touching anything
+doesn't fire any recalculation on its own, so a price already adjusted by
+hand in a past edit only changes if tratamientos are touched again.
 
 All three forms (`NuevoPacienteForm`/`NuevoTratamientoForm`/`NuevoTurnoForm`)
 use the same "outer wrapper returns null unless open, inner component holds
