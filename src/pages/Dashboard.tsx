@@ -18,20 +18,21 @@ export function Dashboard() {
         <div className="rounded-2xl border border-border bg-surface p-5">
           <p className="text-sm font-medium text-ink-muted">Próximos Turnos</p>
           {loading ? null : proximosTurnos.length > 0 ? (
-            // auto-fill: cada tarjeta pide un mínimo de 150px, así entran
+            // auto-fill: cada columna pide un mínimo de 150px, así entran
             // tantas como quepan sin achicarse (2 en un teléfono angosto, 3+
             // a medida que crece el ancho) en vez de un breakpoint fijo.
             // max-h + overflow-hidden recorta turnos de más a una sola fila
-            // completa, nunca una tarjeta a la mitad.
-            <div className="mt-2 grid max-h-[84px] grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 overflow-hidden">
+            // completa, nunca una tarjeta a la mitad. divide-x en vez de
+            // tarjetas individuales: mismo estilo que SplitStatCard.
+            <div className="mt-1 grid max-h-16 grid-cols-[repeat(auto-fill,minmax(150px,1fr))] divide-x divide-border overflow-hidden">
               {proximosTurnos.map((turno) => (
-                <div key={turno.id} className="min-w-0 rounded-xl border border-border bg-surface-muted p-3">
+                <div key={turno.id} className="min-w-0 px-4 first:pl-0 last:pr-0">
                   <p className="truncate text-sm font-semibold text-ink">
                     {turno.paciente?.nombreCompleto ?? 'Paciente'}
                   </p>
-                  <p className="truncate text-xs text-ink-muted">{formatFechaHora(turno.fecha)}</p>
+                  <p className="mt-0.5 truncate text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>
                   {turno.tratamientos.length > 0 && (
-                    <p className="truncate text-xs text-ink-muted">
+                    <p className="mt-0.5 truncate text-sm text-ink-muted">
                       {turno.tratamientos.map((t) => t.nombre).join(', ')}
                     </p>
                   )}
