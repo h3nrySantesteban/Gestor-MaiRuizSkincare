@@ -26,7 +26,7 @@ export function Turnos() {
 
   const { pacientes } = usePacientes()
   const { tratamientos } = useTratamientos()
-  const { turnos, loading } = useTurnos({
+  const { turnos, loading, loadingMore, hasMore, loadMore } = useTurnos({
     fechaDesde: fechaDesde ? new Date(fechaDesde).toISOString() : undefined,
     fechaHasta: fechaHasta ? endOfDay(new Date(fechaHasta)).toISOString() : undefined,
     pacienteId: pacienteId ?? undefined,
@@ -243,6 +243,17 @@ export function Turnos() {
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
             No hay turnos que coincidan con los filtros.
           </p>
+        )}
+
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => loadMore()}
+            disabled={loadingMore}
+            className="mx-auto mt-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loadingMore ? 'Cargando...' : 'Cargar más'}
+          </button>
         )}
       </div>
 
