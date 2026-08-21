@@ -27,3 +27,7 @@ dist-ssr
 .claude/settings.local.json
 
 .vercel
+
+# datos reales exportados de Google Sheets para la migración one-off —
+# contienen nombres/teléfonos de pacientes, nunca deben subirse a git
+scripts/data/
