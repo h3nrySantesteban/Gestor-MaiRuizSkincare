@@ -25,8 +25,13 @@ export interface AgendadosStats {
   ingresoAprox: number
 }
 
+// cantidad de turnos que se traen para el widget "Próximos turnos" del
+// Dashboard — de ahí el grid con auto-fill recorta a los que entren en una
+// fila sin achicarlos; 6 alcanza hasta para pantallas bien anchas
+const PROXIMOS_TURNOS_LIMIT = 6
+
 /**
- * Próximo turno, totales de la semana/mes en curso, lo que queda agendado
+ * Próximos turnos, totales de la semana/mes en curso, lo que queda agendado
  * para lo que resta de la semana/mes, y una serie de 6 meses (mes actual +
  * 5 anteriores) para el gráfico del dashboard. Turnos cancelados no cuentan
  * para ninguno de estos totales. "cantidad" cuenta cualquier turno no
@@ -37,7 +42,7 @@ export interface AgendadosStats {
  * Agendado a Finalizado solo cuando ya pasó 1h de su fecha).
  */
 export function useDashboardStats() {
-  const [proximoTurno, setProximoTurno] = useState<Turno | null>(null)
+  const [proximosTurnos, setProximosTurnos] = useState<Turno[]>([])
   const [semana, setSemana] = useState<RangoStats>({ cantidad: 0, ingresos: 0 })
   const [mes, setMes] = useState<RangoStats>({ cantidad: 0, ingresos: 0 })
   const [agendadosSemana, setAgendadosSemana] = useState<AgendadosStats>({ cantidad: 0, ingresoAprox: 0 })
@@ -56,7 +61,7 @@ export function useDashboardStats() {
     // siguiente — ensanchamos el límite superior para no cortar esos turnos
     const hasta = finDeSemana > finDeMes ? finDeSemana : finDeMes
 
-    const [historicoRes, proximoRes, tratamientosRes] = await Promise.all([
+    const [historicoRes, proximosRes, tratamientosRes] = await Promise.all([
       supabase
         .from('turnos')
         .select(TURNO_SELECT)
@@ -69,14 +74,13 @@ export function useDashboardStats() {
         .gte('fecha', now.toISOString())
         .eq('estado', 'Agendado')
         .order('fecha', { ascending: true })
-        .limit(1)
-        .maybeSingle(),
+        .limit(PROXIMOS_TURNOS_LIMIT),
       supabase.from('tratamientos').select('precio').eq('activo', true),
     ])
 
-    if (historicoRes.error || proximoRes.error || tratamientosRes.error) {
+    if (historicoRes.error || proximosRes.error || tratamientosRes.error) {
       setError(
-        historicoRes.error?.message ?? proximoRes.error?.message ?? tratamientosRes.error?.message ?? 'Error desconocido',
+        historicoRes.error?.message ?? proximosRes.error?.message ?? tratamientosRes.error?.message ?? 'Error desconocido',
       )
       setLoading(false)
       return
@@ -144,7 +148,7 @@ export function useDashboardStats() {
     setMes(mesAcc)
     setAgendadosSemana({ cantidad: agendadosSemanaCount, ingresoAprox: agendadosSemanaCount * precioPromedio })
     setAgendadosMes({ cantidad: agendadosMesCount, ingresoAprox: agendadosMesCount * precioPromedio })
-    setProximoTurno(proximoRes.data ? mapTurnoRow(proximoRes.data as unknown as TurnoRow) : null)
+    setProximosTurnos((proximosRes.data as unknown as TurnoRow[]).map(mapTurnoRow))
     setLoading(false)
   }, [])
 
@@ -167,7 +171,7 @@ export function useDashboardStats() {
   }, [refetch])
 
   return {
-    proximoTurno,
+    proximosTurnos,
     semana,
     mes,
     agendadosSemana,
