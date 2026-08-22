@@ -461,7 +461,17 @@ function PacienteCombobox({ pacientes, value, onChange }: PacienteComboboxProps)
               <button
                 key={p.id}
                 type="button"
-                onClick={() => handleSelect(p.id)}
+                // onMouseDown+preventDefault, no onClick: en iOS, con el
+                // buscador enfocado, el ciclo touchstart→mousedown→click de
+                // un <button> distinto no le saca el foco al input a tiempo
+                // (mismo bug ya documentado en CLAUDE.md para el picker
+                // anterior) — preventDefault en mousedown evita ese forcejeo
+                // y dispara la selección ahí mismo, antes de que el click
+                // llegue a pelearse con el foco del input.
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  handleSelect(p.id)
+                }}
                 className={`block w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-surface-muted ${
                   p.id === value ? 'bg-primary-50 text-primary-700' : 'text-ink'
                 }`}
