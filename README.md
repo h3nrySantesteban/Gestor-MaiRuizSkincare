@@ -67,11 +67,16 @@ una vez), ya que Vite solo sirve el frontend.
    de calendario** (termina en `@group.calendar.google.com`) a
    `GOOGLE_CALENDAR_ID`.
 
-   Deployá con esas 4 variables cargadas, después visitá
-   `/api/google-oauth-start` vos misma (logueada con la cuenta de Google
-   donde creaste el calendario "Turnos"), copiá el refresh token que te
-   muestra la página, y cargalo como `GOOGLE_CALENDAR_REFRESH_TOKEN` en
-   Vercel. Redeployá para que tome efecto.
+   Deployá con esas 4 variables cargadas. **No hace falta ninguna variable
+   más para el refresh token** — se conecta desde adentro de la app: iniciá
+   sesión (logueada con la cuenta de Google donde creaste el calendario
+   "Turnos") y guardá tu primer turno. Como todavía no hay conexión, va a
+   aparecer un aviso arriba de la pantalla con un botón "Conectar" — te lleva
+   a la pantalla de consentimiento de Google, y al volver el refresh token
+   queda guardado solo en Supabase (tabla `google_calendar_conexion`, ver
+   `supabase-setup.sql`). Si en algún momento hay que reconectar (ej. Mai
+   revocó el acceso sin querer), basta con volver a intentar guardar un turno
+   y usar el mismo aviso.
 5. Copiá `.env.example` a `.env.local` con los valores reales para desarrollo local.
 
 ## Arquitectura

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { supabaseAdmin } from '../server/supabaseAdmin.js'
-import { syncTurnoEvent, deleteTurnoEvent } from '../server/googleCalendar.js'
+import { syncTurnoEvent, deleteTurnoEvent, CalendarNoConectadoError } from '../server/googleCalendar.js'
 
 interface TurnoConRelaciones {
   id: string
@@ -64,6 +64,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json({ googleEventId })
   } catch (err) {
+    if (err instanceof CalendarNoConectadoError) {
+      // no es un error real: el frontend usa este código para ofrecer
+      // "Conectar Google Calendar" en vez de solo loguear a la consola
+      res.status(409).json({ error: 'not_connected' })
+      return
+    }
     console.error('Error sincronizando con Google Calendar', err)
     res.status(500).json({ error: err instanceof Error ? err.message : 'Error desconocido' })
   }

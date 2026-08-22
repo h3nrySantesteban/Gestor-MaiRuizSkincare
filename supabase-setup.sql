@@ -252,3 +252,28 @@ alter table public.tratamientos add column if not exists es_sena boolean not nul
 create unique index if not exists tratamientos_es_sena_unique
   on public.tratamientos (es_sena)
   where es_sena;
+
+-- ============================================================
+-- Conexión de Google Calendar
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- Guarda el refresh token que antes vivía en la env var
+-- GOOGLE_CALENDAR_REFRESH_TOKEN, para que conectar el calendario sea un
+-- botón dentro de la app (ver api/google-oauth-callback.ts) en vez de un
+-- paso manual de copiar/pegar en Vercel + redeploy. Fila única (id fijo en
+-- 1): esta app es de un solo admin, no hace falta una tabla de múltiples
+-- conexiones. Sin policies de RLS a propósito — RLS habilitado sin ninguna
+-- policy deniega todo a anon/authenticated, así que solo el service role
+-- (server/supabaseAdmin.ts) puede leer o escribir acá; el refresh token
+-- nunca debe ser alcanzable desde el cliente.
+-- ============================================================
+create table public.google_calendar_conexion (
+  id smallint primary key default 1,
+  refresh_token text not null,
+  connected_at timestamptz not null default now(),
+  constraint google_calendar_conexion_single_row check (id = 1)
+);
+
+alter table public.google_calendar_conexion enable row level security;

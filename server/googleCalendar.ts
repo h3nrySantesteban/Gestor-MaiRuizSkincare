@@ -1,4 +1,5 @@
 import { requireEnv } from './env.js'
+import { supabaseAdmin } from './supabaseAdmin.js'
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3'
 // mismo supuesto de duración que usa finalizar_turnos_vencidos en supabase-setup.sql
@@ -20,14 +21,42 @@ function getCalendarId(): string {
   return requireEnv('GOOGLE_CALENDAR_ID')
 }
 
+/** El endpoint/UI que llama a syncTurnoEvent la usa para ofrecer "Conectar Google Calendar" en vez de un error genérico. */
+export class CalendarNoConectadoError extends Error {
+  constructor() {
+    super('Google Calendar no está conectado todavía')
+    this.name = 'CalendarNoConectadoError'
+  }
+}
+
+async function getStoredRefreshToken(): Promise<string> {
+  const { data, error } = await supabaseAdmin
+    .from('google_calendar_conexion')
+    .select('refresh_token')
+    .eq('id', 1)
+    .maybeSingle()
+  if (error) throw new Error(`No se pudo leer la conexión de Google Calendar: ${error.message}`)
+  if (!data) throw new CalendarNoConectadoError()
+  return data.refresh_token
+}
+
+/** Llamado por api/google-oauth-callback.ts al terminar el flujo de OAuth. */
+export async function saveRefreshToken(refreshToken: string): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('google_calendar_conexion')
+    .upsert({ id: 1, refresh_token: refreshToken, connected_at: new Date().toISOString() })
+  if (error) throw new Error(`No se pudo guardar la conexión de Google Calendar: ${error.message}`)
+}
+
 async function getAccessToken(): Promise<string> {
+  const refreshToken = await getStoredRefreshToken()
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: requireEnv('GOOGLE_CLIENT_ID'),
       client_secret: requireEnv('GOOGLE_CLIENT_SECRET'),
-      refresh_token: requireEnv('GOOGLE_CALENDAR_REFRESH_TOKEN'),
+      refresh_token: refreshToken,
       grant_type: 'refresh_token',
     }),
   })

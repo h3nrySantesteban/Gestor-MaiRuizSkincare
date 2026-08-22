@@ -14,7 +14,8 @@ import { usePacientes } from '../../hooks/usePacientes'
 import { useTratamientos } from '../../hooks/useTratamientos'
 import { useSaveTurno, type TurnoInput } from '../../hooks/useSaveTurno'
 import { useDeleteTurno } from '../../hooks/useDeleteTurno'
-import { syncCalendarDelete, syncCalendarTurno } from '../../lib/googleCalendarSync'
+import { syncCalendarDelete, syncCalendarTurno, CalendarNoConectadoError } from '../../lib/googleCalendarSync'
+import { notifyGoogleCalendarNoConectado } from '../../lib/googleCalendarNotice'
 import { formatCurrency } from '../../lib/format'
 import { ESTADOS_TURNO, MEDIOS_PAGO, type EstadoTurno, type MedioPago, type Turno } from '../../types/turno'
 import type { Paciente } from '../../types/paciente'
@@ -164,9 +165,13 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       if (turno.googleEventId) {
         // si falla, seguimos igual con el borrado — un evento huérfano en
         // Calendar es mucho menos grave que no poder borrar el turno
-        await syncCalendarDelete(turno.googleEventId).catch((err) =>
-          console.error('No se pudo borrar el evento de Google Calendar', err),
-        )
+        await syncCalendarDelete(turno.googleEventId).catch((err) => {
+          if (err instanceof CalendarNoConectadoError) {
+            notifyGoogleCalendarNoConectado()
+          } else {
+            console.error('No se pudo borrar el evento de Google Calendar', err)
+          }
+        })
       }
       await deleteTurno(turno.id)
       onSaved?.()
@@ -206,8 +211,15 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       onSaved?.()
       onClose()
       // la sync a Calendar nunca bloquea ni revierte el guardado en
-      // Supabase, que ya se hizo — un fallo acá solo queda en la consola
-      syncCalendarTurno(turnoId).catch((err) => console.error('No se pudo sincronizar con Google Calendar', err))
+      // Supabase, que ya se hizo. Si todavía no está conectado, se lo
+      // ofrecemos con el banner en vez de solo loguear a la consola.
+      syncCalendarTurno(turnoId).catch((err) => {
+        if (err instanceof CalendarNoConectadoError) {
+          notifyGoogleCalendarNoConectado()
+        } else {
+          console.error('No se pudo sincronizar con Google Calendar', err)
+        }
+      })
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'No se pudo guardar el turno.')
     } finally {

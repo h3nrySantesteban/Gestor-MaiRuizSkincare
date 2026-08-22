@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import { NotificationBell } from '../NotificationBell/NotificationBell'
 import { NuevoTurnoForm } from '../NuevoTurnoForm/NuevoTurnoForm'
+import { GoogleCalendarConnectBanner } from '../GoogleCalendarConnectBanner/GoogleCalendarConnectBanner'
 import {
   BarChartIcon,
   CalendarIcon,
@@ -149,6 +150,8 @@ export function AppLayout() {
             <NotificationBell />
           </div>
         </header>
+
+        <GoogleCalendarConnectBanner />
 
         <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 md:p-6">
           <Outlet />

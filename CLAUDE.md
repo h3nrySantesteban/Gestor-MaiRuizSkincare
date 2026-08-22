@@ -165,16 +165,30 @@ paciente is added as an attendee (and gets Google's own invite email) when
 `pacientes.email` is set — no email means the turno still lands on the
 calendar, just without inviting anyone.
 
-- One-time setup (see README): `api/google-oauth-start.ts` redirects to
-  Google's consent screen (`access_type=offline`, `prompt=consent` — forces a
-  refresh token even on a re-consent); `api/google-oauth-callback.ts` swaps
-  the `code` for tokens and **displays the refresh token on the page** for
-  Mai to copy into `GOOGLE_CALENDAR_REFRESH_TOKEN` by hand — it's never
-  persisted by the app itself, only lives in Vercel env vars.
+- Connecting is a button inside the app, not a manual copy-paste step:
+  `api/google-oauth-start.ts` redirects to Google's consent screen
+  (`access_type=offline`, `prompt=consent` — forces a refresh token even on
+  a re-consent); `api/google-oauth-callback.ts` swaps the `code` for tokens
+  and calls `saveRefreshToken()`, which upserts the single row in
+  `google_calendar_conexion` (`id` fixed at `1` — single-admin app, no need
+  for multiple connections). That table has RLS **enabled with zero
+  policies** — deny-all for `anon`/`authenticated`, reachable only via the
+  service role in `server/supabaseAdmin.ts` — the refresh token must never
+  reach the client. [GoogleCalendarConnectBanner](src/components/GoogleCalendarConnectBanner/GoogleCalendarConnectBanner.tsx)
+  is what surfaces the "Conectar" button: it's not proactive, it only
+  appears reactively the first time a sync actually fails because nothing is
+  connected yet (`CalendarNoConectadoError` → `api/sync-calendar.ts` returns
+  `409 {error: 'not_connected'}` → `src/lib/googleCalendarSync.ts` throws a
+  matching client-side error → `NuevoTurnoForm.tsx` catches it and calls
+  `notifyGoogleCalendarNoConectado()` from
+  [googleCalendarNotice.ts](src/lib/googleCalendarNotice.ts), a tiny pub-sub
+  since the form's modal has already closed by the time the async sync
+  settles — there's no component left to hold "show the banner" as local
+  state, so AppLayout (always mounted) subscribes instead.
 - `server/googleCalendar.ts`: thin wrapper, same shape as
-  `server/whatsappClient.ts`. `getAccessToken()` exchanges the refresh token
-  for a fresh access token on every call (no caching — call volume is low).
-  `syncTurnoEvent(turno)` builds the event — title is always
+  `server/whatsappClient.ts`. `getAccessToken()` reads the stored refresh
+  token and exchanges it for a fresh access token on every call (no caching
+  — call volume is low). `syncTurnoEvent(turno)` builds the event — title is always
   `"Turno: {paciente} — Mailén Ruiz | Técnica Cosmetóloga"` (no tratamiento in
   the title, since the patient's own calendar shows it under someone else's
   name and needs to be self-explanatory at a glance); no `description` — the

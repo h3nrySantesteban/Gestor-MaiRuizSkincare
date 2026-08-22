@@ -1,14 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireEnv } from '../server/env.js'
+import { saveRefreshToken } from '../server/googleCalendar.js'
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 }
 
-// Paso 2 del setup manual: Google redirige acá con un `code` de un solo uso,
-// lo cambiamos por access+refresh token y mostramos el refresh token en la
-// página para que Mai lo copie a mano a GOOGLE_CALENDAR_REFRESH_TOKEN en
-// Vercel — no lo guardamos nosotros, solo debe vivir en las env vars.
+// Google redirige acá con un `code` de un solo uso después de que Mai
+// acepta en la pantalla de consentimiento (arrancada desde el botón
+// "Conectar Google Calendar" en la app, o /api/google-oauth-start
+// directamente). Lo cambiamos por un refresh token y lo guardamos en
+// Supabase (ver server/googleCalendar.ts) — de ahí en adelante la app usa
+// esa fila sola, sin que Mai tenga que copiar/pegar nada ni redeployar.
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = req.query.code
   const error = req.query.error
@@ -43,9 +46,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res
       .status(200)
       .send(
-        'Google no devolvió un refresh token (probablemente ya habías autorizado esta app antes). ' +
-          'Revocá el acceso en https://myaccount.google.com/permissions y volvé a visitar /api/google-oauth-start.',
+        'Google no devolvió un refresh token (probablemente ya habías autorizado esta app antes sin revocarla). ' +
+          'Revocá el acceso en https://myaccount.google.com/permissions y volvé a intentar conectar desde la app.',
       )
+    return
+  }
+
+  try {
+    await saveRefreshToken(data.refresh_token)
+  } catch (err) {
+    res.status(500).send(`No se pudo guardar la conexión: ${escapeHtml(err instanceof Error ? err.message : String(err))}`)
     return
   }
 
@@ -54,10 +64,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .setHeader('Content-Type', 'text/html; charset=utf-8')
     .send(
       `<!doctype html><html><body style="font-family:sans-serif;max-width:640px;margin:40px auto">` +
-        `<h2>Listo</h2>` +
-        `<p>Copiá este valor y cargalo en Vercel como la variable <code>GOOGLE_CALENDAR_REFRESH_TOKEN</code>:</p>` +
-        `<pre style="background:#eee;padding:16px;border-radius:8px;white-space:pre-wrap;word-break:break-all">${escapeHtml(data.refresh_token)}</pre>` +
-        `<p>Después de cargarla, hacé un redeploy en Vercel para que tome efecto.</p>` +
+        `<h2>Google Calendar conectado ✓</h2>` +
+        `<p>Ya podés cerrar esta pestaña y volver a la app — los turnos se van a sincronizar solos de acá en más.</p>` +
+        `<p><a href="/dashboard">Volver a la app</a></p>` +
         `</body></html>`,
     )
 }
