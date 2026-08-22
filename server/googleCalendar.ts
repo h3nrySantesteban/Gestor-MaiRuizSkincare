@@ -146,3 +146,53 @@ export async function deleteTurnoEvent(googleEventId: string): Promise<void> {
   const calendarId = encodeURIComponent(getCalendarId())
   await callCalendarApi(`/calendars/${calendarId}/events/${googleEventId}?sendUpdates=all`, { method: 'DELETE' })
 }
+
+interface TurnoPendienteRow {
+  id: string
+  fecha: string
+  pacientes: { nombre_completo: string; email: string | null } | null
+}
+
+/**
+ * Sincroniza los turnos Agendados que quedaron sin google_event_id — el
+ * caso típico es el turno que disparó el aviso de "Conectar Google
+ * Calendar" (se guardó bien en Supabase, pero la sync falló porque todavía
+ * no había conexión) y cualquier otro guardado mientras tanto. Se llama
+ * justo después de guardar un refresh token nuevo (api/google-oauth-callback.ts)
+ * — sin esto, esos turnos quedarían sin sincronizar para siempre, ya que
+ * nada vuelve a reintentarlos después de conectar. Solo Agendados: un
+ * Finalizado/Cancelado que nunca llegó a Calendar ya no aporta nada
+ * agregándolo ahora.
+ */
+export async function syncTurnosPendientes(): Promise<number> {
+  const { data, error } = await supabaseAdmin
+    .from('turnos')
+    .select('id, fecha, pacientes ( nombre_completo, email )')
+    .eq('estado', 'Agendado')
+    .is('google_event_id', null)
+
+  if (error) throw new Error(`No se pudieron leer los turnos pendientes de sincronizar: ${error.message}`)
+
+  let sincronizados = 0
+  for (const turno of (data ?? []) as unknown as TurnoPendienteRow[]) {
+    try {
+      const googleEventId = await syncTurnoEvent({
+        fecha: turno.fecha,
+        estado: 'Agendado',
+        googleEventId: null,
+        pacienteNombre: turno.pacientes?.nombre_completo ?? 'Paciente',
+        pacienteEmail: turno.pacientes?.email ?? null,
+      })
+      if (googleEventId) {
+        await supabaseAdmin.from('turnos').update({ google_event_id: googleEventId }).eq('id', turno.id)
+        sincronizados++
+      }
+    } catch (err) {
+      // un turno pendiente que falla no debe frenar el resto — sigue
+      // apareciendo sin google_event_id, así que se reintenta en la
+      // próxima conexión
+      console.error(`No se pudo sincronizar el turno pendiente ${turno.id}`, err)
+    }
+  }
+  return sincronizados
+}

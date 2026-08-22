@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { requireEnv } from '../server/env.js'
-import { saveRefreshToken } from '../server/googleCalendar.js'
+import { saveRefreshToken, syncTurnosPendientes } from '../server/googleCalendar.js'
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
@@ -59,6 +59,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  // el turno que disparó el aviso de "Conectar" (y cualquier otro guardado
+  // mientras tanto) se guardó bien en Supabase pero nunca llegó a sincronizar
+  // — sin este paso quedarían sin evento en Calendar para siempre, porque
+  // nada más vuelve a reintentarlos. Un fallo acá no debe romper la
+  // confirmación de que la conexión en sí quedó guardada.
+  let pendientesMsg = ''
+  try {
+    const sincronizados = await syncTurnosPendientes()
+    if (sincronizados > 0) {
+      pendientesMsg = `<p>Se sincronizaron ${sincronizados} turno${sincronizados === 1 ? '' : 's'} que habían quedado pendientes.</p>`
+    }
+  } catch (err) {
+    console.error('No se pudieron sincronizar los turnos pendientes tras conectar', err)
+  }
+
   res
     .status(200)
     .setHeader('Content-Type', 'text/html; charset=utf-8')
@@ -66,6 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `<!doctype html><html><body style="font-family:sans-serif;max-width:640px;margin:40px auto">` +
         `<h2>Google Calendar conectado ✓</h2>` +
         `<p>Ya podés cerrar esta pestaña y volver a la app — los turnos se van a sincronizar solos de acá en más.</p>` +
+        pendientesMsg +
         `<p><a href="/dashboard">Volver a la app</a></p>` +
         `</body></html>`,
     )

@@ -184,7 +184,17 @@ calendar, just without inviting anyone.
   [googleCalendarNotice.ts](src/lib/googleCalendarNotice.ts), a tiny pub-sub
   since the form's modal has already closed by the time the async sync
   settles — there's no component left to hold "show the banner" as local
-  state, so AppLayout (always mounted) subscribes instead.
+  state, so AppLayout (always mounted) subscribes instead. The turno that
+  triggered the banner keeps `google_event_id = null` in Supabase — its
+  Calendar sync genuinely failed, nothing retries it automatically. That's
+  why `api/google-oauth-callback.ts` calls `syncTurnosPendientes()` right
+  after saving the new refresh token: it finds every `Agendado` turno still
+  missing a `google_event_id` and syncs them in one pass, so reconnecting
+  doesn't leave that first turno (or anything saved while disconnected)
+  permanently missing from Calendar. This matters more than it sounds:
+  while unverified (`Testing` publishing status, see below), the refresh
+  token expires every ~7 days, so this "reconnect → backfill" cycle is
+  expected to repeat regularly, not a one-time setup fluke.
 - `server/googleCalendar.ts`: thin wrapper, same shape as
   `server/whatsappClient.ts`. `getAccessToken()` reads the stored refresh
   token and exchanges it for a fresh access token on every call (no caching
@@ -210,8 +220,15 @@ calendar, just without inviting anyone.
   smaller problem than losing the turno data over a Google API hiccup.
   `api/whatsapp-webhook.ts` does the same delete-on-cancel when a patient
   replies "cancelar".
-- Needs Google's sensitive-scope verification (`calendar.events`) to avoid
-  the refresh token expiring every 7 days — see README setup steps.
+- Deliberately **not** pursuing Google's sensitive-scope verification for
+  `calendar.events` — Google itself rejects submitting this app for review
+  ("Tu aplicación es solo para uso personal/interno"), since it's a
+  single-admin tool with no real user base to verify against. Fighting that
+  categorization to force a verification through isn't worth it (also ran
+  into the classic `*.vercel.app` shared-subdomain ownership dead end along
+  the way). Staying in `Testing` publishing status means the refresh token
+  expires every ~7 days — accepted as a fact of life, made cheap by the
+  reconnect flow above (a banner + one click) instead of engineered around.
 
 ### Styling
 

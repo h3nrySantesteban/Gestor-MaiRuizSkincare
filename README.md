@@ -51,10 +51,15 @@ una vez), ya que Vite solo sirve el frontend.
 4. **Google Calendar**: creá un proyecto en
    [Google Cloud Console](https://console.cloud.google.com/), habilitá la
    Google Calendar API. Configurá la pantalla de consentimiento OAuth (tipo
-   "Externo") y arrancá el trámite de verificación del scope
-   `calendar.events` — sin verificar, el refresh token vence a los 7 días y
-   la sync se corta sola. Creá credenciales OAuth 2.0 tipo "Web application",
-   con `https://<tu-dominio>.vercel.app/api/google-oauth-callback` como
+   "Externo", estado de publicación **"Prueba"**) y agregá como "Usuario de
+   prueba" la cuenta de Google donde van a vivir los turnos. Google no
+   revisa/verifica apps de uso personal como esta (lo bloquea directamente
+   si lo intentás), así que no hace falta el trámite de verificación —
+   la contra es que el refresh token vence cada ~7 días en modo Prueba, pero
+   reconectar es un click desde el aviso que aparece en la app (ver más
+   abajo), no un problema real. Creá credenciales OAuth 2.0 tipo
+   "Web application", con
+   `https://<tu-dominio>.vercel.app/api/google-oauth-callback` como
    "Authorized redirect URI" — copiá el Client ID/Secret a
    `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, y esa misma URL a
    `GOOGLE_OAUTH_REDIRECT_URI`.
@@ -74,9 +79,12 @@ una vez), ya que Vite solo sirve el frontend.
    aparecer un aviso arriba de la pantalla con un botón "Conectar" — te lleva
    a la pantalla de consentimiento de Google, y al volver el refresh token
    queda guardado solo en Supabase (tabla `google_calendar_conexion`, ver
-   `supabase-setup.sql`). Si en algún momento hay que reconectar (ej. Mai
-   revocó el acceso sin querer), basta con volver a intentar guardar un turno
-   y usar el mismo aviso.
+   `supabase-setup.sql`). Al estar en modo Prueba (ver arriba), esto se va a
+   repetir cada ~7 días cuando el token venza — mismo aviso, mismo click. El
+   turno que disparó el aviso (y cualquier otro guardado mientras tanto)
+   queda sin sincronizar hasta reconectar; `api/google-oauth-callback.ts`
+   los sincroniza automáticamente apenas se reconecta, no hace falta hacer
+   nada manual con esos turnos.
 5. Copiá `.env.example` a `.env.local` con los valores reales para desarrollo local.
 
 ## Arquitectura
