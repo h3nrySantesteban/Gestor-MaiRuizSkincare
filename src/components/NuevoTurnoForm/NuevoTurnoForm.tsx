@@ -407,6 +407,10 @@ function PacienteCombobox({ pacientes, value, onChange }: PacienteComboboxProps)
   const filtrados = pacientes.filter((p) => p.nombreCompleto.toLowerCase().includes(query.trim().toLowerCase()))
 
   function handleSelect(id: string) {
+    // blur explícito: en iOS, sacar del DOM un input enfocado (acá, al
+    // pasar open a false) no siempre alcanza para bajar el teclado solo —
+    // hay que sacarle el foco a mano antes de que el input desaparezca
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     onChange(id)
     setOpen(false)
   }
