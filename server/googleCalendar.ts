@@ -61,7 +61,25 @@ async function getAccessToken(): Promise<string> {
     }),
   })
   if (!res.ok) {
-    throw new Error(`No se pudo renovar el access token de Google: ${res.status} ${await res.text()}`)
+    const bodyText = await res.text()
+    // invalid_grant: el refresh token guardado ya no sirve (Mai lo revocó a
+    // mano, o venció solo a los 7 días — esperable en modo Prueba, ver
+    // CLAUDE.md). La fila sigue existiendo en la tabla, así que sin este
+    // chequeo getStoredRefreshToken() la sigue encontrando y nunca se llega
+    // a tirar CalendarNoConectadoError — el aviso de "Conectar" no
+    // aparecería nunca para este caso, el más común de todos. Se borra la
+    // fila para que quede consistente con lo que Google ya sabe.
+    let parsedError: unknown
+    try {
+      parsedError = JSON.parse(bodyText)
+    } catch {
+      parsedError = null
+    }
+    if ((parsedError as { error?: string } | null)?.error === 'invalid_grant') {
+      await supabaseAdmin.from('google_calendar_conexion').delete().eq('id', 1)
+      throw new CalendarNoConectadoError()
+    }
+    throw new Error(`No se pudo renovar el access token de Google: ${res.status} ${bodyText}`)
   }
   const data = (await res.json()) as { access_token: string }
   return data.access_token
