@@ -7,6 +7,7 @@ export interface PacienteInput {
   telefono: string | null
   instagram: string | null
   email: string | null
+  notas: string | null
 }
 
 export function usePacientes() {
@@ -17,7 +18,7 @@ export function usePacientes() {
   const refetch = useCallback(async () => {
     const { data, error: fetchError } = await supabase
       .from('pacientes')
-      .select('id, nombre_completo, telefono, instagram, email, created_at')
+      .select('id, nombre_completo, telefono, instagram, email, notas, created_at')
       .order('nombre_completo', { ascending: true })
 
     if (fetchError) {
@@ -43,8 +44,9 @@ export function usePacientes() {
           telefono: input.telefono,
           instagram: input.instagram,
           email: input.email,
+          notas: input.notas,
         })
-        .select('id, nombre_completo, telefono, instagram, email, created_at')
+        .select('id, nombre_completo, telefono, instagram, email, notas, created_at')
         .single()
       if (insertError) throw insertError
       await refetch()
@@ -62,6 +64,7 @@ export function usePacientes() {
           telefono: input.telefono,
           instagram: input.instagram,
           email: input.email,
+          notas: input.notas,
         })
         .eq('id', id)
       if (updateError) throw updateError

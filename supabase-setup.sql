@@ -277,3 +277,73 @@ create table public.google_calendar_conexion (
 );
 
 alter table public.google_calendar_conexion enable row level security;
+
+-- ============================================================
+-- Notas en pacientes y turnos
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- Dos notas independientes, no una sola: una nota de turno documenta algo
+-- puntual de esa sesión (ej. "se fue con roncha, avisar si vuelve"), una
+-- nota de paciente es algo que aplica siempre (ej. "alérgica al latex").
+-- El perfil del paciente (PacienteDetalle.tsx) muestra la del paciente
+-- arriba y la de cada turno dentro de su propia tarjeta.
+-- ============================================================
+alter table public.pacientes add column if not exists notas text;
+alter table public.turnos add column if not exists notas text;
+
+-- upsert_turno necesita el parámetro nuevo — se borra la versión vieja (10
+-- parámetros) para no dejar dos funciones sobrecargadas conviviendo.
+drop function if exists public.upsert_turno(uuid, timestamptz, uuid, numeric, boolean, text, boolean, text, uuid[], numeric[]);
+
+create or replace function public.upsert_turno(
+  p_id uuid,
+  p_fecha timestamptz,
+  p_paciente_id uuid,
+  p_precio numeric,
+  p_gift_card boolean,
+  p_medio_pago text,
+  p_senado boolean,
+  p_estado text,
+  p_tratamiento_ids uuid[],
+  p_tratamiento_precios numeric[],
+  p_notas text
+)
+returns uuid
+language plpgsql
+as $$
+declare
+  v_turno_id uuid;
+  i int;
+begin
+  if p_id is null then
+    insert into public.turnos (fecha, paciente_id, precio, gift_card, medio_pago, senado, estado, notas)
+    values (p_fecha, p_paciente_id, p_precio, p_gift_card, p_medio_pago, p_senado, p_estado, p_notas)
+    returning id into v_turno_id;
+  else
+    update public.turnos set
+      fecha = p_fecha,
+      paciente_id = p_paciente_id,
+      precio = p_precio,
+      gift_card = p_gift_card,
+      medio_pago = p_medio_pago,
+      senado = p_senado,
+      estado = p_estado,
+      notas = p_notas
+    where id = p_id
+    returning id into v_turno_id;
+
+    delete from public.turno_tratamientos where turno_id = v_turno_id;
+  end if;
+
+  for i in 1 .. coalesce(array_length(p_tratamiento_ids, 1), 0) loop
+    insert into public.turno_tratamientos (turno_id, tratamiento_id, precio_aplicado)
+    values (v_turno_id, p_tratamiento_ids[i], p_tratamiento_precios[i]);
+  end loop;
+
+  return v_turno_id;
+end;
+$$;
+
+grant execute on function public.upsert_turno to authenticated;

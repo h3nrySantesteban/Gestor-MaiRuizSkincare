@@ -74,6 +74,11 @@ export function PacienteDetalle() {
             )}
             {paciente?.email && <p className="text-sm text-ink-muted">{paciente.email}</p>}
           </div>
+          {paciente?.notas && (
+            <p className="mt-3 whitespace-pre-wrap rounded-lg bg-warning-bg px-3 py-2 text-sm text-warning">
+              {paciente.notas}
+            </p>
+          )}
         </div>
         <button type="button" onClick={() => setEditOpen(true)} className={secondaryBtnClass}>
           Editar
@@ -118,6 +123,11 @@ export function PacienteDetalle() {
               </p>
               <p className="shrink-0 font-semibold text-ink">{formatCurrency(turno.precio)}</p>
             </div>
+            {turno.notas && (
+              <p className="whitespace-pre-wrap rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-muted">
+                {turno.notas}
+              </p>
+            )}
           </div>
         ))}
 

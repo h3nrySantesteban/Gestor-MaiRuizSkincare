@@ -72,6 +72,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   const [medioPago, setMedioPago] = useState<MedioPago | ''>(turno?.medioPago ?? '')
   const [senado, setSenado] = useState(turno?.senado ?? false)
   const [estado, setEstado] = useState<EstadoTurno>(turno?.estado ?? 'Agendado')
+  const [notas, setNotas] = useState(turno?.notas ?? '')
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
@@ -204,6 +205,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       medioPago: medioPago || null,
       senado,
       estado,
+      notas: notas.trim() || null,
       tratamientos: seleccion,
     }
     try {
@@ -322,6 +324,10 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
                 </option>
               ))}
             </select>
+          </Field>
+
+          <Field label="Notas" hint="Algo puntual de este turno, ej. cómo se fue">
+            <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={3} className={inputClass} />
           </Field>
 
           {formError && <p className="text-sm text-danger">{formError}</p>}

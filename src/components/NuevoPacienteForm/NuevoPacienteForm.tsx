@@ -11,6 +11,7 @@ const schema = z.object({
   telefono: z.string().trim(),
   instagram: z.string().trim(),
   email: z.string().trim().refine((v) => v === '' || z.string().email().safeParse(v).success, 'Email inválido.'),
+  notas: z.string().trim(),
 })
 
 interface NuevoPacienteFormProps {
@@ -36,6 +37,7 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
   const [telefono, setTelefono] = useState(paciente?.telefono ?? '')
   const [instagram, setInstagram] = useState(paciente?.instagram ?? '')
   const [email, setEmail] = useState(paciente?.email ?? '')
+  const [notas, setNotas] = useState(paciente?.notas ?? '')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -67,7 +69,7 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    const result = schema.safeParse({ nombreCompleto, telefono, instagram, email })
+    const result = schema.safeParse({ nombreCompleto, telefono, instagram, email, notas })
     if (!result.success) {
       const fieldErrors: Record<string, string> = {}
       for (const issue of result.error.issues) fieldErrors[String(issue.path[0])] = issue.message
@@ -82,6 +84,7 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
       telefono: result.data.telefono || null,
       instagram: result.data.instagram || null,
       email: result.data.email || null,
+      notas: result.data.notas || null,
     }
     try {
       if (paciente) {
@@ -141,6 +144,9 @@ function NuevoPacienteFormInner({ onClose, onSaved, paciente, initialNombre }: N
             onChange={(e) => setEmail(e.target.value)}
             className={inputClass}
           />
+        </Field>
+        <Field label="Notas" error={errors.notas} hint="Algo que aplica siempre a este paciente, ej. alergias">
+          <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={3} className={inputClass} />
         </Field>
 
         {formError && <p className="text-sm text-danger">{formError}</p>}

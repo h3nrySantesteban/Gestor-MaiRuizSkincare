@@ -10,6 +10,7 @@ export interface TurnoInput {
   medioPago: MedioPago | null
   senado: boolean
   estado: EstadoTurno
+  notas: string | null
   tratamientos: { tratamientoId: string; precioAplicado: number }[]
 }
 
@@ -30,6 +31,7 @@ export function useSaveTurno() {
       p_medio_pago: input.medioPago,
       p_senado: input.senado,
       p_estado: input.estado,
+      p_notas: input.notas,
       p_tratamiento_ids: input.tratamientos.map((t) => t.tratamientoId),
       p_tratamiento_precios: input.tratamientos.map((t) => t.precioAplicado),
     })
