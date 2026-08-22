@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePacientes } from '../hooks/usePacientes'
+import { usePacienteIdsConNotasEnTurnos } from '../hooks/usePacienteIdsConNotasEnTurnos'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
-import { InstagramIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
+import { InstagramIcon, NoteIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { instagramLink, waLink } from '../lib/links'
 
 export function Pacientes() {
   const { pacientes, loading, refetch } = usePacientes()
+  const pacienteIdsConNotasEnTurnos = usePacienteIdsConNotasEnTurnos()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [formOpen, setFormOpen] = useState(false)
@@ -47,49 +49,64 @@ export function Pacientes() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {filtered.map((p) => (
-          <div
-            key={p.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => navigate(`/pacientes/${p.id}`)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                navigate(`/pacientes/${p.id}`)
-              }
-            }}
-            className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"
-          >
-            <p className="min-w-0 truncate font-medium text-ink">{p.nombreCompleto}</p>
-            <div className="flex shrink-0 items-center gap-2">
-              {p.telefono && (
-                <a
-                  href={waLink(p.telefono)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`WhatsApp de ${p.nombreCompleto}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-success-bg text-success hover:opacity-80"
+        {filtered.map((p) => {
+          const tieneNotas = Boolean(p.notas) || pacienteIdsConNotasEnTurnos.has(p.id)
+          return (
+            <div
+              key={p.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/pacientes/${p.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  navigate(`/pacientes/${p.id}`)
+                }
+              }}
+              className="relative flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"
+            >
+              {tieneNotas && (
+                // pegado a la esquina de la tarjeta (no del contenido) a
+                // propósito: así nunca compite por espacio con los badges de
+                // WhatsApp/Instagram, que están centrados dentro de la fila
+                <span
+                  role="img"
+                  aria-label="Tiene notas"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-surface-muted text-ink-muted"
                 >
-                  <WhatsAppIcon className="h-4 w-4" />
-                </a>
+                  <NoteIcon className="h-3 w-3 shrink-0" />
+                </span>
               )}
-              {p.instagram && (
-                <a
-                  href={instagramLink(p.instagram)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Instagram de ${p.nombreCompleto}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-50 text-primary-600 hover:opacity-80"
-                >
-                  <InstagramIcon className="h-4 w-4" />
-                </a>
-              )}
+              <p className="min-w-0 truncate font-medium text-ink">{p.nombreCompleto}</p>
+              <div className="flex shrink-0 items-center gap-2">
+                {p.telefono && (
+                  <a
+                    href={waLink(p.telefono)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`WhatsApp de ${p.nombreCompleto}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-success-bg text-success hover:opacity-80"
+                  >
+                    <WhatsAppIcon className="h-3.5 w-3.5" />
+                  </a>
+                )}
+                {p.instagram && (
+                  <a
+                    href={instagramLink(p.instagram)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Instagram de ${p.nombreCompleto}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-primary-600 hover:opacity-80"
+                  >
+                    <InstagramIcon className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {!loading && filtered.length === 0 && (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
