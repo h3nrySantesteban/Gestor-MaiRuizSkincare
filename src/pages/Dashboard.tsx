@@ -45,11 +45,11 @@ export function Dashboard() {
                     key={turno.id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => navigate(`/pacientes/${turno.pacienteId}`)}
+                    onClick={() => navigate(`/pacientes/${turno.pacienteId}`, { state: { from: '/dashboard' } })}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
-                        navigate(`/pacientes/${turno.pacienteId}`)
+                        navigate(`/pacientes/${turno.pacienteId}`, { state: { from: '/dashboard' } })
                       }
                     }}
                     className="relative min-w-0 cursor-pointer"

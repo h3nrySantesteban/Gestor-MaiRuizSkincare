@@ -56,11 +56,11 @@ export function Pacientes() {
               key={p.id}
               role="button"
               tabIndex={0}
-              onClick={() => navigate(`/pacientes/${p.id}`)}
+              onClick={() => navigate(`/pacientes/${p.id}`, { state: { from: '/pacientes' } })}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  navigate(`/pacientes/${p.id}`)
+                  navigate(`/pacientes/${p.id}`, { state: { from: '/pacientes' } })
                 }
               }}
               className="relative flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"

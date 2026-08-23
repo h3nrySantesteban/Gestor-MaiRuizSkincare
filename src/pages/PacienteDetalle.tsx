@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { usePacientes } from '../hooks/usePacientes'
 import { useTurnos } from '../hooks/useTurnos'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
@@ -13,6 +13,13 @@ import type { Turno } from '../types/turno'
 
 export function PacienteDetalle() {
   const { id } = useParams<{ id: string }>()
+  const location = useLocation()
+  // Dashboard y Pacientes son los dos puntos de entrada hoy — cada uno pasa
+  // de dónde vino al navegar acá (state, no localStorage: es por-navegación,
+  // no algo que deba persistir). Sin ese state (ej. se entra pegando la URL
+  // directo), /pacientes es el default más razonable.
+  const backTo = (location.state as { from?: string } | null)?.from ?? '/pacientes'
+  const backLabel = backTo === '/dashboard' ? 'Dashboard' : 'Pacientes'
   // instancia propia, igual que NuevoTurnoForm con usePacientes/useTratamientos:
   // el estado no se comparte entre instancias del hook, así que refetch()
   // después de editar es necesario para que este paciente se actualice acá
@@ -32,8 +39,8 @@ export function PacienteDetalle() {
   if (!loadingPacientes && !paciente) {
     return (
       <div className="flex flex-col gap-4">
-        <Link to="/pacientes" className="flex w-fit items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink">
-          <ArrowLeftIcon className="h-4 w-4" /> Pacientes
+        <Link to={backTo} className="flex w-fit items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink">
+          <ArrowLeftIcon className="h-4 w-4" /> {backLabel}
         </Link>
         <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
           No se encontró el paciente.
@@ -44,8 +51,8 @@ export function PacienteDetalle() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Link to="/pacientes" className="flex w-fit items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink">
-        <ArrowLeftIcon className="h-4 w-4" /> Pacientes
+      <Link to={backTo} className="flex w-fit items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink">
+        <ArrowLeftIcon className="h-4 w-4" /> {backLabel}
       </Link>
 
       <div className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-surface p-5">
