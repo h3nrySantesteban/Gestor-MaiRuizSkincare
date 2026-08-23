@@ -145,6 +145,13 @@ export const ArrowRightIcon = ({ className }: IconProps) => (
   </svg>
 )
 
+export const ArrowUpRightIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <line x1="7" y1="17" x2="17" y2="7" />
+    <polyline points="7 7 17 7 17 17" />
+  </svg>
+)
+
 export const SunIcon = ({ className }: IconProps) => (
   <svg {...base} className={className}>
     <circle cx="12" cy="12" r="4" />

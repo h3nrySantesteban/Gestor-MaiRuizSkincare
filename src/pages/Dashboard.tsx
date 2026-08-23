@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useDashboardStats } from '../hooks/useDashboardStats'
 import { SplitStatCard } from '../components/StatCard/SplitStatCard'
 import { MonthlyChart } from '../components/MonthlyChart/MonthlyChart'
-import { ArrowRightIcon, NoteIcon } from '../components/icons'
+import { ArrowUpRightIcon, NoteIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 
 export function Dashboard() {
@@ -21,21 +21,23 @@ export function Dashboard() {
               aria-label="Ver todos los turnos"
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
             >
-              <ArrowRightIcon className="h-4 w-4" />
+              <ArrowUpRightIcon className="h-4 w-4" />
             </button>
           </div>
           {loading ? null : proximosTurnos.length > 0 ? (
             // auto-fill: cada columna pide un mínimo de 150px, así entran
             // tantas como quepan sin achicarse (2 en un teléfono angosto, 3+
             // a medida que crece el ancho) en vez de un breakpoint fijo.
-            // divide-x en vez de tarjetas individuales: mismo estilo que
-            // SplitStatCard. Turnos de más envuelven a una fila 2 igual que
-            // cualquier grid — en vez de adivinar su altura en px con
-            // max-h (frágil: alcanzaba a filtrarse un pixelado de esa fila),
+            // gap en vez de separadores por borde (divide-x): con más
+            // turnos de los que entran en una fila, el que envuelve a la
+            // fila 2 sigue siendo "no el primer hijo" en el DOM aunque caiga
+            // en la primera columna visual — divide-x le pone un borde
+            // igual, sin importar en qué columna cayó (le puso un separador
+            // a la izquierda de un turno que no tenía nada a su izquierda).
             // grid-rows-[auto] fija la fila 1 al contenido real y
             // auto-rows-[0px] fuerza cualquier fila implícita (la 2, 3...) a
             // 0px, así el overflow-hidden no tiene nada que recortar mal.
-            <div className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] grid-rows-[auto] auto-rows-[0px] divide-x divide-border overflow-hidden">
+            <div className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] grid-rows-[auto] auto-rows-[0px] gap-x-4 overflow-hidden">
               {proximosTurnos.map((turno) => {
                 const tieneNotas = Boolean(turno.notas) || Boolean(turno.paciente?.notas)
                 return (
@@ -50,7 +52,7 @@ export function Dashboard() {
                         navigate(`/pacientes/${turno.pacienteId}`)
                       }
                     }}
-                    className="relative min-w-0 cursor-pointer px-4 first:pl-0 last:pr-0"
+                    className="relative min-w-0 cursor-pointer"
                   >
                     {tieneNotas && (
                       <span
