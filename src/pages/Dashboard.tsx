@@ -1,16 +1,29 @@
+import { useNavigate } from 'react-router-dom'
 import { useDashboardStats } from '../hooks/useDashboardStats'
 import { SplitStatCard } from '../components/StatCard/SplitStatCard'
 import { MonthlyChart } from '../components/MonthlyChart/MonthlyChart'
+import { ArrowRightIcon, NoteIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 
 export function Dashboard() {
   const { proximosTurnos, semana, mes, agendadosSemana, agendadosMes, serieSeisMeses, loading } = useDashboardStats()
+  const navigate = useNavigate()
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-surface p-5">
-          <p className="text-sm font-medium text-ink-muted">Próximos Turnos</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-ink-muted">Próximos Turnos</p>
+            <button
+              type="button"
+              onClick={() => navigate('/turnos')}
+              aria-label="Ver todos los turnos"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
+            >
+              <ArrowRightIcon className="h-4 w-4" />
+            </button>
+          </div>
           {loading ? null : proximosTurnos.length > 0 ? (
             // auto-fill: cada columna pide un mínimo de 150px, así entran
             // tantas como quepan sin achicarse (2 en un teléfono angosto, 3+
@@ -23,14 +36,38 @@ export function Dashboard() {
             // auto-rows-[0px] fuerza cualquier fila implícita (la 2, 3...) a
             // 0px, así el overflow-hidden no tiene nada que recortar mal.
             <div className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] grid-rows-[auto] auto-rows-[0px] divide-x divide-border overflow-hidden">
-              {proximosTurnos.map((turno) => (
-                <div key={turno.id} className="min-w-0 px-4 first:pl-0 last:pr-0">
-                  <p className="truncate text-sm font-semibold text-ink">
-                    {turno.paciente?.nombreCompleto ?? 'Paciente'}
-                  </p>
-                  <p className="mt-0.5 truncate text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>
-                </div>
-              ))}
+              {proximosTurnos.map((turno) => {
+                const tieneNotas = Boolean(turno.notas) || Boolean(turno.paciente?.notas)
+                return (
+                  <div
+                    key={turno.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/pacientes/${turno.pacienteId}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(`/pacientes/${turno.pacienteId}`)
+                      }
+                    }}
+                    className="relative min-w-0 cursor-pointer px-4 first:pl-0 last:pr-0"
+                  >
+                    {tieneNotas && (
+                      <span
+                        role="img"
+                        aria-label="Tiene notas"
+                        className="absolute right-1 top-0 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-surface-muted text-ink-muted"
+                      >
+                        <NoteIcon className="h-3 w-3 shrink-0" />
+                      </span>
+                    )}
+                    <p className="truncate pr-6 text-sm font-semibold text-ink">
+                      {turno.paciente?.nombreCompleto ?? 'Paciente'}
+                    </p>
+                    <p className="mt-0.5 truncate text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <p className="mt-2 text-sm text-ink-muted">No hay turnos agendados.</p>

@@ -16,7 +16,7 @@ export interface Turno {
   id: string
   fecha: string
   pacienteId: string
-  paciente: Pick<Paciente, 'id' | 'nombreCompleto' | 'telefono' | 'instagram'> | null
+  paciente: Pick<Paciente, 'id' | 'nombreCompleto' | 'telefono' | 'instagram' | 'notas'> | null
   precio: number
   giftCard: boolean
   medioPago: MedioPago | null
@@ -52,6 +52,7 @@ export interface TurnoRow {
     nombre_completo: string
     telefono: string | null
     instagram: string | null
+    notas: string | null
   } | null
   turno_tratamientos: {
     tratamiento_id: string
@@ -71,6 +72,7 @@ export function mapTurnoRow(row: TurnoRow): Turno {
           nombreCompleto: row.pacientes.nombre_completo,
           telefono: row.pacientes.telefono,
           instagram: row.pacientes.instagram,
+          notas: row.pacientes.notas,
         }
       : null,
     precio: row.precio,
