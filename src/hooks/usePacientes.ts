@@ -10,6 +10,18 @@ export interface PacienteInput {
   notas: string | null
 }
 
+// turnos.paciente_id es "on delete restrict" y respuestas_formulario.paciente_id
+// no tiene "on delete cascade" tampoco (ver supabase-setup.sql) — un paciente
+// con turnos o formularios asociados no se puede borrar sin perder ese
+// historial. Acá solo se traduce ese error de Postgres a un mensaje que Mai
+// pueda entender, igual que traducirError en useTratamientos.ts.
+function traducirError(error: { code?: string; message: string }): Error {
+  if (error.code === '23503') {
+    return new Error('Este paciente tiene turnos o formularios asociados — no se puede borrar mientras los tenga.')
+  }
+  return new Error(error.message)
+}
+
 export function usePacientes() {
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,5 +85,14 @@ export function usePacientes() {
     [refetch],
   )
 
-  return { pacientes, loading, error, refetch, create, update }
+  const remove = useCallback(
+    async (id: string) => {
+      const { error: deleteError } = await supabase.from('pacientes').delete().eq('id', id)
+      if (deleteError) throw traducirError(deleteError)
+      await refetch()
+    },
+    [refetch],
+  )
+
+  return { pacientes, loading, error, refetch, create, update, remove }
 }

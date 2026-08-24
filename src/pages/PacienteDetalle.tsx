@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { usePacientes } from '../hooks/usePacientes'
 import { useTurnos } from '../hooks/useTurnos'
 import { useRespuestasFormulario } from '../hooks/useRespuestasFormulario'
@@ -16,6 +16,7 @@ import type { Turno } from '../types/turno'
 export function PacienteDetalle() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
   // Dashboard y Pacientes son los dos puntos de entrada hoy — cada uno pasa
   // de dónde vino al navegar acá (state, no localStorage: es por-navegación,
   // no algo que deba persistir). Sin ese state (ej. se entra pegando la URL
@@ -207,7 +208,13 @@ export function PacienteDetalle() {
         )}
       </div>
 
-      <NuevoPacienteForm open={editOpen} onClose={() => setEditOpen(false)} onSaved={() => refetch()} paciente={paciente} />
+      <NuevoPacienteForm
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => refetch()}
+        onDeleted={() => navigate(backTo)}
+        paciente={paciente}
+      />
       <NuevoTurnoForm open={turnoFormOpen} onClose={() => setTurnoFormOpen(false)} turno={editingTurno} />
 
       <Modal open={asignarFormOpen} onClose={() => setAsignarFormOpen(false)} title="Asignar formulario existente">
