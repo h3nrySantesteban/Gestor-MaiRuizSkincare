@@ -8,10 +8,11 @@ import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { Modal } from '../components/Modal/Modal'
 import { secondaryBtnClass } from '../components/forms/FormField'
-import { ArrowLeftIcon, ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
+import { ArrowLeftIcon, ChevronDownIcon, InstagramIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
 import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
+import { normalizeSearch } from '../lib/text'
 import type { Turno } from '../types/turno'
 
 export function PacienteDetalle() {
@@ -35,14 +36,26 @@ export function PacienteDetalle() {
   const [turnoFormOpen, setTurnoFormOpen] = useState(false)
   const [asignarFormOpen, setAsignarFormOpen] = useState(false)
   const [expandedFormularioId, setExpandedFormularioId] = useState<string | null>(null)
+  const [busquedaFormulario, setBusquedaFormulario] = useState('')
 
   const paciente = pacientes.find((p) => p.id === id) ?? null
   const formulariosPaciente = formularios.filter((f) => f.pacienteId === id)
   const formulariosSinAsignar = formularios.filter((f) => !f.pacienteId)
+  const busquedaFormularioNormalizada = normalizeSearch(busquedaFormulario.trim())
+  const formulariosSinAsignarFiltrados = busquedaFormularioNormalizada
+    ? formulariosSinAsignar.filter((f) =>
+        normalizeSearch(f.respuestas['Nombre y apellido'] || '').includes(busquedaFormularioNormalizada),
+      )
+    : formulariosSinAsignar
 
   function openEditTurno(turno: Turno) {
     setEditingTurno(turno)
     setTurnoFormOpen(true)
+  }
+
+  function closeAsignarForm() {
+    setAsignarFormOpen(false)
+    setBusquedaFormulario('')
   }
 
   async function handleAsignarFormulario(respuestaId: string) {
@@ -50,7 +63,7 @@ export function PacienteDetalle() {
     await asignarFormulario(respuestaId, id)
     const respuesta = formularios.find((f) => f.id === respuestaId)
     if (respuesta) await completarContactoDesdeFormulario(paciente, respuesta.respuestas, update)
-    setAsignarFormOpen(false)
+    closeAsignarForm()
   }
 
   if (!loadingPacientes && !paciente) {
@@ -220,22 +233,40 @@ export function PacienteDetalle() {
       />
       <NuevoTurnoForm open={turnoFormOpen} onClose={() => setTurnoFormOpen(false)} turno={editingTurno} />
 
-      <Modal open={asignarFormOpen} onClose={() => setAsignarFormOpen(false)} title="Asignar formulario existente">
-        <div className="flex flex-col gap-2">
-          {formulariosSinAsignar.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => handleAsignarFormulario(f.id)}
-              className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-left text-sm hover:border-primary-300"
-            >
-              <span className="min-w-0 truncate">{f.respuestas['Nombre y apellido'] || 'Respuesta sin nombre'}</span>
-              <span className="shrink-0 text-xs text-ink-muted">{formatFechaHora(f.createdAt)}</span>
-            </button>
-          ))}
-          {formulariosSinAsignar.length === 0 && (
-            <p className="text-sm text-ink-muted">No hay formularios sin asignar.</p>
+      <Modal open={asignarFormOpen} onClose={closeAsignarForm} title="Asignar formulario existente">
+        <div className="flex flex-col gap-3">
+          {formulariosSinAsignar.length > 0 && (
+            <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-2">
+              <SearchIcon className="h-4 w-4 shrink-0 text-ink-muted" />
+              <input
+                autoFocus
+                value={busquedaFormulario}
+                onChange={(e) => setBusquedaFormulario(e.target.value)}
+                placeholder="Buscar por nombre..."
+                className="w-full text-base text-ink outline-none"
+              />
+            </div>
           )}
+
+          <div className="flex flex-col gap-2">
+            {formulariosSinAsignarFiltrados.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => handleAsignarFormulario(f.id)}
+                className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-left text-sm hover:border-primary-300"
+              >
+                <span className="min-w-0 truncate">{f.respuestas['Nombre y apellido'] || 'Respuesta sin nombre'}</span>
+                <span className="shrink-0 text-xs text-ink-muted">{formatFechaHora(f.createdAt)}</span>
+              </button>
+            ))}
+            {formulariosSinAsignar.length === 0 && (
+              <p className="text-sm text-ink-muted">No hay formularios sin asignar.</p>
+            )}
+            {formulariosSinAsignar.length > 0 && formulariosSinAsignarFiltrados.length === 0 && (
+              <p className="text-sm text-ink-muted">No se encontraron formularios.</p>
+            )}
+          </div>
         </div>
       </Modal>
     </div>
