@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useRespuestasFormulario } from '../hooks/useRespuestasFormulario'
 import { usePacientes } from '../hooks/usePacientes'
 import { PacienteCombobox } from '../components/PacienteCombobox/PacienteCombobox'
 import { primaryBtnClass } from '../components/forms/FormField'
-import { ChevronDownIcon } from '../components/icons'
+import { ArrowUpRightIcon, ChevronDownIcon } from '../components/icons'
 import { formatFechaHora } from '../lib/format'
 import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
 
@@ -16,6 +17,7 @@ const CAMPO_NOMBRE = 'Nombre y apellido'
 export function Formularios() {
   const { respuestas, loading, asignar } = useRespuestasFormulario()
   const { pacientes, update } = usePacientes()
+  const navigate = useNavigate()
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [asignandoId, setAsignandoId] = useState<string | null>(null)
   const [pacienteElegido, setPacienteElegido] = useState<string | null>(null)
@@ -56,10 +58,17 @@ export function Formularios() {
 
           return (
             <div key={r.id} className="rounded-xl border border-border bg-surface p-4">
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => setExpandedId(expanded ? null : r.id)}
-                className="flex w-full items-center justify-between gap-3 text-left"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setExpandedId(expanded ? null : r.id)
+                  }
+                }}
+                className="flex w-full cursor-pointer items-center justify-between gap-3 text-left"
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink">{titulo}</p>
@@ -67,9 +76,22 @@ export function Formularios() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {paciente ? (
-                    <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
-                      {paciente.nombreCompleto}
-                    </span>
+                    <>
+                      <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
+                        {paciente.nombreCompleto}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/pacientes/${paciente.id}`, { state: { from: '/formularios' } })
+                        }}
+                        aria-label={`Ver perfil de ${paciente.nombreCompleto}`}
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
+                      >
+                        <ArrowUpRightIcon className="h-4 w-4" />
+                      </button>
+                    </>
                   ) : (
                     <span className="rounded-full bg-warning-bg px-2.5 py-1 text-xs font-medium text-warning">
                       Sin asignar
@@ -79,7 +101,7 @@ export function Formularios() {
                     className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
                   />
                 </div>
-              </button>
+              </div>
 
               {expanded && (
                 <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
