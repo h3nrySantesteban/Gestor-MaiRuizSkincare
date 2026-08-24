@@ -200,7 +200,7 @@ export function Turnos() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="shrink-0 text-sm text-ink-muted">{formatFechaHora(turno.fecha)}</p>
+                  <p className="shrink-0 text-sm text-ink-muted">{formatCurrency(turno.precio)}</p>
                   {turno.tratamientos.length > 0 && (
                     <p className="min-w-0 truncate text-sm text-ink-muted">
                       {turno.tratamientos.map((t) => t.nombre).join(', ')}
@@ -209,7 +209,7 @@ export function Turnos() {
                 </div>
               </div>
               <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-                <p className="font-semibold text-ink">{formatCurrency(turno.precio)}</p>
+                <p className="font-semibold text-ink">{formatFechaHora(turno.fecha)}</p>
                 <div className="flex items-center gap-3">
                   {turno.paciente?.telefono && (
                     <a
