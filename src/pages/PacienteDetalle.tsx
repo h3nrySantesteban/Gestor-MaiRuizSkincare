@@ -15,16 +15,18 @@ import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
 import { normalizeSearch } from '../lib/text'
 import type { Turno } from '../types/turno'
 
+const BACK_LABELS: Record<string, string> = { '/dashboard': 'Dashboard', '/turnos': 'Turnos', '/formularios': 'Formularios' }
+
 export function PacienteDetalle() {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
   const navigate = useNavigate()
-  // Dashboard, Pacientes y Formularios son los puntos de entrada hoy — cada
-  // uno pasa de dónde vino al navegar acá (state, no localStorage: es
+  // Dashboard, Turnos, Pacientes y Formularios son los puntos de entrada hoy
+  // — cada uno pasa de dónde vino al navegar acá (state, no localStorage: es
   // por-navegación, no algo que deba persistir). Sin ese state (ej. se
   // entra pegando la URL directo), /pacientes es el default más razonable.
   const backTo = (location.state as { from?: string } | null)?.from ?? '/pacientes'
-  const backLabel = backTo === '/dashboard' ? 'Dashboard' : backTo === '/formularios' ? 'Formularios' : 'Pacientes'
+  const backLabel = BACK_LABELS[backTo] ?? 'Pacientes'
   // instancia propia, igual que NuevoTurnoForm con usePacientes/useTratamientos:
   // el estado no se comparte entre instancias del hook, así que refetch()
   // después de editar es necesario para que este paciente se actualice acá

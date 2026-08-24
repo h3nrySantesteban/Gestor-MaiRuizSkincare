@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { endOfDay, isSameDay } from 'date-fns'
 import { useTurnos } from '../hooks/useTurnos'
 import { usePacientes } from '../hooks/usePacientes'
@@ -7,7 +8,7 @@ import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
 import { DateTimeInput } from '../components/forms/DateTimeInput'
-import { ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
+import { ArrowUpRightIcon, ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
 import { ESTADOS_TURNO, type EstadoTurno, type Turno } from '../types/turno'
@@ -24,6 +25,7 @@ export function Turnos() {
   const [formOpen, setFormOpen] = useState(false)
   const [editingTurno, setEditingTurno] = useState<Turno | null>(null)
 
+  const navigate = useNavigate()
   const { pacientes } = usePacientes()
   const { tratamientos } = useTratamientos()
   const { turnos, loading, loadingMore, hasMore, loadMore } = useTurnos({
@@ -201,9 +203,24 @@ export function Turnos() {
               >
                 <div className="min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="min-w-0 truncate font-medium text-ink">
-                      {turno.paciente?.nombreCompleto ?? 'Paciente'}
-                    </p>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <p className="min-w-0 truncate font-medium text-ink">
+                        {turno.paciente?.nombreCompleto ?? 'Paciente'}
+                      </p>
+                      {turno.pacienteId && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/pacientes/${turno.pacienteId}`, { state: { from: '/turnos' } })
+                          }}
+                          aria-label={`Ver perfil de ${turno.paciente?.nombreCompleto ?? 'paciente'}`}
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
+                        >
+                          <ArrowUpRightIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {/* una vez finalizado ya no aporta info accionable — el pago ya está saldado */}
                       {turno.senado && turno.estado !== 'Finalizado' && (
