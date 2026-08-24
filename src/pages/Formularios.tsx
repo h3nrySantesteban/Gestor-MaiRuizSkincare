@@ -5,6 +5,7 @@ import { PacienteCombobox } from '../components/PacienteCombobox/PacienteCombobo
 import { primaryBtnClass } from '../components/forms/FormField'
 import { ChevronDownIcon } from '../components/icons'
 import { formatFechaHora } from '../lib/format'
+import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
 
 // "Nombre y apellido" es la pregunta del form que mejor identifica de un
 // vistazo quién la completó — se usa como título de la tarjeta mientras no
@@ -14,7 +15,7 @@ const CAMPO_NOMBRE = 'Nombre y apellido'
 
 export function Formularios() {
   const { respuestas, loading, asignar } = useRespuestasFormulario()
-  const { pacientes } = usePacientes()
+  const { pacientes, update } = usePacientes()
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [asignandoId, setAsignandoId] = useState<string | null>(null)
   const [pacienteElegido, setPacienteElegido] = useState<string | null>(null)
@@ -27,6 +28,9 @@ export function Formularios() {
     setGuardando(true)
     try {
       await asignar(respuestaId, pacienteElegido)
+      const paciente = pacientes.find((p) => p.id === pacienteElegido)
+      const respuesta = respuestas.find((r) => r.id === respuestaId)
+      if (paciente && respuesta) await completarContactoDesdeFormulario(paciente, respuesta.respuestas, update)
       setAsignandoId(null)
       setPacienteElegido(null)
     } finally {

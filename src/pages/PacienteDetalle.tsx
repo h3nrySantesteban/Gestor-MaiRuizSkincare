@@ -11,6 +11,7 @@ import { secondaryBtnClass } from '../components/forms/FormField'
 import { ArrowLeftIcon, ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
+import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
 import type { Turno } from '../types/turno'
 
 export function PacienteDetalle() {
@@ -26,7 +27,7 @@ export function PacienteDetalle() {
   // instancia propia, igual que NuevoTurnoForm con usePacientes/useTratamientos:
   // el estado no se comparte entre instancias del hook, así que refetch()
   // después de editar es necesario para que este paciente se actualice acá
-  const { pacientes, loading: loadingPacientes, refetch } = usePacientes()
+  const { pacientes, loading: loadingPacientes, refetch, update } = usePacientes()
   const { turnos, loading: loadingTurnos } = useTurnos({ pacienteId: id })
   const { respuestas: formularios, asignar: asignarFormulario } = useRespuestasFormulario()
   const [editOpen, setEditOpen] = useState(false)
@@ -45,8 +46,10 @@ export function PacienteDetalle() {
   }
 
   async function handleAsignarFormulario(respuestaId: string) {
-    if (!id) return
+    if (!id || !paciente) return
     await asignarFormulario(respuestaId, id)
+    const respuesta = formularios.find((f) => f.id === respuestaId)
+    if (respuesta) await completarContactoDesdeFormulario(paciente, respuesta.respuestas, update)
     setAsignarFormOpen(false)
   }
 
