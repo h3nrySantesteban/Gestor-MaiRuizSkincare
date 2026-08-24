@@ -1,4 +1,5 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
 import { useTratamientos } from '../hooks/useTratamientos'
 import { NuevoTratamientoForm } from '../components/NuevoTratamientoForm/NuevoTratamientoForm'
 import { ActualizarPreciosModal } from '../components/ActualizarPreciosModal/ActualizarPreciosModal'
@@ -13,6 +14,15 @@ export function Tratamientos() {
   const [porcentaje, setPorcentaje] = useState('')
   const [previewOpen, setPreviewOpen] = useState(false)
 
+  // edición inline del precio, aparte del modal completo — para cambiar
+  // solo ese campo no hace falta abrir Nuevo/Editar tratamiento entero
+  const [editingPrecioId, setEditingPrecioId] = useState<string | null>(null)
+  const [precioEditValue, setPrecioEditValue] = useState('')
+  // Escape dispara blur() a mano para salir del input, pero blur también es
+  // lo que dispara el guardado — este ref le avisa al handler de blur que
+  // esta vez hay que descartar en vez de guardar
+  const cancelPrecioEditRef = useRef(false)
+
   function openNuevo() {
     setEditing(null)
     setFormOpen(true)
@@ -21,6 +31,36 @@ export function Tratamientos() {
   function openEdit(t: Tratamiento) {
     setEditing(t)
     setFormOpen(true)
+  }
+
+  function startEditPrecio(t: Tratamiento) {
+    setEditingPrecioId(t.id)
+    setPrecioEditValue(String(t.precio))
+  }
+
+  function handlePrecioKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur()
+    } else if (e.key === 'Escape') {
+      cancelPrecioEditRef.current = true
+      e.currentTarget.blur()
+    }
+  }
+
+  async function handlePrecioBlur(id: string) {
+    if (cancelPrecioEditRef.current) {
+      cancelPrecioEditRef.current = false
+      setEditingPrecioId(null)
+      return
+    }
+    const precio = Number(precioEditValue)
+    setEditingPrecioId(null)
+    if (!Number.isFinite(precio) || precio < 0) return
+    try {
+      await updatePrecios([{ id, precio }])
+    } catch (err) {
+      console.error('No se pudo guardar el precio', err)
+    }
   }
 
   // la seña no es un precio de lista (es un monto de depósito que se
@@ -104,7 +144,34 @@ export function Tratamientos() {
                 {t.descripcion && <p className="mt-0.5 truncate text-sm text-ink-muted">{t.descripcion}</p>}
               </button>
               <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
-                <p className="font-semibold text-ink">{formatCurrency(t.precio)}</p>
+                {editingPrecioId === t.id ? (
+                  <div className="relative w-28">
+                    <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-sm text-ink-muted">
+                      $
+                    </span>
+                    <input
+                      autoFocus
+                      type="number"
+                      min="0"
+                      step="1000"
+                      inputMode="decimal"
+                      value={precioEditValue}
+                      onChange={(e) => setPrecioEditValue(e.target.value)}
+                      onKeyDown={handlePrecioKeyDown}
+                      onBlur={() => handlePrecioBlur(t.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full rounded-lg border border-primary-500 py-1 pl-5 pr-2 text-sm font-semibold text-ink outline-none"
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => startEditPrecio(t)}
+                    className="font-semibold text-ink underline decoration-dotted decoration-ink-muted underline-offset-4 hover:text-primary-600"
+                  >
+                    {formatCurrency(t.precio)}
+                  </button>
+                )}
                 <button type="button" onClick={() => setActivo(t.id, !t.activo)} className={secondaryBtnClass}>
                   {t.activo ? 'Desactivar' : 'Activar'}
                 </button>
