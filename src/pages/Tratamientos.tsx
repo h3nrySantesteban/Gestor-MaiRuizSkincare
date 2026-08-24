@@ -103,7 +103,7 @@ export function Tratamientos() {
                 </div>
                 {t.descripcion && <p className="mt-0.5 truncate text-sm text-ink-muted">{t.descripcion}</p>}
               </button>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
                 <p className="font-semibold text-ink">{formatCurrency(t.precio)}</p>
                 <button type="button" onClick={() => setActivo(t.id, !t.activo)} className={secondaryBtnClass}>
                   {t.activo ? 'Desactivar' : 'Activar'}
