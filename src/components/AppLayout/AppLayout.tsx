@@ -8,6 +8,7 @@ import { GoogleCalendarConnectBanner } from '../GoogleCalendarConnectBanner/Goog
 import {
   BarChartIcon,
   CalendarIcon,
+  ClipboardListIcon,
   HomeIcon,
   LogOutIcon,
   MenuIcon,
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { to: '/turnos', label: 'Turnos', icon: CalendarIcon, end: false },
   { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false },
   { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false },
+  { to: '/formularios', label: 'Formularios', icon: ClipboardListIcon, end: false },
   { to: '/analytics', label: 'Analytics', icon: BarChartIcon, end: false },
 ]
 

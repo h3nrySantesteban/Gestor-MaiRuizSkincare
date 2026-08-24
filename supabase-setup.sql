@@ -347,3 +347,38 @@ end;
 $$;
 
 grant execute on function public.upsert_turno to authenticated;
+
+-- ============================================================
+-- Formularios (respuestas del Google Form previo al turno)
+--
+-- Migración incremental. api/google-form-webhook.ts inserta cada respuesta
+-- siempre con paciente_id null — el matching es manual, Mai ya lo hacía a
+-- mano en la app vieja (no hay forma confiable de correlacionar automático:
+-- el teléfono que el paciente escribe en el form no tiene por qué coincidir
+-- en formato con pacientes.telefono). google_response_id evita duplicar la
+-- fila si Apps Script reintenta el POST.
+-- ============================================================
+create table public.respuestas_formulario (
+  id uuid primary key default gen_random_uuid(),
+  paciente_id uuid references public.pacientes(id),
+  google_response_id text unique,
+  respuestas jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.respuestas_formulario enable row level security;
+
+create policy "auth manage respuestas_formulario" on public.respuestas_formulario for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+alter publication supabase_realtime add table public.respuestas_formulario;
+
+-- Tipo nuevo para avisar "llegó un formulario nuevo sin asignar" — usa
+-- turno_id null y mensaje_original con el nombre que puso el paciente en el
+-- form (no hace falta una columna nueva: la asignación a un paciente
+-- concreto vive en respuestas_formulario.paciente_id, no acá). El check
+-- constraint se recrea entero porque Postgres no tiene un "add value" para
+-- checks (a diferencia de un enum de verdad).
+alter table public.notificaciones drop constraint notificaciones_tipo_check;
+alter table public.notificaciones add constraint notificaciones_tipo_check
+  check (tipo in ('confirmado', 'cancelado', 'reprogramar', 'no_reconocido', 'formulario_nuevo'));

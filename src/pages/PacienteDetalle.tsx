@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { usePacientes } from '../hooks/usePacientes'
 import { useTurnos } from '../hooks/useTurnos'
+import { useRespuestasFormulario } from '../hooks/useRespuestasFormulario'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
+import { Modal } from '../components/Modal/Modal'
 import { secondaryBtnClass } from '../components/forms/FormField'
-import { ArrowLeftIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
+import { ArrowLeftIcon, ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
 import type { Turno } from '../types/turno'
@@ -25,15 +27,26 @@ export function PacienteDetalle() {
   // después de editar es necesario para que este paciente se actualice acá
   const { pacientes, loading: loadingPacientes, refetch } = usePacientes()
   const { turnos, loading: loadingTurnos } = useTurnos({ pacienteId: id })
+  const { respuestas: formularios, asignar: asignarFormulario } = useRespuestasFormulario()
   const [editOpen, setEditOpen] = useState(false)
   const [editingTurno, setEditingTurno] = useState<Turno | null>(null)
   const [turnoFormOpen, setTurnoFormOpen] = useState(false)
+  const [asignarFormOpen, setAsignarFormOpen] = useState(false)
+  const [expandedFormularioId, setExpandedFormularioId] = useState<string | null>(null)
 
   const paciente = pacientes.find((p) => p.id === id) ?? null
+  const formulariosPaciente = formularios.filter((f) => f.pacienteId === id)
+  const formulariosSinAsignar = formularios.filter((f) => !f.pacienteId)
 
   function openEditTurno(turno: Turno) {
     setEditingTurno(turno)
     setTurnoFormOpen(true)
+  }
+
+  async function handleAsignarFormulario(respuestaId: string) {
+    if (!id) return
+    await asignarFormulario(respuestaId, id)
+    setAsignarFormOpen(false)
   }
 
   if (!loadingPacientes && !paciente) {
@@ -93,6 +106,55 @@ export function PacienteDetalle() {
       </div>
 
       <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-ink-muted">
+            {formulariosPaciente.length} formulario{formulariosPaciente.length === 1 ? '' : 's'}
+          </p>
+          <button
+            type="button"
+            onClick={() => setAsignarFormOpen(true)}
+            className="text-sm font-medium text-primary-600 hover:underline"
+          >
+            Asignar formulario existente
+          </button>
+        </div>
+
+        {formulariosPaciente.map((f) => {
+          const expanded = expandedFormularioId === f.id
+          return (
+            <div key={f.id} className="rounded-xl border border-border bg-surface p-4">
+              <button
+                type="button"
+                onClick={() => setExpandedFormularioId(expanded ? null : f.id)}
+                className="flex w-full items-center justify-between gap-2 text-left"
+              >
+                <p className="text-sm text-ink-muted">{formatFechaHora(f.createdAt)}</p>
+                <ChevronDownIcon
+                  className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {expanded && (
+                <dl className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+                  {Object.entries(f.respuestas).map(([pregunta, respuesta]) => (
+                    <div key={pregunta}>
+                      <dt className="text-xs font-medium text-ink-muted">{pregunta}</dt>
+                      <dd className="whitespace-pre-wrap text-sm text-ink">{respuesta || '—'}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+          )
+        })}
+
+        {formulariosPaciente.length === 0 && (
+          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
+            Este paciente todavía no tiene formularios asignados.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
         <p className="text-sm font-medium text-ink-muted">
           {turnos.length} turno{turnos.length === 1 ? '' : 's'}
         </p>
@@ -147,6 +209,25 @@ export function PacienteDetalle() {
 
       <NuevoPacienteForm open={editOpen} onClose={() => setEditOpen(false)} onSaved={() => refetch()} paciente={paciente} />
       <NuevoTurnoForm open={turnoFormOpen} onClose={() => setTurnoFormOpen(false)} turno={editingTurno} />
+
+      <Modal open={asignarFormOpen} onClose={() => setAsignarFormOpen(false)} title="Asignar formulario existente">
+        <div className="flex flex-col gap-2">
+          {formulariosSinAsignar.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => handleAsignarFormulario(f.id)}
+              className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-left text-sm hover:border-primary-300"
+            >
+              <span className="min-w-0 truncate">{f.respuestas['Nombre y apellido'] || 'Respuesta sin nombre'}</span>
+              <span className="shrink-0 text-xs text-ink-muted">{formatFechaHora(f.createdAt)}</span>
+            </button>
+          ))}
+          {formulariosSinAsignar.length === 0 && (
+            <p className="text-sm text-ink-muted">No hay formularios sin asignar.</p>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

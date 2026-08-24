@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatFechaHora } from '../../lib/format'
 import { BellIcon } from '../icons'
-import type { TipoNotificacion } from '../../types/notificacion'
+import type { Notificacion, TipoNotificacion } from '../../types/notificacion'
 
 const TIPO_LABEL: Record<TipoNotificacion, string> = {
   confirmado: 'Confirmó',
   cancelado: 'Canceló',
   reprogramar: 'Quiere reprogramar',
   no_reconocido: 'Respuesta sin reconocer',
+  formulario_nuevo: 'Formulario nuevo',
 }
 
 const TIPO_CLASS: Record<TipoNotificacion, string> = {
@@ -16,12 +18,22 @@ const TIPO_CLASS: Record<TipoNotificacion, string> = {
   cancelado: 'bg-danger-bg text-danger',
   reprogramar: 'bg-warning-bg text-warning',
   no_reconocido: 'bg-surface-muted text-ink-muted',
+  formulario_nuevo: 'bg-surface-muted text-ink-muted',
 }
 
 export function NotificationBell() {
   const { notificaciones, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+
+  function handleClick(n: Notificacion) {
+    markAsRead(n.id)
+    if (n.tipo === 'formulario_nuevo') {
+      setOpen(false)
+      navigate('/formularios')
+    }
+  }
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -76,7 +88,7 @@ export function NotificationBell() {
               <button
                 key={n.id}
                 type="button"
-                onClick={() => markAsRead(n.id)}
+                onClick={() => handleClick(n)}
                 className={`block w-full border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-surface-muted ${
                   n.leida ? '' : 'bg-primary-50'
                 }`}

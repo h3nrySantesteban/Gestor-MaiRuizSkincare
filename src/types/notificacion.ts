@@ -1,4 +1,4 @@
-export const TIPOS_NOTIFICACION = ['confirmado', 'cancelado', 'reprogramar', 'no_reconocido'] as const
+export const TIPOS_NOTIFICACION = ['confirmado', 'cancelado', 'reprogramar', 'no_reconocido', 'formulario_nuevo'] as const
 export type TipoNotificacion = (typeof TIPOS_NOTIFICACION)[number]
 
 export interface Notificacion {

@@ -174,6 +174,15 @@ export const TrashIcon = ({ className }: IconProps) => (
   </svg>
 )
 
+export const ClipboardListIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+    <line x1="9" y1="12" x2="15" y2="12" />
+    <line x1="9" y1="16" x2="15" y2="16" />
+  </svg>
+)
+
 export const NoteIcon = ({ className }: IconProps) => (
   <svg {...base} className={className}>
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
