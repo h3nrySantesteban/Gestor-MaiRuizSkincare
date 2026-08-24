@@ -70,28 +70,30 @@ export function Formularios() {
                 }}
                 className="flex w-full cursor-pointer items-center justify-between gap-3 text-left"
               >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-ink">{titulo}</p>
-                  <p className="text-xs text-ink-muted">{formatFechaHora(r.createdAt)}</p>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-ink">{titulo}</p>
+                    <p className="text-xs text-ink-muted">{formatFechaHora(r.createdAt)}</p>
+                  </div>
+                  {paciente && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/pacientes/${paciente.id}`, { state: { from: '/formularios' } })
+                      }}
+                      aria-label={`Ver perfil de ${paciente.nombreCompleto}`}
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
+                    >
+                      <ArrowUpRightIcon className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   {paciente ? (
-                    <>
-                      <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
-                        {paciente.nombreCompleto}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          navigate(`/pacientes/${paciente.id}`, { state: { from: '/formularios' } })
-                        }}
-                        aria-label={`Ver perfil de ${paciente.nombreCompleto}`}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
-                      >
-                        <ArrowUpRightIcon className="h-4 w-4" />
-                      </button>
-                    </>
+                    <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700">
+                      {paciente.nombreCompleto}
+                    </span>
                   ) : (
                     <span className="rounded-full bg-warning-bg px-2.5 py-1 text-xs font-medium text-warning">
                       Sin asignar
