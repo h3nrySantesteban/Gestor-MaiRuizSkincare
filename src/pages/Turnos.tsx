@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { endOfDay } from 'date-fns'
+import { endOfDay, isSameDay } from 'date-fns'
 import { useTurnos } from '../hooks/useTurnos'
 import { usePacientes } from '../hooks/usePacientes'
 import { useTratamientos } from '../hooks/useTratamientos'
@@ -168,76 +168,89 @@ export function Turnos() {
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        {turnos.map((turno, index) => (
-          <Fragment key={turno.id}>
-            {index === primerNoAgendadoIndex && index > 0 && <div className="my-1 border-t border-border" />}
-            {index === primerCanceladoSenadoIndex && index > 0 && <div className="my-1 border-t border-border" />}
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => openEdit(turno)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  openEdit(turno)
-                }
-              }}
-              className="flex cursor-pointer flex-col gap-2 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="min-w-0 truncate font-medium text-ink">{turno.paciente?.nombreCompleto ?? 'Paciente'}</p>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {/* una vez finalizado ya no aporta info accionable — el pago ya está saldado */}
-                    {turno.senado && turno.estado !== 'Finalizado' && (
-                      <span className="rounded-full bg-warning-bg px-2.5 py-1 text-xs font-medium text-warning">
-                        Señado
-                      </span>
+      <div className="flex flex-col">
+        {turnos.map((turno, index) => {
+          // el gap normal (gap-2 de antes) pasa a ser mt-2 explícito porque
+          // ya no es uniforme: entre turnos del mismo día es el normal,
+          // entre días distintos se duplica (mt-4) para que el agrupado por
+          // día se note de un vistazo, no solo por la fecha de cada tarjeta
+          const anterior = index > 0 ? turnos[index - 1] : null
+          const mismoDia = anterior ? isSameDay(new Date(turno.fecha), new Date(anterior.fecha)) : true
+          const espaciado = index === 0 ? '' : mismoDia ? 'mt-2' : 'mt-4'
+          return (
+            <Fragment key={turno.id}>
+              {index === primerNoAgendadoIndex && index > 0 && <div className="my-1 border-t border-border" />}
+              {index === primerCanceladoSenadoIndex && index > 0 && <div className="my-1 border-t border-border" />}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => openEdit(turno)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    openEdit(turno)
+                  }
+                }}
+                className={`flex cursor-pointer flex-col gap-2 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300 sm:flex-row sm:items-center sm:justify-between ${espaciado}`}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="min-w-0 truncate font-medium text-ink">
+                      {turno.paciente?.nombreCompleto ?? 'Paciente'}
+                    </p>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {/* una vez finalizado ya no aporta info accionable — el pago ya está saldado */}
+                      {turno.senado && turno.estado !== 'Finalizado' && (
+                        <span className="rounded-full bg-warning-bg px-2.5 py-1 text-xs font-medium text-warning">
+                          Señado
+                        </span>
+                      )}
+                      <EstadoBadge estado={turno.estado} />
+                      {turno.confirmadoPaciente && (
+                        <span className="text-xs font-medium text-success">✓ confirmó</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="shrink-0 text-sm text-ink-muted">{formatCurrency(turno.precio)}</p>
+                    {turno.tratamientos.length > 0 && (
+                      <p className="min-w-0 truncate text-sm text-ink-muted">
+                        {turno.tratamientos.map((t) => t.nombre).join(', ')}
+                      </p>
                     )}
-                    <EstadoBadge estado={turno.estado} />
-                    {turno.confirmadoPaciente && <span className="text-xs font-medium text-success">✓ confirmó</span>}
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="shrink-0 text-sm text-ink-muted">{formatCurrency(turno.precio)}</p>
-                  {turno.tratamientos.length > 0 && (
-                    <p className="min-w-0 truncate text-sm text-ink-muted">
-                      {turno.tratamientos.map((t) => t.nombre).join(', ')}
-                    </p>
-                  )}
+                <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
+                  <p className="font-semibold tracking-wide text-ink">{formatFechaHora(turno.fecha)}</p>
+                  <div className="flex items-center gap-3">
+                    {turno.paciente?.telefono && (
+                      <a
+                        href={waLink(turno.paciente.telefono)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-xs font-medium text-success hover:underline"
+                      >
+                        <WhatsAppIcon className="h-3.5 w-3.5" /> WhatsApp
+                      </a>
+                    )}
+                    {turno.paciente?.instagram && (
+                      <a
+                        href={instagramLink(turno.paciente.instagram)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline"
+                      >
+                        <InstagramIcon className="h-3.5 w-3.5" /> Instagram
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-                <p className="font-semibold text-ink">{formatFechaHora(turno.fecha)}</p>
-                <div className="flex items-center gap-3">
-                  {turno.paciente?.telefono && (
-                    <a
-                      href={waLink(turno.paciente.telefono)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1 text-xs font-medium text-success hover:underline"
-                    >
-                      <WhatsAppIcon className="h-3.5 w-3.5" /> WhatsApp
-                    </a>
-                  )}
-                  {turno.paciente?.instagram && (
-                    <a
-                      href={instagramLink(turno.paciente.instagram)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:underline"
-                    >
-                      <InstagramIcon className="h-3.5 w-3.5" /> Instagram
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Fragment>
-        ))}
+            </Fragment>
+          )
+        })}
 
         {!loading && turnos.length === 0 && (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
