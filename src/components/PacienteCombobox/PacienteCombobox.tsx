@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { inputClass } from '../forms/FormField'
 import { ChevronDownIcon } from '../icons'
+import { normalizeSearch } from '../../lib/text'
 import type { Paciente } from '../../types/paciente'
 
 interface PacienteComboboxProps {
@@ -38,7 +39,7 @@ export function PacienteCombobox({ pacientes, value, onChange }: PacienteCombobo
   }, [])
 
   const seleccionado = pacientes.find((p) => p.id === value) ?? null
-  const filtrados = pacientes.filter((p) => p.nombreCompleto.toLowerCase().includes(query.trim().toLowerCase()))
+  const filtrados = pacientes.filter((p) => normalizeSearch(p.nombreCompleto).includes(normalizeSearch(query.trim())))
 
   function handleSelect(id: string) {
     // blur explícito: en iOS, sacar del DOM un input enfocado (acá, al

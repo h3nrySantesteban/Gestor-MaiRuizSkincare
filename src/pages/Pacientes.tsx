@@ -6,6 +6,7 @@ import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPaciente
 import { InstagramIcon, NoteIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { instagramLink, waLink } from '../lib/links'
+import { normalizeSearch } from '../lib/text'
 
 export function Pacientes() {
   const { pacientes, loading, refetch } = usePacientes()
@@ -15,9 +16,9 @@ export function Pacientes() {
   const [formOpen, setFormOpen] = useState(false)
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = normalizeSearch(query.trim())
     if (!q) return pacientes
-    return pacientes.filter((p) => p.nombreCompleto.toLowerCase().includes(q))
+    return pacientes.filter((p) => normalizeSearch(p.nombreCompleto).includes(q))
   }, [pacientes, query])
 
   function openNuevo() {
