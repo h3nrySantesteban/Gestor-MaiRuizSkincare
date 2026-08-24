@@ -264,20 +264,23 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
           </Field>
 
           <Field label="Precio" required error={errors.precio} hint="Se completa solo según el tratamiento; se puede editar">
-            <input
-              ref={precioInputRef}
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={precio}
-              onChange={(e) => {
-                setPrecio(e.target.value)
-                setPrecioDirty(true)
-              }}
-              onKeyDown={handlePrecioKeyDown}
-              className={inputClass}
-            />
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-muted">$</span>
+              <input
+                ref={precioInputRef}
+                type="number"
+                min="0"
+                step="1000"
+                inputMode="decimal"
+                value={precio}
+                onChange={(e) => {
+                  setPrecio(e.target.value)
+                  setPrecioDirty(true)
+                }}
+                onKeyDown={handlePrecioKeyDown}
+                className={`${inputClass} !pl-7`}
+              />
+            </div>
           </Field>
 
           <div className="grid grid-cols-2 gap-4">

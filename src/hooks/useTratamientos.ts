@@ -81,5 +81,20 @@ export function useTratamientos() {
     [refetch],
   )
 
-  return { tratamientos, loading, error, refetch, create, update, setActivo }
+  // no hay un solo UPDATE que ponga un valor distinto por fila en Postgrest
+  // (es un incremento global de precios, cada tratamiento termina en un
+  // monto distinto) — se resuelve como updates individuales en paralelo
+  const updatePrecios = useCallback(
+    async (updates: { id: string; precio: number }[]) => {
+      const results = await Promise.all(
+        updates.map(({ id, precio }) => supabase.from('tratamientos').update({ precio }).eq('id', id)),
+      )
+      const failed = results.find((r) => r.error)
+      if (failed?.error) throw failed.error
+      await refetch()
+    },
+    [refetch],
+  )
+
+  return { tratamientos, loading, error, refetch, create, update, setActivo, updatePrecios }
 }
