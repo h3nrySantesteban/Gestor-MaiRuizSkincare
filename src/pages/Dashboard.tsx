@@ -1,13 +1,16 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useDashboardStats } from '../hooks/useDashboardStats'
 import { SplitStatCard } from '../components/StatCard/SplitStatCard'
 import { MonthlyChart } from '../components/MonthlyChart/MonthlyChart'
+import { Modal } from '../components/Modal/Modal'
 import { ArrowUpRightIcon, NoteIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 
 export function Dashboard() {
   const { proximosTurnos, semana, mes, agendadosSemana, agendadosMes, serieSeisMeses, loading } = useDashboardStats()
   const navigate = useNavigate()
+  const [infoAgendadosOpen, setInfoAgendadosOpen] = useState(false)
 
   return (
     <div className="flex flex-col gap-6">
@@ -86,6 +89,7 @@ export function Dashboard() {
             label: 'Agendados',
             value: `${agendadosSemana.cantidad} turno${agendadosSemana.cantidad === 1 ? '' : 's'}`,
             secondary: `~${formatCurrency(agendadosSemana.ingresoAprox)}`,
+            onInfoClick: () => setInfoAgendadosOpen(true),
           }}
         />
         <SplitStatCard
@@ -98,6 +102,7 @@ export function Dashboard() {
             label: 'Agendados',
             value: `${agendadosMes.cantidad} turno${agendadosMes.cantidad === 1 ? '' : 's'}`,
             secondary: `~${formatCurrency(agendadosMes.ingresoAprox)}`,
+            onInfoClick: () => setInfoAgendadosOpen(true),
           }}
         />
       </div>
@@ -105,6 +110,27 @@ export function Dashboard() {
       <div className="rounded-2xl border border-border bg-surface p-5">
         <MonthlyChart data={serieSeisMeses} />
       </div>
+
+      <Modal
+        open={infoAgendadosOpen}
+        onClose={() => setInfoAgendadosOpen(false)}
+        title='¿Cómo se calcula "Agendados"?'
+        widthClassName="max-w-sm"
+      >
+        <div className="flex flex-col gap-3 text-sm text-ink-muted">
+          <p>
+            <span className="font-medium text-ink">Cantidad:</span> turnos con estado Agendado que todavía quedan
+            entre hoy y el final de la semana o el mes en curso.
+          </p>
+          <p>
+            <span className="font-medium text-ink">Ingreso aproximado:</span> como un turno Agendado todavía puede
+            cancelarse o cambiar antes de concretarse, no se usa su precio cargado — se estima con el precio
+            promedio de los últimos 10 turnos ya Finalizados (el precio real cobrado, sea de uno o varios
+            tratamientos combinados), multiplicado por la cantidad de Agendados. Por eso aparece con el signo{' '}
+            <span className="font-medium text-ink">~</span>: es una proyección, no un monto exacto.
+          </p>
+        </div>
+      </Modal>
     </div>
   )
 }
