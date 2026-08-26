@@ -183,6 +183,17 @@ export const ClipboardListIcon = ({ className }: IconProps) => (
   </svg>
 )
 
+export const ListIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <line x1="9" y1="6" x2="20" y2="6" />
+    <line x1="9" y1="12" x2="20" y2="12" />
+    <line x1="9" y1="18" x2="20" y2="18" />
+    <line x1="4" y1="6" x2="4.01" y2="6" />
+    <line x1="4" y1="12" x2="4.01" y2="12" />
+    <line x1="4" y1="18" x2="4.01" y2="18" />
+  </svg>
+)
+
 export const InfoIcon = ({ className }: IconProps) => (
   <svg {...base} className={className}>
     <circle cx="12" cy="12" r="10" />

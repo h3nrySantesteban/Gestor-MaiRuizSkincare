@@ -4,7 +4,7 @@ import { usePacientes } from '../hooks/usePacientes'
 import { usePacienteIdsConNotasEnTurnos } from '../hooks/usePacienteIdsConNotasEnTurnos'
 import { useTurnoCountsPorPaciente } from '../hooks/useTurnoCountsPorPaciente'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
-import { ChevronDownIcon, InstagramIcon, NoteIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
+import { InstagramIcon, ListIcon, NoteIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { instagramLink, waLink } from '../lib/links'
 import { normalizeSearch } from '../lib/text'
@@ -43,22 +43,22 @@ export function Pacientes() {
             {pacientes.length} paciente{pacientes.length === 1 ? '' : 's'}
           </p>
         </div>
-        <button type="button" onClick={openNuevo} className={primaryBtnClass}>
-          + Nuevo paciente
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <OrdenDropdown value={orden} onChange={setOrden} />
+          <button type="button" onClick={openNuevo} className={primaryBtnClass}>
+            + Nuevo paciente
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 sm:max-w-sm sm:flex-1">
-          <SearchIcon className="h-4 w-4 shrink-0 text-ink-muted" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre..."
-            className="w-full text-base text-ink outline-none"
-          />
-        </div>
-        <OrdenDropdown value={orden} onChange={setOrden} />
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 sm:max-w-sm">
+        <SearchIcon className="h-4 w-4 shrink-0 text-ink-muted" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nombre..."
+          className="w-full text-base text-ink outline-none"
+        />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -164,11 +164,10 @@ function OrdenDropdown({ value, onChange }: OrdenDropdownProps) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink"
+        aria-label={`Ordenar pacientes (actual: ${value})`}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
       >
-        <span className="text-ink-muted">Ordenar:</span>
-        {value}
-        <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ListIcon className="h-5 w-5" />
       </button>
 
       {open && (
