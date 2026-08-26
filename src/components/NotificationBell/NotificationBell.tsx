@@ -84,30 +84,44 @@ export function NotificationBell() {
             {notificaciones.length === 0 && (
               <p className="px-4 py-6 text-center text-sm text-ink-muted">Sin notificaciones todavía.</p>
             )}
-            {notificaciones.map((n) => (
-              <button
-                key={n.id}
-                type="button"
-                onClick={() => handleClick(n)}
-                className={`block w-full border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-surface-muted ${
-                  n.leida ? '' : 'bg-primary-50'
-                }`}
-              >
-                <div className="mb-1 flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${TIPO_CLASS[n.tipo]}`}>
-                    {TIPO_LABEL[n.tipo]}
-                  </span>
-                  {!n.leida && <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />}
-                </div>
-                {n.turno && (
-                  <p className="text-sm text-ink">
-                    {n.turno.pacienteNombre} — turno {formatFechaHora(n.turno.fecha)}
-                  </p>
-                )}
-                {n.mensajeOriginal && <p className="mt-0.5 truncate text-xs text-ink-muted">"{n.mensajeOriginal}"</p>}
-                <p className="mt-1 text-[11px] text-ink-muted">{formatFechaHora(n.createdAt)}</p>
-              </button>
-            ))}
+            {notificaciones.map((n) => {
+              // la línea principal identifica de qué/quién se trata — turno
+              // si hay uno matcheado, o el nombre puesto en el form para
+              // formulario_nuevo (que no tiene turno asociado). La etiqueta
+              // de tipo va al lado, en el mismo renglón, no arriba.
+              const principal = n.turno
+                ? `${n.turno.pacienteNombre} — turno ${formatFechaHora(n.turno.fecha)}`
+                : n.tipo === 'formulario_nuevo'
+                  ? (n.mensajeOriginal ?? 'Formulario nuevo')
+                  : null
+              const mensajeAparte = n.mensajeOriginal && n.tipo !== 'formulario_nuevo'
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => handleClick(n)}
+                  className={`block w-full border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-surface-muted ${
+                    n.leida ? '' : 'bg-primary-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    {principal ? (
+                      <p className="min-w-0 truncate text-sm text-ink">{principal}</p>
+                    ) : (
+                      <span />
+                    )}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${TIPO_CLASS[n.tipo]}`}>
+                        {TIPO_LABEL[n.tipo]}
+                      </span>
+                      {!n.leida && <span className="h-1.5 w-1.5 rounded-full bg-primary-500" />}
+                    </div>
+                  </div>
+                  {mensajeAparte && <p className="mt-0.5 truncate text-xs text-ink-muted">"{n.mensajeOriginal}"</p>}
+                  <p className="mt-1 text-[11px] text-ink-muted">{formatFechaHora(n.createdAt)}</p>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
