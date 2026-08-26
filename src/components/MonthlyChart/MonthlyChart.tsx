@@ -127,7 +127,10 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
                 tickLine={false}
                 width={56}
               />
-              <Tooltip cursor={{ fill: 'var(--color-surface-muted)' }} content={<ChartTooltip diaDeHoy={diaDeHoy} />} />
+              {/* cursor=false: sin esto, Recharts pinta un rectángulo de fondo
+                  detrás de toda la columna al tocar/hacer hover — se veía
+                  como si estuviera "seleccionando" esa franja del gráfico */}
+              <Tooltip cursor={false} content={<ChartTooltip diaDeHoy={diaDeHoy} />} />
               <Bar dataKey="ingresos" name="Total del mes" fill="var(--color-primary-700)" radius={[4, 4, 0, 0]} maxBarSize={20} />
               <Bar
                 dataKey="ingresosAlaFecha"
