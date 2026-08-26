@@ -1,25 +1,34 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePacientes } from '../hooks/usePacientes'
 import { usePacienteIdsConNotasEnTurnos } from '../hooks/usePacienteIdsConNotasEnTurnos'
+import { useTurnoCountsPorPaciente } from '../hooks/useTurnoCountsPorPaciente'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
-import { InstagramIcon, NoteIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
+import { ChevronDownIcon, InstagramIcon, NoteIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { instagramLink, waLink } from '../lib/links'
 import { normalizeSearch } from '../lib/text'
 
+const ORDENES = ['Alfabético', 'Cantidad de turnos'] as const
+type Orden = (typeof ORDENES)[number]
+
 export function Pacientes() {
   const { pacientes, loading, refetch } = usePacientes()
   const pacienteIdsConNotasEnTurnos = usePacienteIdsConNotasEnTurnos()
+  const turnoCounts = useTurnoCountsPorPaciente()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [orden, setOrden] = useState<Orden>('Alfabético')
 
   const filtered = useMemo(() => {
     const q = normalizeSearch(query.trim())
-    if (!q) return pacientes
-    return pacientes.filter((p) => normalizeSearch(p.nombreCompleto).includes(q))
-  }, [pacientes, query])
+    const base = q ? pacientes.filter((p) => normalizeSearch(p.nombreCompleto).includes(q)) : pacientes
+    if (orden === 'Alfabético') return base
+    // usePacientes ya trae orden alfabético de la base — acá solo se
+    // reordena por cantidad, de más a menos turnos
+    return [...base].sort((a, b) => (turnoCounts.get(b.id) ?? 0) - (turnoCounts.get(a.id) ?? 0))
+  }, [pacientes, query, orden, turnoCounts])
 
   function openNuevo() {
     setFormOpen(true)
@@ -39,14 +48,17 @@ export function Pacientes() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 sm:max-w-sm">
-        <SearchIcon className="h-4 w-4 shrink-0 text-ink-muted" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por nombre..."
-          className="w-full text-base text-ink outline-none"
-        />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 sm:max-w-sm sm:flex-1">
+          <SearchIcon className="h-4 w-4 shrink-0 text-ink-muted" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre..."
+            className="w-full text-base text-ink outline-none"
+          />
+        </div>
+        <OrdenDropdown value={orden} onChange={setOrden} />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -117,6 +129,67 @@ export function Pacientes() {
       </div>
 
       <NuevoPacienteForm open={formOpen} onClose={() => setFormOpen(false)} onSaved={() => refetch()} />
+    </div>
+  )
+}
+
+interface OrdenDropdownProps {
+  value: Orden
+  onChange: (orden: Orden) => void
+}
+
+// mismo patrón que TratamientoFilterDropdown en Turnos.tsx: trigger + panel
+// que cierra al clickear afuera o con Escape
+function OrdenDropdown({ value, onChange }: OrdenDropdownProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [])
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink"
+      >
+        <span className="text-ink-muted">Ordenar:</span>
+        {value}
+        <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 flex w-48 flex-col gap-0.5 rounded-lg border border-border bg-surface p-1 shadow-lg">
+          {ORDENES.map((o) => (
+            <button
+              key={o}
+              type="button"
+              onClick={() => {
+                onChange(o)
+                setOpen(false)
+              }}
+              className={`rounded px-2 py-1.5 text-left text-sm hover:bg-surface-muted ${
+                o === value ? 'bg-primary-50 text-primary-700' : 'text-ink'
+              }`}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
