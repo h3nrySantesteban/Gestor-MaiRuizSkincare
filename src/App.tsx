@@ -1,10 +1,9 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute'
 import { AppLayout } from './components/AppLayout/AppLayout'
 import { Login } from './pages/Login'
-import { Landing } from './pages/Landing'
 import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { TermsOfService } from './pages/TermsOfService'
 
@@ -27,11 +26,11 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          {/* públicas a propósito: Google exige que la página principal, la
-              política de privacidad y los términos de servicio sean
-              accesibles sin login para la revisión del scope sensible de
-              Calendar */}
-          <Route path="/" element={<Landing />} />
+          {/* /privacidad y /terminos quedan públicas — no se persigue la
+              verificación del scope sensible de Calendar (ver CLAUDE.md),
+              pero por las dudas de que el consent screen de OAuth todavía
+              las referencie no cuesta nada dejarlas accesibles. */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/privacidad" element={<PrivacyPolicy />} />
           <Route path="/terminos" element={<TermsOfService />} />
