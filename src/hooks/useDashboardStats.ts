@@ -21,9 +21,16 @@ export interface RangoStats {
 
 export interface AgendadosStats {
   cantidad: number
-  /** promedio de precio de los tratamientos activos × cantidad — muchos turnos se cargan sin tratamiento, así que precio no siempre refleja lo que se va a cobrar */
+  /** promedio de precio (turno.precio, no por tratamiento) de los últimos 10 turnos Finalizados × cantidad */
   ingresoAprox: number
 }
+
+// cantidad de turnos Finalizados recientes que se promedian para proyectar
+// el ingreso de los Agendados — turno.precio y no el precio de catálogo de
+// un tratamiento, porque muchos turnos combinan varios tratamientos (el
+// promedio de precios de catálogo por tratamiento individual subestimaba
+// esos casos)
+const TURNOS_PARA_PROMEDIO = 10
 
 // cantidad de turnos que se traen para el widget "Próximos turnos" del
 // Dashboard — de ahí el grid con auto-fill recorta a los que entren en una
@@ -66,7 +73,7 @@ export function useDashboardStats() {
     // siguiente — ensanchamos el límite superior para no cortar esos turnos
     const hasta = finDeSemana > finDeMes ? finDeSemana : finDeMes
 
-    const [historicoRes, proximosRes, tratamientosRes] = await Promise.all([
+    const [historicoRes, proximosRes, ultimosFinalizadosRes] = await Promise.all([
       supabase
         .from('turnos')
         .select(TURNO_SELECT)
@@ -81,14 +88,20 @@ export function useDashboardStats() {
         .eq('estado', 'Agendado')
         .order('fecha', { ascending: true })
         .limit(PROXIMOS_TURNOS_LIMIT),
-      // es_sena excluido: no es un tratamiento real, incluirlo en el
-      // promedio infla la proyección de ingresos futuros de los agendados
-      supabase.from('tratamientos').select('precio').eq('activo', true).eq('es_sena', false),
+      supabase
+        .from('turnos')
+        .select('precio')
+        .eq('estado', 'Finalizado')
+        .order('fecha', { ascending: false })
+        .limit(TURNOS_PARA_PROMEDIO),
     ])
 
-    if (historicoRes.error || proximosRes.error || tratamientosRes.error) {
+    if (historicoRes.error || proximosRes.error || ultimosFinalizadosRes.error) {
       setError(
-        historicoRes.error?.message ?? proximosRes.error?.message ?? tratamientosRes.error?.message ?? 'Error desconocido',
+        historicoRes.error?.message ??
+          proximosRes.error?.message ??
+          ultimosFinalizadosRes.error?.message ??
+          'Error desconocido',
       )
       setLoading(false)
       return
@@ -96,8 +109,9 @@ export function useDashboardStats() {
     setError(null)
 
     const turnos = (historicoRes.data as unknown as TurnoRow[]).map(mapTurnoRow)
-    const precios = (tratamientosRes.data ?? []).map((t) => t.precio as number)
-    const precioPromedio = precios.length > 0 ? precios.reduce((acc, p) => acc + p, 0) / precios.length : 0
+    const preciosRecientes = (ultimosFinalizadosRes.data ?? []).map((t) => t.precio as number)
+    const precioPromedio =
+      preciosRecientes.length > 0 ? preciosRecientes.reduce((acc, p) => acc + p, 0) / preciosRecientes.length : 0
 
     // 6 buckets fijos (aunque algún mes tenga 0 turnos) para que el gráfico no salte de eje
     const buckets: MesSerie[] = Array.from({ length: 6 }, (_, i) => {
