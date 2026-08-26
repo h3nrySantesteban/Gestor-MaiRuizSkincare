@@ -23,8 +23,10 @@ interface NuevoPacienteFormProps {
   /** solo aplica al editar un paciente existente — al crear no hay nada que borrar */
   onDeleted?: () => void
   paciente?: Paciente | null
-  /** pre-completa el nombre cuando se abre desde "crear nuevo" en el combobox del turno */
+  /** pre-completa al abrir desde "crear nuevo" en el combobox del turno, o desde un formulario sin paciente asignado */
   initialNombre?: string
+  initialTelefono?: string
+  initialEmail?: string
 }
 
 // Wrapper que solo monta NuevoPacienteFormInner mientras open=true: así cada
@@ -35,12 +37,20 @@ export function NuevoPacienteForm(props: NuevoPacienteFormProps) {
   return <NuevoPacienteFormInner {...props} />
 }
 
-function NuevoPacienteFormInner({ onClose, onSaved, onDeleted, paciente, initialNombre }: NuevoPacienteFormProps) {
+function NuevoPacienteFormInner({
+  onClose,
+  onSaved,
+  onDeleted,
+  paciente,
+  initialNombre,
+  initialTelefono,
+  initialEmail,
+}: NuevoPacienteFormProps) {
   const { create, update, remove } = usePacientes()
   const [nombreCompleto, setNombreCompleto] = useState(paciente?.nombreCompleto ?? initialNombre ?? '')
-  const [telefono, setTelefono] = useState(paciente?.telefono ?? '')
+  const [telefono, setTelefono] = useState(paciente?.telefono ?? initialTelefono ?? '')
   const [instagram, setInstagram] = useState(paciente?.instagram ?? '')
-  const [email, setEmail] = useState(paciente?.email ?? '')
+  const [email, setEmail] = useState(paciente?.email ?? initialEmail ?? '')
   const [notas, setNotas] = useState(paciente?.notas ?? '')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)

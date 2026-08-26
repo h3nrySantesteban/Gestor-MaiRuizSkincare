@@ -22,8 +22,12 @@ function normalizarTelefonoArgentino(raw: string): string | null {
   return digits.length === 10 ? `549${digits}` : null
 }
 
-/** Teléfono y email que se pueden completar en el paciente a partir de una respuesta de formulario. */
-function contactoDesdeFormulario(respuestas: Record<string, string>): { telefono: string | null; email: string | null } {
+/**
+ * Teléfono y email que se pueden completar en el paciente a partir de una
+ * respuesta de formulario. También se usa para precompletar el form de
+ * "crear nuevo paciente" cuando se arranca desde una respuesta sin asignar.
+ */
+export function contactoDesdeFormulario(respuestas: Record<string, string>): { telefono: string | null; email: string | null } {
   const telefonoRaw = respuestas[CAMPO_TELEFONO]?.trim()
   const emailRaw = respuestas[CAMPO_EMAIL]?.trim()
   return {

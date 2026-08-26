@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useRespuestasFormulario } from '../hooks/useRespuestasFormulario'
 import { usePacientes } from '../hooks/usePacientes'
 import { PacienteCombobox } from '../components/PacienteCombobox/PacienteCombobox'
+import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { ArrowUpRightIcon, ChevronDownIcon } from '../components/icons'
 import { formatFechaHora } from '../lib/format'
-import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
+import { completarContactoDesdeFormulario, contactoDesdeFormulario } from '../lib/formularioContacto'
+import type { Paciente } from '../types/paciente'
 
 // "Nombre y apellido" es la pregunta del form que mejor identifica de un
 // vistazo quién la completó — se usa como título de la tarjeta mientras no
@@ -22,8 +24,14 @@ export function Formularios() {
   const [asignandoId, setAsignandoId] = useState<string | null>(null)
   const [pacienteElegido, setPacienteElegido] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
+  // id de la respuesta para la que se abrió "crear nuevo paciente" — asigna
+  // automático al paciente recién creado en onSaved, ya que crearlo desde
+  // acá justamente significa que es la persona de esta respuesta
+  const [nuevoPacienteParaId, setNuevoPacienteParaId] = useState<string | null>(null)
 
   const sinAsignar = respuestas.filter((r) => !r.pacienteId).length
+  const respuestaNuevoPaciente = respuestas.find((r) => r.id === nuevoPacienteParaId) ?? null
+  const contactoNuevoPaciente = respuestaNuevoPaciente ? contactoDesdeFormulario(respuestaNuevoPaciente.respuestas) : null
 
   async function handleAsignar(respuestaId: string) {
     if (!pacienteElegido) return
@@ -38,6 +46,13 @@ export function Formularios() {
     } finally {
       setGuardando(false)
     }
+  }
+
+  async function handleNuevoPacienteCreado(p: Paciente) {
+    if (nuevoPacienteParaId) await asignar(nuevoPacienteParaId, p.id)
+    setNuevoPacienteParaId(null)
+    setAsignandoId(null)
+    setPacienteElegido(null)
   }
 
   return (
@@ -111,8 +126,15 @@ export function Formularios() {
                     <div className="flex flex-col gap-2 rounded-lg bg-surface-muted p-3 sm:flex-row sm:items-center">
                       {asignandoId === r.id ? (
                         <>
-                          <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                             <PacienteCombobox pacientes={pacientes} value={pacienteElegido} onChange={setPacienteElegido} />
+                            <button
+                              type="button"
+                              onClick={() => setNuevoPacienteParaId(r.id)}
+                              className="w-fit text-xs font-medium text-primary-600 hover:underline"
+                            >
+                              + Nuevo paciente
+                            </button>
                           </div>
                           <div className="flex shrink-0 gap-2">
                             <button
@@ -167,6 +189,15 @@ export function Formularios() {
           </p>
         )}
       </div>
+
+      <NuevoPacienteForm
+        open={nuevoPacienteParaId !== null}
+        onClose={() => setNuevoPacienteParaId(null)}
+        onSaved={handleNuevoPacienteCreado}
+        initialNombre={respuestaNuevoPaciente?.respuestas[CAMPO_NOMBRE] || undefined}
+        initialTelefono={contactoNuevoPaciente?.telefono ?? undefined}
+        initialEmail={contactoNuevoPaciente?.email ?? undefined}
+      />
     </div>
   )
 }
