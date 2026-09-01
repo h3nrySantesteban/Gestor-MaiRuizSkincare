@@ -1,0 +1,16 @@
+{
+  "name": "Gestor de Turnos — Mai Ruiz Skincare",
+  "short_name": "Turnos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f3f1",
+  "theme_color": "#f7f3f1",
+  "icons": [
+    {
+      "src": "/valentines-flower-svgrepo-com.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

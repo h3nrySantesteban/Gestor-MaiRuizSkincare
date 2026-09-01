@@ -4,6 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/valentines-flower-svgrepo-com.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Sin esto, un acceso directo agregado a la pantalla de inicio en iOS
+         sigue abriendo la barra de direcciones y la toolbar de Safari en vez
+         de una app a pantalla completa — apple-mobile-web-app-capable es lo
+         que activa el modo standalone en iOS; mobile-web-app-capable es el
+         nombre estándar (Android/Chrome) que además lo va reemplazando de a
+         poco, se incluyen los dos por compatibilidad. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- "default" a propósito, no "black-translucent": ese modo hace que el
+         contenido se dibuje debajo de la barra de estado/notch, y esta app
+         no tiene padding de safe-area-inset-top en ningún lado — usarlo
+         taparía el header (hamburguesa/campanita) detrás del notch en
+         iPhones con Face ID. "default" reserva su propio espacio, sin ese
+         riesgo, a costa de no adaptarse al tema oscuro (queda una franja
+         clara siempre, ya que este meta no se puede togglear en runtime
+         como el theme-color de abajo). -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Turnos" />
     <meta name="google-site-verification" content="msQUl-LfxNNIlzqOg6iG_vGfxrfNZL9FfEXvXEn0krI" />
     <meta
       name="description"
