@@ -35,7 +35,7 @@ export function formatFecha(iso: string): string {
 // columnas `date` de Postgres sin hora, como gastos.fecha — turnos.fecha es
 // timestamptz y ya trae zona, formatFecha/formatFechaHora de arriba le
 // pegan bien directo.
-function parseFechaSolo(fecha: string): Date {
+export function parseFechaSolo(fecha: string): Date {
   const [year, month, day] = fecha.split('-').map(Number)
   return new Date(year, month - 1, day)
 }

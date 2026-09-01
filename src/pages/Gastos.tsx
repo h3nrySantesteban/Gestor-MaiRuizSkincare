@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
 import { primaryBtnClass } from '../components/forms/FormField'
-import { formatCurrency, formatFechaSolo, formatMesAno } from '../lib/format'
+import { formatCurrency, formatFechaSolo, formatMesAno, parseFechaSolo } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
 
 const UNIDAD_LABELS: Record<RecurrenciaUnidad, { singular: string; plural: string }> = {
@@ -16,12 +16,35 @@ function formatRecurrencia(numero: number, unidad: RecurrenciaUnidad): string {
   return `cada ${numero} ${numero === 1 ? singular : plural}`
 }
 
-// new Date() sin argumentos siempre es hora local del dispositivo — a
-// diferencia de parsear un string 'YYYY-MM-DD' (ver formatFechaSolo en
-// lib/format.ts), esto no tiene el problema del corrimiento UTC.
-function mesActualKey(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+// Un gasto fijo solo tiene UNA fila con UNA fecha (la de cuando se cargó
+// por primera vez) — la recurrencia no genera filas nuevas (ver
+// useGastos.ts). Para saber si "aplica este mes" hay que proyectarla hacia
+// adelante desde esa fecha en pasos de recurrenciaNumero/recurrenciaUnidad
+// y ver si el mes buscado cae en alguno de esos pasos — comparar la fecha
+// tal cual contra el mes actual (lo que hacía la versión anterior) solo
+// daba el resultado correcto el mismísimo mes en que se cargó el gasto, y
+// nunca más después.
+function ocurreEnMes(gasto: Gasto, targetYear: number, targetMonth: number): boolean {
+  if (!gasto.esFijo || !gasto.recurrenciaNumero || !gasto.recurrenciaUnidad) return false
+  const inicio = parseFechaSolo(gasto.fecha)
+  const primerDiaMes = new Date(targetYear, targetMonth - 1, 1)
+  const primerDiaMesSiguiente = new Date(targetYear, targetMonth, 1)
+  if (inicio >= primerDiaMesSiguiente) return false // todavía no arrancó
+
+  if (gasto.recurrenciaUnidad === 'mes') {
+    // los meses no tienen la misma cantidad de días — para esta unidad se
+    // resuelve por aritmética de meses en vez de días, así "cada 1 mes"
+    // arrancando el 31 no se salta meses más cortos
+    const mesesDesdeInicio = (targetYear - inicio.getFullYear()) * 12 + (targetMonth - 1 - inicio.getMonth())
+    return mesesDesdeInicio >= 0 && mesesDesdeInicio % gasto.recurrenciaNumero === 0
+  }
+
+  const msPorDia = 24 * 60 * 60 * 1000
+  const pasoDias = gasto.recurrenciaUnidad === 'semana' ? gasto.recurrenciaNumero * 7 : gasto.recurrenciaNumero
+  const diasHastaElMes = Math.round((primerDiaMes.getTime() - inicio.getTime()) / msPorDia)
+  const kMin = diasHastaElMes <= 0 ? 0 : Math.ceil(diasHastaElMes / pasoDias)
+  const proximaOcurrenciaMs = inicio.getTime() + kMin * pasoDias * msPorDia
+  return proximaOcurrenciaMs < primerDiaMesSiguiente.getTime()
 }
 
 interface GrupoMes {
@@ -65,8 +88,8 @@ export function Gastos() {
   }
 
   const gastosFijosDelMes = useMemo(() => {
-    const mesActual = mesActualKey()
-    return gastos.filter((g) => g.esFijo && g.fecha.slice(0, 7) === mesActual)
+    const hoy = new Date()
+    return gastos.filter((g) => ocurreEnMes(g, hoy.getFullYear(), hoy.getMonth() + 1))
   }, [gastos])
 
   const gruposPorMes = useMemo(() => agruparPorMes(gastos), [gastos])
