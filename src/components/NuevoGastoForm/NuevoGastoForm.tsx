@@ -160,7 +160,7 @@ function NuevoGastoFormInner({ onClose, onSaved, onDeleted, gasto }: NuevoGastoF
                 ref={valorRef}
                 type="number"
                 min="0"
-                step="1000"
+                step="any"
                 inputMode="decimal"
                 value={valor}
                 onChange={(e) => setValor(e.target.value)}
