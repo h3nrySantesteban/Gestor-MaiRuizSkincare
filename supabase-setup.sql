@@ -382,3 +382,43 @@ alter publication supabase_realtime add table public.respuestas_formulario;
 alter table public.notificaciones drop constraint notificaciones_tipo_check;
 alter table public.notificaciones add constraint notificaciones_tipo_check
   check (tipo in ('confirmado', 'cancelado', 'reprogramar', 'no_reconocido', 'formulario_nuevo'));
+
+-- ============================================================
+-- Gastos
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- Gastos de servicios e insumos del consultorio, cargados a mano por Mai.
+-- es_fijo marca un gasto recurrente (alquiler, un insumo que se repite,
+-- etc.) — recurrencia_numero/unidad son puramente informativos ("cada 1
+-- mes"), no generan filas nuevas solos: cada ocurrencia real se sigue
+-- cargando a mano cuando pasa, esto no es un generador automático.
+-- fecha es date (no timestamptz, a diferencia de turnos): a un gasto no le
+-- importa la hora, solo el día.
+-- ============================================================
+create table public.gastos (
+  id uuid primary key default gen_random_uuid(),
+  nombre text not null,
+  valor numeric(12, 2) not null,
+  fecha date not null default current_date,
+  descripcion text,
+  es_fijo boolean not null default false,
+  recurrencia_numero integer,
+  recurrencia_unidad text check (recurrencia_unidad in ('dia', 'semana', 'mes')),
+  created_at timestamptz not null default now(),
+  -- ambos campos de recurrencia van juntos: presentes solo si es_fijo,
+  -- ausentes si no — evita que quede un número "cada 3" huérfano sin unidad
+  -- (o viceversa) sin que el código tenga que blindarse contra ese caso
+  constraint gastos_recurrencia_solo_si_fijo check (
+    (es_fijo and recurrencia_numero is not null and recurrencia_unidad is not null)
+    or (not es_fijo and recurrencia_numero is null and recurrencia_unidad is null)
+  )
+);
+
+create index gastos_fecha_idx on public.gastos (fecha);
+
+alter table public.gastos enable row level security;
+
+create policy "auth manage gastos" on public.gastos for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');

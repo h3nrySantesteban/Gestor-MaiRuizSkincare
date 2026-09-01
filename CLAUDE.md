@@ -56,6 +56,16 @@ functions under `/api`.
 - `notificaciones`: written only by `api/whatsapp-webhook.ts`, read/marked-read
   by the frontend. `turno_id` is nullable — an unrecognized sender or an
   unmatched reply still produces a row so nothing silently drops.
+- `gastos`: Mai's own expense log (servicios/insumos), entirely separate from
+  `turnos` — **not** netted against revenue anywhere (Dashboard/Analytics
+  `ingresos` stay untouched), this is expense bookkeeping only, not a P&L
+  view. `es_fijo` + `recurrencia_numero`/`recurrencia_unidad` are
+  informational only ("cada 1 mes", shown as a badge in
+  [Gastos.tsx](src/pages/Gastos.tsx)) — nothing generates the next
+  occurrence automatically, Mai still logs each one by hand when it happens.
+  `fecha` is a plain `date` (unlike `turnos.fecha`, no time-of-day
+  attached). Not added to `supabase_realtime` — nothing external (bot,
+  webhook) ever writes to this table, so there's nothing to reflect live.
 - `upsert_turno(...)` Postgres function: creates/updates a turno **and**
   replaces its `turno_tratamientos` rows in one transaction (avoids a turno
   ever existing with a partial line-item set from two sequential client

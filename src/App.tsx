@@ -15,6 +15,7 @@ const Pacientes = lazy(() => import('./pages/Pacientes').then((m) => ({ default:
 const PacienteDetalle = lazy(() => import('./pages/PacienteDetalle').then((m) => ({ default: m.PacienteDetalle })))
 const Tratamientos = lazy(() => import('./pages/Tratamientos').then((m) => ({ default: m.Tratamientos })))
 const Formularios = lazy(() => import('./pages/Formularios').then((m) => ({ default: m.Formularios })))
+const Gastos = lazy(() => import('./pages/Gastos').then((m) => ({ default: m.Gastos })))
 const Analytics = lazy(() => import('./pages/Analytics').then((m) => ({ default: m.Analytics })))
 
 function PageFallback() {
@@ -86,6 +87,14 @@ function App() {
               element={
                 <Suspense fallback={<PageFallback />}>
                   <Formularios />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/gastos"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <Gastos />
                 </Suspense>
               }
             />

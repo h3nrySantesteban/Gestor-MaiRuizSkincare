@@ -9,6 +9,7 @@ import {
   BarChartIcon,
   CalendarIcon,
   ClipboardListIcon,
+  DollarSignIcon,
   HomeIcon,
   LogOutIcon,
   MenuIcon,
@@ -26,6 +27,7 @@ const NAV_ITEMS = [
   { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false },
   { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false },
   { to: '/formularios', label: 'Formularios', icon: ClipboardListIcon, end: false },
+  { to: '/gastos', label: 'Gastos', icon: DollarSignIcon, end: false },
   { to: '/analytics', label: 'Analytics', icon: BarChartIcon, end: false },
 ]
 
