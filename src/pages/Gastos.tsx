@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
 import { primaryBtnClass } from '../components/forms/FormField'
-import { formatCurrency, formatFecha } from '../lib/format'
+import { formatCurrency, formatFechaSolo, formatMesAno } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
 
 const UNIDAD_LABELS: Record<RecurrenciaUnidad, { singular: string; plural: string }> = {
@@ -14,6 +14,39 @@ const UNIDAD_LABELS: Record<RecurrenciaUnidad, { singular: string; plural: strin
 function formatRecurrencia(numero: number, unidad: RecurrenciaUnidad): string {
   const { singular, plural } = UNIDAD_LABELS[unidad]
   return `cada ${numero} ${numero === 1 ? singular : plural}`
+}
+
+// new Date() sin argumentos siempre es hora local del dispositivo — a
+// diferencia de parsear un string 'YYYY-MM-DD' (ver formatFechaSolo en
+// lib/format.ts), esto no tiene el problema del corrimiento UTC.
+function mesActualKey(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+interface GrupoMes {
+  key: string
+  label: string
+  gastos: Gasto[]
+}
+
+// gastos ya viene ordenado desc por fecha (useGastos) — agrupar en ese
+// mismo recorrido preserva el orden de los meses (más reciente primero)
+// sin necesitar un sort aparte.
+function agruparPorMes(gastos: Gasto[]): GrupoMes[] {
+  const grupos: GrupoMes[] = []
+  const porKey = new Map<string, GrupoMes>()
+  for (const g of gastos) {
+    const key = g.fecha.slice(0, 7)
+    let grupo = porKey.get(key)
+    if (!grupo) {
+      grupo = { key, label: formatMesAno(g.fecha), gastos: [] }
+      porKey.set(key, grupo)
+      grupos.push(grupo)
+    }
+    grupo.gastos.push(g)
+  }
+  return grupos
 }
 
 export function Gastos() {
@@ -31,7 +64,12 @@ export function Gastos() {
     setFormOpen(true)
   }
 
-  // fecha ya viene ordenada desc por la consulta (useGastos), acá no hace falta reordenar
+  const gastosFijosDelMes = useMemo(() => {
+    const mesActual = mesActualKey()
+    return gastos.filter((g) => g.esFijo && g.fecha.slice(0, 7) === mesActual)
+  }, [gastos])
+
+  const gruposPorMes = useMemo(() => agruparPorMes(gastos), [gastos])
 
   return (
     <div className="flex flex-col gap-6">
@@ -45,28 +83,34 @@ export function Gastos() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-2">
-        {gastos.map((g) => (
-          <button
-            key={g.id}
-            type="button"
-            onClick={() => openEdit(g)}
-            className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 text-left sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-medium text-ink">{g.nombre}</p>
-                <span className="text-xs text-ink-muted">{formatFecha(g.fecha)}</span>
-                {g.esFijo && g.recurrenciaNumero && g.recurrenciaUnidad && (
-                  <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
-                    Fijo · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}
-                  </span>
-                )}
-              </div>
-              {g.descripcion && <p className="mt-0.5 truncate text-sm text-ink-muted">{g.descripcion}</p>}
+      {/* si todavía no hay ningún gasto cargado, esta sección quedaría
+          duplicando el estado vacío de abajo — se oculta hasta que haya algo */}
+      {gastos.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold text-ink-muted">Gastos fijos de este mes</h2>
+          <div className="flex flex-col gap-2">
+            {gastosFijosDelMes.map((g) => (
+              <GastoRow key={g.id} gasto={g} onClick={() => openEdit(g)} />
+            ))}
+            {gastosFijosDelMes.length === 0 && (
+              <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-ink-muted">
+                No hay gastos fijos cargados este mes.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {gruposPorMes.map((grupo) => (
+          <div key={grupo.key} className="flex flex-col gap-2">
+            <h2 className="text-sm font-semibold text-ink-muted">{grupo.label}</h2>
+            <div className="flex flex-col gap-2">
+              {grupo.gastos.map((g) => (
+                <GastoRow key={g.id} gasto={g} onClick={() => openEdit(g)} />
+              ))}
             </div>
-            <p className="shrink-0 font-semibold text-ink sm:text-right">{formatCurrency(g.valor)}</p>
-          </button>
+          </div>
         ))}
 
         {!loading && gastos.length === 0 && (
@@ -84,5 +128,32 @@ export function Gastos() {
         gasto={editing}
       />
     </div>
+  )
+}
+
+function GastoRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 text-left sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium text-ink">{g.nombre}</p>
+          <span className="text-xs text-ink-muted">{formatFechaSolo(g.fecha)}</span>
+        </div>
+        {g.descripcion && <p className="mt-0.5 truncate text-sm text-ink-muted">{g.descripcion}</p>}
+      </div>
+      {/* Fijo + valor van juntos, mismo renglón, alineados a la derecha */}
+      <div className="flex shrink-0 items-center justify-end gap-2">
+        {g.esFijo && g.recurrenciaNumero && g.recurrenciaUnidad && (
+          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+            Fijo · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}
+          </span>
+        )}
+        <p className="font-semibold text-ink">{formatCurrency(g.valor)}</p>
+      </div>
+    </button>
   )
 }
