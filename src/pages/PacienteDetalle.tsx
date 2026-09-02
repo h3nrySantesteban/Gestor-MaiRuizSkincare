@@ -15,7 +15,7 @@ import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
 import { normalizeSearch } from '../lib/text'
 import type { Turno } from '../types/turno'
 
-const BACK_LABELS: Record<string, string> = { '/dashboard': 'Dashboard', '/turnos': 'Turnos', '/formularios': 'Formularios' }
+const BACK_LABELS: Record<string, string> = { '/dashboard': 'Resumen', '/turnos': 'Turnos', '/formularios': 'Formularios' }
 
 export function PacienteDetalle() {
   const { id } = useParams<{ id: string }>()

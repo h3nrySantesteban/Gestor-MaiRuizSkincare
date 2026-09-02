@@ -9,6 +9,7 @@ import { GoogleCalendarConnectBanner } from '../GoogleCalendarConnectBanner/Goog
 import {
   BarChartIcon,
   CalendarIcon,
+  ChevronDownIcon,
   ClipboardListIcon,
   DollarSignIcon,
   HomeIcon,
@@ -22,35 +23,98 @@ import {
   XIcon,
 } from '../icons'
 
+// Submenu de "Resumen" (todo #2): por ahora solo Gastos tiene pantalla
+// propia adonde llevar — el resto (Ingresos, Turnos tipo panel github, Top
+// tratamientos, Top pacientes) todavía no existe como sección separada, así
+// que quedan visibles pero sin destino hasta que se construyan por partes.
+const RESUMEN_SUBMENU: { label: string; to?: string }[] = [
+  { label: 'Gastos', to: '/gastos' },
+  { label: 'Ingresos' },
+  { label: 'Turnos' },
+  { label: 'Top tratamientos' },
+  { label: 'Top pacientes' },
+]
+
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: HomeIcon, end: true },
-  { to: '/turnos', label: 'Turnos', icon: CalendarIcon, end: false },
-  { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false },
-  { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false },
-  { to: '/formularios', label: 'Formularios', icon: ClipboardListIcon, end: false },
-  { to: '/gastos', label: 'Gastos', icon: DollarSignIcon, end: false },
-  { to: '/analytics', label: 'Analytics', icon: BarChartIcon, end: false },
+  { to: '/dashboard', label: 'Resumen', icon: HomeIcon, end: true, submenu: RESUMEN_SUBMENU },
+  { to: '/turnos', label: 'Turnos', icon: CalendarIcon, end: false, submenu: [] },
+  { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false, submenu: [] },
+  { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false, submenu: [] },
+  { to: '/formularios', label: 'Formularios', icon: ClipboardListIcon, end: false, submenu: [] },
+  { to: '/gastos', label: 'Gastos', icon: DollarSignIcon, end: false, submenu: [] },
+  { to: '/analytics', label: 'Analytics', icon: BarChartIcon, end: false, submenu: [] },
 ]
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  // qué ítem tiene el submenu desplegado (por "to", solo uno a la vez) —
+  // arranca cerrado, no hace falta que sobreviva a un cambio de página
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
+
   return (
     <nav className="flex flex-1 flex-col gap-1 px-3">
-      {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-              isActive ? 'bg-primary-50 text-primary-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
-            }`
-          }
-        >
-          <Icon className="h-5 w-5 shrink-0" />
-          {label}
-        </NavLink>
-      ))}
+      {NAV_ITEMS.map(({ to, label, icon: Icon, end, submenu }) => {
+        const expanded = openSubmenu === to
+        return (
+          <div key={to}>
+            <div
+              className={`flex items-center rounded-lg text-sm font-medium transition-colors ${
+                expanded ? '' : 'hover:bg-surface-muted'
+              }`}
+            >
+              <NavLink
+                to={to}
+                end={end}
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  `flex flex-1 items-center gap-3 px-3 py-2.5 ${
+                    isActive ? 'text-primary-700' : 'text-ink-muted hover:text-ink'
+                  }`
+                }
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                {label}
+              </NavLink>
+              {submenu.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setOpenSubmenu(expanded ? null : to)}
+                  aria-label={expanded ? `Ocultar opciones de ${label}` : `Mostrar opciones de ${label}`}
+                  aria-expanded={expanded}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-muted hover:text-ink"
+                >
+                  <ChevronDownIcon className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </div>
+            {expanded && (
+              <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border pl-4">
+                {submenu.map((item) =>
+                  item.to ? (
+                    <NavLink
+                      key={item.label}
+                      to={item.to}
+                      onClick={onNavigate}
+                      className={({ isActive }) =>
+                        `rounded-lg px-3 py-2 text-sm transition-colors ${
+                          isActive ? 'text-primary-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+                        }`
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  ) : (
+                    // sin pantalla propia todavía — visible para mostrar el
+                    // alcance final del menú, pero no navega a nada
+                    <span key={item.label} className="cursor-default px-3 py-2 text-sm text-ink-muted/50">
+                      {item.label}
+                    </span>
+                  ),
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </nav>
   )
 }
