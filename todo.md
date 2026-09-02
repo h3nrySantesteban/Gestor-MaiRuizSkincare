@@ -16,7 +16,7 @@ vez que testeó el cambio y confirmó que quedó bien.
 
 4. [HECHO] Arreglar pantalla de inicio, flashea en pantalla la pagina de inicio vieja que explicaba la app para la verificación de google, y se muestra el login
 
-5. Cambiar calendario al de Mai
+5. Cambiar calendario al de Mai -sinonimo de poner la app en produccion
 
 6. Eliminar Limpieza de los turnos que tengan Limpieza + otro tratamiento
 
@@ -25,3 +25,7 @@ vez que testeó el cambio y confirmó que quedó bien.
 8. Crear nueva instancia de la app si  conexión a la db, con datos hardcodeados en un json levantar como demo
 
 9. Crear una landing previa a la demo
+
+10. Agregar variables de entorno al .env.local para poder testear cuando la app este en produ
+
+11. analizar e implementar carga "skeleton" para que los componentes no salenten en la pagina mientras van cargando y completandose 

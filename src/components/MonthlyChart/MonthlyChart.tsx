@@ -98,7 +98,7 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
         </button>
       </div>
 
-      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 md:mb-4">
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 sm:mb-4">
         <span className="flex items-center gap-1.5 text-xs text-ink-muted">
           <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--color-primary-700)' }} />
           Total del mes
@@ -110,9 +110,13 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
       </div>
 
       {view === 'chart' ? (
-        // más bajo en mobile — parte de achicar el dashboard para que entre
-        // en el viewport de un iPhone sin scroll vertical (todo #2)
-        <div className="h-44 w-full md:h-72">
+        // más bajo solo en pantallas angostas de teléfono (<640px, el sm de
+        // Tailwind sin tocar) — parte de achicar el dashboard para que entre
+        // en el viewport de un iPhone sin scroll vertical (todo #2). "md" en
+        // este proyecto es 1200px (ver index.css), demasiado ancho: un iPad
+        // (768-1200px) quedaba con el gráfico chico de igual manera, con
+        // lugar de sobra sin usar debajo — por eso sm: y no md: acá.
+        <div className="h-44 w-full sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="var(--color-border)" />
