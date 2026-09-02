@@ -29,3 +29,5 @@ vez que testeó el cambio y confirmó que quedó bien.
 10. Agregar variables de entorno al .env.local para poder testear cuando la app este en produ
 
 11. analizar e implementar carga "skeleton" para que los componentes no salenten en la pagina mientras van cargando y completandose 
+
+12. al precionar boton + de la app desplegar opciones para arriba (Nuevo turno, nuevo gasto, Nuevo paciente,)

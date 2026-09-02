@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { TouchEvent } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import type { MouseEvent, TouchEvent } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import { NotificationBell } from '../NotificationBell/NotificationBell'
@@ -11,7 +11,6 @@ import {
   CalendarIcon,
   ChevronDownIcon,
   ClipboardListIcon,
-  DollarSignIcon,
   HomeIcon,
   LogOutIcon,
   MenuIcon,
@@ -41,19 +40,35 @@ const NAV_ITEMS = [
   { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false, submenu: [] },
   { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false, submenu: [] },
   { to: '/formularios', label: 'Formularios', icon: ClipboardListIcon, end: false, submenu: [] },
-  { to: '/gastos', label: 'Gastos', icon: DollarSignIcon, end: false, submenu: [] },
   { to: '/analytics', label: 'Analytics', icon: BarChartIcon, end: false, submenu: [] },
 ]
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
-  // qué ítem tiene el submenu desplegado (por "to", solo uno a la vez) —
-  // arranca cerrado, no hace falta que sobreviva a un cambio de página
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
+interface NavLinksProps {
+  onNavigate?: () => void
+  // levantado a AppLayout (no local) para que sobreviva a que el drawer
+  // mobile se desmonte al cerrarse, y a navegar a otra pantalla y volver
+  openSubmenu: string | null
+  onToggleSubmenu: (to: string) => void
+}
+
+function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
+  const location = useLocation()
 
   return (
     <nav className="flex flex-1 flex-col gap-1 px-3">
       {NAV_ITEMS.map(({ to, label, icon: Icon, end, submenu }) => {
         const expanded = openSubmenu === to
+        const isCurrentPage = location.pathname === to
+        // ya estando en la página, tocar la palabra no tiene nada nuevo
+        // adonde navegar — en vez de ese no-op, despliega/oculta el submenu
+        function handleLabelClick(e: MouseEvent) {
+          if (submenu.length > 0 && isCurrentPage) {
+            e.preventDefault()
+            onToggleSubmenu(to)
+          } else {
+            onNavigate?.()
+          }
+        }
         return (
           <div key={to}>
             <div
@@ -64,7 +79,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
               <NavLink
                 to={to}
                 end={end}
-                onClick={onNavigate}
+                onClick={handleLabelClick}
                 className={({ isActive }) =>
                   `flex flex-1 items-center gap-3 px-3 py-2.5 ${
                     isActive ? 'text-primary-700' : 'text-ink-muted hover:text-ink'
@@ -77,7 +92,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
               {submenu.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setOpenSubmenu(expanded ? null : to)}
+                  onClick={() => onToggleSubmenu(to)}
                   aria-label={expanded ? `Ocultar opciones de ${label}` : `Mostrar opciones de ${label}`}
                   aria-expanded={expanded}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-muted hover:text-ink"
@@ -141,8 +156,16 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme()
   const [drawerPhase, setDrawerPhase] = useState<DrawerPhase>('closed')
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
+  // acá y no dentro de NavLinks: esa instancia del drawer mobile se
+  // desmonta entera al cerrarse (ver "drawerPhase !== 'closed'" abajo), así
+  // que un estado local ahí se perdería en vez de mantenerse abierto
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
   // ref, no state: se actualiza en cada touchmove y no necesita re-render
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
+
+  function toggleSubmenu(to: string) {
+    setOpenSubmenu((prev) => (prev === to ? null : to))
+  }
 
   function openDrawer() {
     setDrawerPhase('open')
@@ -249,7 +272,7 @@ export function AppLayout() {
             <p className="text-xs text-ink-muted">Gestor de turnos</p>
           </div>
         </div>
-        <NavLinks />
+        <NavLinks openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} />
         <div className="px-3 pt-4">
           <button
             type="button"
@@ -299,7 +322,7 @@ export function AppLayout() {
                 <XIcon className="h-4 w-4" />
               </button>
             </div>
-            <NavLinks onNavigate={closeDrawer} />
+            <NavLinks onNavigate={closeDrawer} openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} />
             <div className="px-3 pt-4">
               <button
                 type="button"
