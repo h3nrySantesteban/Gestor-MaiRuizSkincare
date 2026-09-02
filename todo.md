@@ -32,4 +32,4 @@ vez que testeó el cambio y confirmó que quedó bien.
 
 [HECHO] 12. al precionar boton + de la app desplegar opciones para arriba (Nuevo turno, nuevo gasto, Nuevo paciente,)
 
-13. flash del desplegable de Resumen en el medio de la pantalla al ir de Resumen a Gastos (dura un milisegundo, no se puede capturar)
+[HECHO?] 13. flash del desplegable de Resumen en el medio de la pantalla al ir de Resumen a Gastos (dura un milisegundo, no se puede capturar)
