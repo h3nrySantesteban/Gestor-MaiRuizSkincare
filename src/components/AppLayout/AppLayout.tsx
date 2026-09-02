@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { TouchEvent } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -64,23 +64,46 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 // antes de abrir/cerrar, para no disparar con un toque casi estático.
 const EDGE_SWIPE_ZONE = 24
 const SWIPE_THRESHOLD = 60
+// mismo valor que la duración de las animaciones en index.css
+// (drawer-panel-in/out, drawer-backdrop-in/out) — el drawer sigue montado
+// este tiempo extra en fase "closing" para que la animación de salida
+// llegue a verse en vez de desaparecer de golpe.
+const DRAWER_CLOSE_ANIM_MS = 200
+
+type DrawerPhase = 'closed' | 'open' | 'closing'
 
 export function AppLayout() {
   const { signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerPhase, setDrawerPhase] = useState<DrawerPhase>('closed')
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
   // ref, no state: se actualiza en cada touchmove y no necesita re-render
   const swipeStart = useRef<{ x: number; y: number } | null>(null)
 
+  function openDrawer() {
+    setDrawerPhase('open')
+  }
+
+  function closeDrawer() {
+    setDrawerPhase((phase) => (phase === 'open' ? 'closing' : phase))
+  }
+
+  useEffect(() => {
+    if (drawerPhase !== 'closing') return
+    const id = setTimeout(() => setDrawerPhase('closed'), DRAWER_CLOSE_ANIM_MS)
+    return () => clearTimeout(id)
+  }, [drawerPhase])
+
   function handleTouchStart(e: TouchEvent) {
     const touch = e.touches[0]
-    if (drawerOpen) {
+    if (drawerPhase === 'open') {
       // cerrando: no hace falta arrancar en ningún borde en particular
       swipeStart.current = { x: touch.clientX, y: touch.clientY }
-    } else {
+    } else if (drawerPhase === 'closed') {
       swipeStart.current =
         touch.clientX >= window.innerWidth - EDGE_SWIPE_ZONE ? { x: touch.clientX, y: touch.clientY } : null
+    } else {
+      swipeStart.current = null
     }
   }
 
@@ -93,11 +116,11 @@ export function AppLayout() {
     // más horizontal que vertical, así un scroll vertical no dispara el
     // abrir/cerrar por error
     if (Math.abs(deltaX) <= Math.abs(deltaY)) return
-    if (drawerOpen && deltaX > SWIPE_THRESHOLD) {
-      setDrawerOpen(false)
+    if (drawerPhase === 'open' && deltaX > SWIPE_THRESHOLD) {
+      closeDrawer()
       swipeStart.current = null
-    } else if (!drawerOpen && deltaX < -SWIPE_THRESHOLD) {
-      setDrawerOpen(true)
+    } else if (drawerPhase === 'closed' && deltaX < -SWIPE_THRESHOLD) {
+      openDrawer()
       swipeStart.current = null
     }
   }
@@ -137,7 +160,7 @@ export function AppLayout() {
               también vive de ese lado (ver comentario en el div raíz) */}
           <button
             type="button"
-            onClick={() => setDrawerOpen(true)}
+            onClick={openDrawer}
             aria-label="Abrir menú"
             className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted md:hidden"
           >
@@ -176,13 +199,23 @@ export function AppLayout() {
         <p className="px-5 pt-4 text-left text-[11px] text-ink-muted">Hecho con amor para mi amor &lt;3</p>
       </aside>
 
-      {drawerOpen && (
+      {drawerPhase !== 'closed' && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
-            className="absolute inset-0 bg-black/40 animate-[drawer-backdrop-in_0.2s_ease-out]"
-            onClick={() => setDrawerOpen(false)}
+            className={`absolute inset-0 bg-black/40 ${
+              drawerPhase === 'closing'
+                ? 'animate-[drawer-backdrop-out_0.2s_ease-in]'
+                : 'animate-[drawer-backdrop-in_0.2s_ease-out]'
+            }`}
+            onClick={closeDrawer}
           />
-          <aside className="relative ml-auto flex h-full w-64 flex-col bg-surface py-5 shadow-xl animate-[drawer-panel-in_0.2s_ease-out]">
+          <aside
+            className={`relative ml-auto flex h-full w-64 flex-col bg-surface py-5 shadow-xl ${
+              drawerPhase === 'closing'
+                ? 'animate-[drawer-panel-out_0.2s_ease-in]'
+                : 'animate-[drawer-panel-in_0.2s_ease-out]'
+            }`}
+          >
             <div className="mb-6 flex items-center justify-between px-5">
               <div className="flex items-center gap-2">
                 <span className="text-2xl" aria-hidden="true">
@@ -195,14 +228,14 @@ export function AppLayout() {
               </div>
               <button
                 type="button"
-                onClick={() => setDrawerOpen(false)}
+                onClick={closeDrawer}
                 aria-label="Cerrar menú"
                 className="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted"
               >
                 <XIcon className="h-4 w-4" />
               </button>
             </div>
-            <NavLinks onNavigate={() => setDrawerOpen(false)} />
+            <NavLinks onNavigate={closeDrawer} />
             <div className="px-3 pt-4">
               <button
                 type="button"
