@@ -33,14 +33,14 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 10. Agregar variables de entorno al .env.local para poder testear cuando la app este en produ
 
-11. analizar e implementar carga "skeleton" para que los componentes no salenten en la pagina mientras van cargando y completandose
+# 11. analizar e implementar carga "skeleton" para que los componentes no salenten en la pagina mientras van cargando y completandose
     # 1. Resumen
     # 2. Turnos
     # 3. Pacientes
-    4. PacienteDetalle
-    5. Tratamientos
-    6. Formularios
-    7. Gastos
+    # 4. PacienteDetalle
+    # 5. Tratamientos
+    # 6. Formularios
+    # 7. Gastos
     (Analytics queda afuera — está anotada para eliminarse, tarea 3)
 
 # 12. al precionar boton + de la app desplegar opciones para arriba (Nuevo turno, nuevo gasto, Nuevo paciente,)
