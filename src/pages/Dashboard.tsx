@@ -31,10 +31,16 @@ function DashboardSkeleton() {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-surface p-5">
-          <Skeleton className="h-4 w-28" />
-          {/* mismo grid auto-fill que el real (una sola fila, tantas
-              columnas como entren) — no un grid-cols-2 fijo de 2 filas */}
-          <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-6 w-6 rounded-full" />
+          </div>
+          {/* mismo grid que el real, truco de recorte incluido:
+              grid-rows-[auto] + auto-rows-[0px] + overflow-hidden fuerza
+              cualquier fila implícita a 0px, así en un teléfono angosto
+              (donde solo entra 1 columna) se ve un solo ítem, no los 3
+              apilados — igual que el contenido real */}
+          <div className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] grid-rows-[auto] auto-rows-[0px] gap-x-4 overflow-hidden">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex flex-col gap-1.5">
                 <Skeleton className="h-4 w-24" />
