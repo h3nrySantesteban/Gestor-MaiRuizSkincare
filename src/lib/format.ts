@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { differenceInCalendarDays, endOfWeek, format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 const currencyFormatter = new Intl.NumberFormat('es-AR', {
@@ -56,4 +56,23 @@ export function formatFechaHora(iso: string): string {
 
 export function formatHora(iso: string): string {
   return format(new Date(iso), 'HH:mm', { locale: es })
+}
+
+/**
+ * Encabezado de grupo para el listado de turnos: "Hoy"/"Mañana" los
+ * próximos dos días, "el martes" mientras siga cayendo dentro de esta
+ * semana (hasta el domingo — weekStartsOn:1 así "esta semana" termina un
+ * domingo, no un sábado), y una fecha corta ("9/9") para cualquier otro
+ * caso (más adelante que el domingo, o en el pasado).
+ */
+export function formatGrupoDia(iso: string): string {
+  const fecha = new Date(iso)
+  const hoy = new Date()
+  const diff = differenceInCalendarDays(fecha, hoy)
+  if (diff === 0) return 'Hoy'
+  if (diff === 1) return 'Mañana'
+  if (diff > 1 && fecha <= endOfWeek(hoy, { weekStartsOn: 1 })) {
+    return `el ${format(fecha, 'EEEE', { locale: es })}`
+  }
+  return format(fecha, 'd/M', { locale: es })
 }

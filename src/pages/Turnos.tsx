@@ -10,7 +10,7 @@ import { Skeleton } from '../components/Skeleton/Skeleton'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
 import { DateTimeInput } from '../components/forms/DateTimeInput'
 import { ArrowUpRightIcon, ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
-import { formatCurrency, formatFechaHora } from '../lib/format'
+import { formatCurrency, formatFechaHora, formatGrupoDia } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
 import { ESTADOS_TURNO, type EstadoTurno, type Turno } from '../types/turno'
 import type { Tratamiento } from '../types/tratamiento'
@@ -208,10 +208,11 @@ export function Turnos() {
         )}
 
         {!loading && turnos.map((turno, index) => {
-          // el gap normal (gap-2 de antes) pasa a ser mt-2 explícito porque
-          // ya no es uniforme: entre turnos del mismo día es el normal,
-          // entre días distintos se duplica (mt-4) para que el agrupado por
-          // día se note de un vistazo, no solo por la fecha de cada tarjeta
+          // el gap normal (gap-2 de antes) pasa a ser mt-2 explícito: entre
+          // turnos del mismo día es el normal, entre días distintos el
+          // encabezado ("Hoy"/"el martes"/"9/9", ver formatGrupoDia) ya
+          // aporta su propia separación arriba, así que la card no necesita
+          // margen extra además de eso
           const anterior = index > 0 ? turnos[index - 1] : null
           const mismoDia = anterior ? isSameDay(new Date(turno.fecha), new Date(anterior.fecha)) : true
           // el separador de estado (Agendado/Finalizado/Cancelado señado) ya
@@ -220,11 +221,16 @@ export function Turnos() {
           // que es la agrupación que más importa, dejaba de notarse por
           // arriba del cambio de día
           const separadorAntes = index === primerNoAgendadoIndex || index === primerCanceladoSenadoIndex
-          const espaciado = index === 0 || separadorAntes ? '' : mismoDia ? 'mt-2' : 'mt-4'
+          const espaciado = index === 0 || separadorAntes || !mismoDia ? '' : 'mt-2'
           return (
             <Fragment key={turno.id}>
               {index === primerNoAgendadoIndex && index > 0 && <div className="my-4 border-t-2 border-border" />}
               {index === primerCanceladoSenadoIndex && index > 0 && <div className="my-4 border-t-2 border-border" />}
+              {(index === 0 || !mismoDia) && (
+                <p className={`mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted ${index === 0 ? '' : 'mt-4'}`}>
+                  {formatGrupoDia(turno.fecha)}
+                </p>
+              )}
               <div
                 role="button"
                 tabIndex={0}
