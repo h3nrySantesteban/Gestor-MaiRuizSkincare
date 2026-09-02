@@ -18,8 +18,12 @@ const Formularios = lazy(() => import('./pages/Formularios').then((m) => ({ defa
 const Gastos = lazy(() => import('./pages/Gastos').then((m) => ({ default: m.Gastos })))
 const Analytics = lazy(() => import('./pages/Analytics').then((m) => ({ default: m.Analytics })))
 
+// en blanco a propósito: el chunk de cada página se descarga rápido (unos
+// pocos KB), y mostrar texto acá se ve como un segundo "cargando" distinto
+// justo antes de que la página monte su propio skeleton — mejor nada que
+// un flash de texto que no combina con nada
 function PageFallback() {
-  return <div className="p-6 text-sm text-ink-muted">Cargando...</div>
+  return null
 }
 
 function App() {
