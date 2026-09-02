@@ -58,10 +58,12 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 // Zona angosta pegada al borde derecho donde tiene que arrancar el toque
 // para contar como "abrir con swipe" — si se contara desde cualquier punto
 // de la pantalla, cualquier scroll/drag horizontal accidental abriría el
-// drawer. EDGE_SWIPE_THRESHOLD es cuánto tiene que arrastrar el dedo hacia
-// la izquierda antes de abrir, para no disparar con un toque casi estático.
+// drawer. Para cerrar no hace falta esa restricción: con el drawer abierto,
+// cualquier arrastre hacia la derecha (el gesto opuesto) lo cierra, arranque
+// donde arranque. SWIPE_THRESHOLD es cuánto tiene que arrastrar el dedo
+// antes de abrir/cerrar, para no disparar con un toque casi estático.
 const EDGE_SWIPE_ZONE = 24
-const EDGE_SWIPE_THRESHOLD = 60
+const SWIPE_THRESHOLD = 60
 
 export function AppLayout() {
   const { signOut } = useAuth()
@@ -69,32 +71,39 @@ export function AppLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
   // ref, no state: se actualiza en cada touchmove y no necesita re-render
-  const edgeSwipeStart = useRef<{ x: number; y: number } | null>(null)
+  const swipeStart = useRef<{ x: number; y: number } | null>(null)
 
   function handleTouchStart(e: TouchEvent) {
-    if (drawerOpen) return
     const touch = e.touches[0]
-    edgeSwipeStart.current =
-      touch.clientX >= window.innerWidth - EDGE_SWIPE_ZONE ? { x: touch.clientX, y: touch.clientY } : null
+    if (drawerOpen) {
+      // cerrando: no hace falta arrancar en ningún borde en particular
+      swipeStart.current = { x: touch.clientX, y: touch.clientY }
+    } else {
+      swipeStart.current =
+        touch.clientX >= window.innerWidth - EDGE_SWIPE_ZONE ? { x: touch.clientX, y: touch.clientY } : null
+    }
   }
 
   function handleTouchMove(e: TouchEvent) {
-    const start = edgeSwipeStart.current
+    const start = swipeStart.current
     if (!start) return
     const touch = e.touches[0]
     const deltaX = touch.clientX - start.x
     const deltaY = touch.clientY - start.y
-    // deltaX bien negativo (arrastre hacia la izquierda) y más horizontal
-    // que vertical, así un scroll vertical que arranca cerca del borde no
-    // dispara el drawer por error
-    if (deltaX < -EDGE_SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
+    // más horizontal que vertical, así un scroll vertical no dispara el
+    // abrir/cerrar por error
+    if (Math.abs(deltaX) <= Math.abs(deltaY)) return
+    if (drawerOpen && deltaX > SWIPE_THRESHOLD) {
+      setDrawerOpen(false)
+      swipeStart.current = null
+    } else if (!drawerOpen && deltaX < -SWIPE_THRESHOLD) {
       setDrawerOpen(true)
-      edgeSwipeStart.current = null
+      swipeStart.current = null
     }
   }
 
   function handleTouchEnd() {
-    edgeSwipeStart.current = null
+    swipeStart.current = null
   }
 
   return (

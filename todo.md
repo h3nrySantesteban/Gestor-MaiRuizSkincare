@@ -6,6 +6,8 @@ considera que una tarea está resuelta, la marca anteponiendo `[HECHO]` al
 número — no la borra. El borrado de la línea queda a mano del usuario, una
 vez que testeó el cambio y confirmó que quedó bien.
 
+-------------------------------------------------------------
+
 1. Datos de gatos de este mes y del mes pasado en la seccion de gastos
 
 2. cambiar dashboard por Resumen con un boton de desplegable para Gastos, ingresos, Turnos (panel de cuadrados tipo github), Top tratamientos (ordenarlos por cantTurnos y cantIngresos), Top pacientes
