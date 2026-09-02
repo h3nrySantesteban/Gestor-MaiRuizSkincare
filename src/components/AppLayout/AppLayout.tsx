@@ -70,16 +70,8 @@ export function AppLayout() {
     // panel quedan más cerca del pulgar al sostener el teléfono con esa mano.
     <div className="flex h-svh overflow-hidden bg-surface-muted">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 items-center justify-end border-b border-border bg-surface px-4 py-3 md:px-6">
+        <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-6">
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Abrir menú"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted md:hidden"
-            >
-              <MenuIcon className="h-5 w-5" />
-            </button>
             <button
               type="button"
               onClick={toggleTheme}
@@ -90,6 +82,16 @@ export function AppLayout() {
             </button>
             <NotificationBell />
           </div>
+          {/* hamburguesa sigue a la derecha, junto al menú/drawer que ahora
+              también vive de ese lado (ver comentario en el div raíz) */}
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Abrir menú"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted md:hidden"
+          >
+            <MenuIcon className="h-5 w-5" />
+          </button>
         </header>
 
         <GoogleCalendarConnectBanner />
