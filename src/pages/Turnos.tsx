@@ -101,7 +101,7 @@ export function Turnos() {
           {loading ? (
             <Skeleton className="mt-1.5 h-4 w-24" />
           ) : (
-            <p className="text-sm text-ink-muted">{turnos.length} resultado{turnos.length === 1 ? '' : 's'}</p>
+            <p className="text-sm text-ink-muted">Mostrando {turnos.length} resultado{turnos.length === 1 ? '' : 's'}</p>
           )}
         </div>
         <button type="button" onClick={openNuevo} className={primaryBtnClass}>
@@ -227,7 +227,7 @@ export function Turnos() {
               {index === primerNoAgendadoIndex && index > 0 && <div className="my-4 border-t-2 border-border" />}
               {index === primerCanceladoSenadoIndex && index > 0 && <div className="my-4 border-t-2 border-border" />}
               {(index === 0 || !mismoDia) && (
-                <p className={`mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted ${index === 0 ? '' : 'mt-4'}`}>
+                <p className={`mb-2 text-xs font-semibold text-ink-muted ${index === 0 ? '' : 'mt-4'}`}>
                   {formatGrupoDia(turno.fecha)}
                 </p>
               )}
