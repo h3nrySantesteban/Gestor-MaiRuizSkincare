@@ -4,13 +4,64 @@ import { useDashboardStats } from '../hooks/useDashboardStats'
 import { SplitStatCard } from '../components/StatCard/SplitStatCard'
 import { MonthlyChart } from '../components/MonthlyChart/MonthlyChart'
 import { Modal } from '../components/Modal/Modal'
+import { Skeleton } from '../components/Skeleton/Skeleton'
 import { ArrowUpRightIcon, NoteIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
+
+// mismo shape que SplitStatCard (StatCard/SplitStatCard.tsx): dos mitades
+// con label + valor grande + secundario, separadas por un borde
+function SplitStatCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <div className="grid grid-cols-2 divide-x divide-border">
+        {[0, 1].map((i) => (
+          <div key={i} className={`flex flex-col gap-2 ${i === 0 ? 'pr-4' : 'pl-4'}`}>
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-7 w-20" />
+            <Skeleton className="h-4 w-14" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <Skeleton className="h-4 w-28" />
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col gap-1.5">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3.5 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <SplitStatCardSkeleton />
+        <SplitStatCardSkeleton />
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface p-4 sm:p-5">
+        <div className="mb-2 flex items-center justify-between sm:mb-4">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+        <Skeleton className="h-44 w-full sm:h-72" />
+      </div>
+    </div>
+  )
+}
 
 export function Dashboard() {
   const { proximosTurnos, semana, mes, agendadosSemana, agendadosMes, serieSeisMeses, loading } = useDashboardStats()
   const navigate = useNavigate()
   const [infoAgendadosOpen, setInfoAgendadosOpen] = useState(false)
+
+  if (loading) return <DashboardSkeleton />
 
   return (
     <div className="flex flex-col gap-6">
@@ -27,7 +78,7 @@ export function Dashboard() {
               <ArrowUpRightIcon className="h-4 w-4" />
             </button>
           </div>
-          {loading ? null : proximosTurnos.length > 0 ? (
+          {proximosTurnos.length > 0 ? (
             // auto-fill: cada columna pide un mínimo de 150px, así entran
             // tantas como quepan sin achicarse (2 en un teléfono angosto, 3+
             // a medida que crece el ancho) en vez de un breakpoint fijo.
