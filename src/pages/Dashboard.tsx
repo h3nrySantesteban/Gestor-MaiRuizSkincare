@@ -32,8 +32,10 @@ function DashboardSkeleton() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-surface p-5">
           <Skeleton className="h-4 w-28" />
-          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
-            {[0, 1, 2, 3].map((i) => (
+          {/* mismo grid auto-fill que el real (una sola fila, tantas
+              columnas como entren) — no un grid-cols-2 fijo de 2 filas */}
+          <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-x-4 gap-y-3">
+            {[0, 1, 2].map((i) => (
               <div key={i} className="flex flex-col gap-1.5">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-3.5 w-20" />
