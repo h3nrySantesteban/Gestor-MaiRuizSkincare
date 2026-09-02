@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type { TouchEvent } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
@@ -54,11 +55,47 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
+// Zona angosta pegada al borde derecho donde tiene que arrancar el toque
+// para contar como "abrir con swipe" — si se contara desde cualquier punto
+// de la pantalla, cualquier scroll/drag horizontal accidental abriría el
+// drawer. EDGE_SWIPE_THRESHOLD es cuánto tiene que arrastrar el dedo hacia
+// la izquierda antes de abrir, para no disparar con un toque casi estático.
+const EDGE_SWIPE_ZONE = 24
+const EDGE_SWIPE_THRESHOLD = 60
+
 export function AppLayout() {
   const { signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
+  // ref, no state: se actualiza en cada touchmove y no necesita re-render
+  const edgeSwipeStart = useRef<{ x: number; y: number } | null>(null)
+
+  function handleTouchStart(e: TouchEvent) {
+    if (drawerOpen) return
+    const touch = e.touches[0]
+    edgeSwipeStart.current =
+      touch.clientX >= window.innerWidth - EDGE_SWIPE_ZONE ? { x: touch.clientX, y: touch.clientY } : null
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    const start = edgeSwipeStart.current
+    if (!start) return
+    const touch = e.touches[0]
+    const deltaX = touch.clientX - start.x
+    const deltaY = touch.clientY - start.y
+    // deltaX bien negativo (arrastre hacia la izquierda) y más horizontal
+    // que vertical, así un scroll vertical que arranca cerca del borde no
+    // dispara el drawer por error
+    if (deltaX < -EDGE_SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
+      setDrawerOpen(true)
+      edgeSwipeStart.current = null
+    }
+  }
+
+  function handleTouchEnd() {
+    edgeSwipeStart.current = null
+  }
 
   return (
     // h-svh + overflow-hidden a propósito: sin esto los flex children (que
@@ -68,7 +105,12 @@ export function AppLayout() {
     // Sidebar/drawer del lado derecho a propósito: Mai es diestra, y con el
     // menú a la derecha tanto el botón que lo abre (header) como el propio
     // panel quedan más cerca del pulgar al sostener el teléfono con esa mano.
-    <div className="flex h-svh overflow-hidden bg-surface-muted">
+    <div
+      className="flex h-svh overflow-hidden bg-surface-muted"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-6">
           <div className="flex items-center gap-1">
