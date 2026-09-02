@@ -9,7 +9,7 @@ import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { Modal } from '../components/Modal/Modal'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { secondaryBtnClass } from '../components/forms/FormField'
-import { ArrowLeftIcon, ChevronDownIcon, InstagramIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
+import { ArrowLeftIcon, ChevronDownIcon, InstagramIcon, MailIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
 import { completarContactoDesdeFormulario } from '../lib/formularioContacto'
@@ -122,7 +122,10 @@ export function PacienteDetalle() {
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold text-ink">{paciente?.nombreCompleto}</h1>
             <div className="mt-2 flex flex-col gap-1.5">
-              {paciente?.telefono && (
+              {/* teléfono y mail siempre muestran su ícono, aunque falte el
+                  dato — atenuado (sin link) en vez de desaparecer del todo,
+                  así queda claro de un vistazo qué contacto falta cargar */}
+              {paciente?.telefono ? (
                 <a
                   href={waLink(paciente.telefono)}
                   target="_blank"
@@ -131,6 +134,10 @@ export function PacienteDetalle() {
                 >
                   <WhatsAppIcon className="h-4 w-4 shrink-0" /> {paciente.telefono}
                 </a>
+              ) : (
+                <span className="flex w-fit items-center gap-1.5 text-sm text-ink-muted/50">
+                  <WhatsAppIcon className="h-4 w-4 shrink-0" /> Sin teléfono
+                </span>
               )}
               {paciente?.instagram && (
                 <a
@@ -142,7 +149,15 @@ export function PacienteDetalle() {
                   <InstagramIcon className="h-4 w-4 shrink-0" /> @{paciente.instagram}
                 </a>
               )}
-              {paciente?.email && <p className="text-sm text-ink-muted">{paciente.email}</p>}
+              {paciente?.email ? (
+                <span className="flex w-fit items-center gap-1.5 text-sm text-ink-muted">
+                  <MailIcon className="h-4 w-4 shrink-0" /> {paciente.email}
+                </span>
+              ) : (
+                <span className="flex w-fit items-center gap-1.5 text-sm text-ink-muted/50">
+                  <MailIcon className="h-4 w-4 shrink-0" /> Sin email
+                </span>
+              )}
             </div>
             {paciente?.notas && (
               <p className="mt-3 whitespace-pre-wrap rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-muted">
@@ -174,7 +189,7 @@ export function PacienteDetalle() {
           </button>
         </div>
 
-        {loadingFormularios && [0, 1].map((i) => <RowSkeleton key={i} />)}
+        {loadingFormularios && <RowSkeleton />}
 
         {!loadingFormularios && formulariosPaciente.map((f) => {
           const expanded = expandedFormularioId === f.id
