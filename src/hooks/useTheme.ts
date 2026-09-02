@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 
 type Theme = 'light' | 'dark'
 
-// mismos valores que --color-surface-muted en src/index.css (claro/oscuro) —
-// colorean la barra de estado de iOS/Android para que combine con el fondo
-const THEME_COLOR: Record<Theme, string> = { light: '#f7f3f1', dark: '#131117' }
+// mismos valores que --color-surface en src/index.css (claro/oscuro) —
+// colorean la barra de estado de iOS/Android para que combine con el header
+// (bg-surface), no con el fondo de página (bg-surface-muted, un tono distinto)
+const THEME_COLOR: Record<Theme, string> = { light: '#ffffff', dark: '#1e1b26' }
 
 function getSystemTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'

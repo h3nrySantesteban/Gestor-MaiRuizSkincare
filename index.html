@@ -34,7 +34,7 @@
     <title>Gestor de Turnos — Mai Ruiz Skincare</title>
     <!-- valor por defecto; el script de abajo lo corrige antes del primer
          paint, y useTheme.ts lo mantiene sincronizado con el toggle -->
-    <meta name="theme-color" content="#f7f3f1" />
+    <meta name="theme-color" content="#ffffff" />
     <script>
       // corre antes del primer paint para no mostrar un flash de tema claro
       // en usuarios que ya eligieron oscuro (una vez que React monta ya es tarde)
@@ -42,10 +42,11 @@
         var t = localStorage.getItem('theme')
         var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)
         if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
-        // mismo valor que --color-surface-muted en src/index.css: así la
-        // franja de la barra de estado en iOS/Android combina con el fondo
-        // de la app en vez de quedarse en blanco cuando el tema es oscuro
-        document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#131117' : '#f7f3f1')
+        // mismo valor que --color-surface en src/index.css (no
+        // --color-surface-muted): así la franja de la barra de estado en
+        // iOS/Android combina con el header/barra de navegación de la app,
+        // no con el fondo de página (un tono distinto)
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#1e1b26' : '#ffffff')
       } catch (e) {}
     </script>
   </head>
