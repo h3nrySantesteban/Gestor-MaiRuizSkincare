@@ -201,7 +201,7 @@ export function Turnos() {
       <div className="flex flex-col">
         {loading && (
           <div className="flex flex-col gap-2">
-            {[0, 1, 2, 3, 4].map((i) => (
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
               <TurnoRowSkeleton key={i} />
             ))}
           </div>

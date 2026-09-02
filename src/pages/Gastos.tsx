@@ -134,7 +134,7 @@ export function Gastos() {
           <div className="flex flex-col gap-2">
             <Skeleton className="h-4 w-20" />
             <div className="flex flex-col gap-2">
-              {[0, 1, 2, 3].map((i) => (
+              {[0, 1, 2, 3, 4, 5, 6].map((i) => (
                 <GastoRowSkeleton key={i} />
               ))}
             </div>

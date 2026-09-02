@@ -137,7 +137,7 @@ export function Tratamientos() {
       )}
 
       <div className="flex flex-col gap-2">
-        {loading && [0, 1, 2, 3, 4].map((i) => <TratamientoRowSkeleton key={i} />)}
+        {loading && [0, 1, 2, 3, 4, 5, 6, 7].map((i) => <TratamientoRowSkeleton key={i} />)}
 
         {!loading && ordenados.map((t, index) => (
           <Fragment key={t.id}>

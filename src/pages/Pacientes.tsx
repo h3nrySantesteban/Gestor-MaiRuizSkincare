@@ -80,7 +80,7 @@ export function Pacientes() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {loading && [0, 1, 2, 3, 4, 5].map((i) => <PacienteRowSkeleton key={i} />)}
+        {loading && [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <PacienteRowSkeleton key={i} />)}
 
         {!loading && filtered.map((p) => {
           const tieneNotas = Boolean(p.notas) || pacienteIdsConNotasEnTurnos.has(p.id)
