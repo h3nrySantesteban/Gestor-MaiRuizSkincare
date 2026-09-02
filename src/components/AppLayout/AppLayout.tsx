@@ -52,9 +52,10 @@ interface NavLinksProps {
   // mobile se desmonte al cerrarse, y a navegar a otra pantalla y volver
   openSubmenu: string | null
   onToggleSubmenu: (to: string) => void
+  onCloseSubmenu: () => void
 }
 
-function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
+function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu, onCloseSubmenu }: NavLinksProps) {
   const location = useLocation()
 
   return (
@@ -111,7 +112,16 @@ function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
                     <NavLink
                       key={item.label}
                       to={item.to}
-                      onClick={onNavigate}
+                      onClick={() => {
+                        // colapsar el submenu ya mismo, no solo cerrar el
+                        // drawer — si no, durante la animación de cierre en
+                        // mobile se alcanza a ver el submenu todavía
+                        // desplegado (el "flash en el medio de la pantalla"
+                        // del todo #13, el drawer ocupa más de la mitad del
+                        // ancho en un teléfono angosto)
+                        onCloseSubmenu()
+                        onNavigate?.()
+                      }}
                       className={({ isActive }) =>
                         `rounded-lg px-3 py-2 text-sm transition-colors ${
                           isActive ? 'text-primary-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
@@ -306,7 +316,7 @@ export function AppLayout() {
             <p className="text-xs text-ink-muted">Gestor de turnos</p>
           </div>
         </div>
-        <NavLinks openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} />
+        <NavLinks openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} onCloseSubmenu={() => setOpenSubmenu(null)} />
         <div className="px-3 pt-4">
           <button
             type="button"
@@ -356,7 +366,12 @@ export function AppLayout() {
                 <XIcon className="h-4 w-4" />
               </button>
             </div>
-            <NavLinks onNavigate={closeDrawer} openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} />
+            <NavLinks
+              onNavigate={closeDrawer}
+              openSubmenu={openSubmenu}
+              onToggleSubmenu={toggleSubmenu}
+              onCloseSubmenu={() => setOpenSubmenu(null)}
+            />
             <div className="px-3 pt-4">
               <button
                 type="button"
