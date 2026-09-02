@@ -6,6 +6,7 @@ import { usePacientes } from '../hooks/usePacientes'
 import { useTratamientos } from '../hooks/useTratamientos'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
+import { Skeleton } from '../components/Skeleton/Skeleton'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
 import { DateTimeInput } from '../components/forms/DateTimeInput'
 import { ArrowUpRightIcon, ChevronDownIcon, InstagramIcon, WhatsAppIcon } from '../components/icons'
@@ -13,6 +14,29 @@ import { formatCurrency, formatFechaHora } from '../lib/format'
 import { instagramLink, waLink } from '../lib/links'
 import { ESTADOS_TURNO, type EstadoTurno, type Turno } from '../types/turno'
 import type { Tratamiento } from '../types/tratamiento'
+
+// mismo shape que una card de turno real (más abajo en este archivo):
+// nombre + badge de estado, precio + tratamiento, fecha + ícono de contacto
+function TurnoRowSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <Skeleton className="h-3.5 w-16" />
+          <Skeleton className="h-3.5 w-24" />
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+    </div>
+  )
+}
 
 export function Turnos() {
   const [fechaDesde, setFechaDesde] = useState('')
@@ -74,7 +98,11 @@ export function Turnos() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-ink">Turnos</h1>
-          <p className="text-sm text-ink-muted">{turnos.length} resultado{turnos.length === 1 ? '' : 's'}</p>
+          {loading ? (
+            <Skeleton className="mt-1.5 h-4 w-24" />
+          ) : (
+            <p className="text-sm text-ink-muted">{turnos.length} resultado{turnos.length === 1 ? '' : 's'}</p>
+          )}
         </div>
         <button type="button" onClick={openNuevo} className={primaryBtnClass}>
           + Nuevo turno
@@ -171,7 +199,15 @@ export function Turnos() {
       </div>
 
       <div className="flex flex-col">
-        {turnos.map((turno, index) => {
+        {loading && (
+          <div className="flex flex-col gap-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <TurnoRowSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {!loading && turnos.map((turno, index) => {
           // el gap normal (gap-2 de antes) pasa a ser mt-2 explícito porque
           // ya no es uniforme: entre turnos del mismo día es el normal,
           // entre días distintos se duplica (mt-4) para que el agrupado por
