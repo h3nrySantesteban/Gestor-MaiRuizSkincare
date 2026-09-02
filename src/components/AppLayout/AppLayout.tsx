@@ -52,10 +52,9 @@ interface NavLinksProps {
   // mobile se desmonte al cerrarse, y a navegar a otra pantalla y volver
   openSubmenu: string | null
   onToggleSubmenu: (to: string) => void
-  onCloseSubmenu: () => void
 }
 
-function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu, onCloseSubmenu }: NavLinksProps) {
+function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
   const location = useLocation()
 
   return (
@@ -112,16 +111,7 @@ function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu, onCloseSubmenu }: 
                     <NavLink
                       key={item.label}
                       to={item.to}
-                      onClick={() => {
-                        // colapsar el submenu ya mismo, no solo cerrar el
-                        // drawer — si no, durante la animación de cierre en
-                        // mobile se alcanza a ver el submenu todavía
-                        // desplegado (el "flash en el medio de la pantalla"
-                        // del todo #13, el drawer ocupa más de la mitad del
-                        // ancho en un teléfono angosto)
-                        onCloseSubmenu()
-                        onNavigate?.()
-                      }}
+                      onClick={onNavigate}
                       className={({ isActive }) =>
                         `rounded-lg px-3 py-2 text-sm transition-colors ${
                           isActive ? 'text-primary-700' : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
@@ -316,7 +306,7 @@ export function AppLayout() {
             <p className="text-xs text-ink-muted">Gestor de turnos</p>
           </div>
         </div>
-        <NavLinks openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} onCloseSubmenu={() => setOpenSubmenu(null)} />
+        <NavLinks openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} />
         <div className="px-3 pt-4">
           <button
             type="button"
@@ -334,17 +324,23 @@ export function AppLayout() {
         <div className="fixed inset-0 z-40 md:hidden">
           <div
             className={`absolute inset-0 bg-black/40 ${
+              // forwards: sin esto, al terminar la animación el navegador
+              // "suelta" el elemento a su estado sin animar (opacidad
+              // 1/transform 0, o sea vuelto a mostrarse entero) durante el
+              // rato entre que la animación CSS termina y el setTimeout de
+              // React desmonta el drawer — un flash del menú ya cerrado
+              // reapareciendo un instante antes de desaparecer del todo
               drawerPhase === 'closing'
-                ? 'animate-[drawer-backdrop-out_0.2s_ease-in]'
-                : 'animate-[drawer-backdrop-in_0.2s_ease-out]'
+                ? 'animate-[drawer-backdrop-out_0.2s_ease-in_forwards]'
+                : 'animate-[drawer-backdrop-in_0.2s_ease-out_forwards]'
             }`}
             onClick={closeDrawer}
           />
           <aside
             className={`relative ml-auto flex h-full w-64 flex-col bg-surface py-5 shadow-xl ${
               drawerPhase === 'closing'
-                ? 'animate-[drawer-panel-out_0.2s_ease-in]'
-                : 'animate-[drawer-panel-in_0.2s_ease-out]'
+                ? 'animate-[drawer-panel-out_0.2s_ease-in_forwards]'
+                : 'animate-[drawer-panel-in_0.2s_ease-out_forwards]'
             }`}
           >
             <div className="mb-6 flex items-center justify-between px-5">
@@ -366,12 +362,7 @@ export function AppLayout() {
                 <XIcon className="h-4 w-4" />
               </button>
             </div>
-            <NavLinks
-              onNavigate={closeDrawer}
-              openSubmenu={openSubmenu}
-              onToggleSubmenu={toggleSubmenu}
-              onCloseSubmenu={() => setOpenSubmenu(null)}
-            />
+            <NavLinks onNavigate={closeDrawer} openSubmenu={openSubmenu} onToggleSubmenu={toggleSubmenu} />
             <div className="px-3 pt-4">
               <button
                 type="button"
