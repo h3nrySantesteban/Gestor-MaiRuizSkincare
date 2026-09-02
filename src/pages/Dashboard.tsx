@@ -107,7 +107,7 @@ export function Dashboard() {
         />
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-5">
+      <div className="rounded-2xl border border-border bg-surface p-4 md:p-5">
         <MonthlyChart data={serieSeisMeses} />
       </div>
 
