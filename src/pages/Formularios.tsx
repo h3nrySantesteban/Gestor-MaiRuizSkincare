@@ -89,7 +89,7 @@ export function Formularios() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {loading && [0, 1, 2, 3, 4, 5, 6].map((i) => <RespuestaRowSkeleton key={i} />)}
+        {loading && [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <RespuestaRowSkeleton key={i} />)}
 
         {!loading && respuestas.map((r) => {
           const paciente = r.pacienteId ? pacientes.find((p) => p.id === r.pacienteId) : null
