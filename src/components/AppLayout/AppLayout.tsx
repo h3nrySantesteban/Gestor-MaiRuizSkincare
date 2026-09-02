@@ -65,8 +65,41 @@ export function AppLayout() {
     // por default no bajan de su min-height de contenido) hacen que la
     // página entera crezca y sea el body el que scrollea, no <main> — en iOS
     // eso dispara el rebote elástico nativo y se siente "trabado" al hacer scroll.
+    // Sidebar/drawer del lado derecho a propósito: Mai es diestra, y con el
+    // menú a la derecha tanto el botón que lo abre (header) como el propio
+    // panel quedan más cerca del pulgar al sostener el teléfono con esa mano.
     <div className="flex h-svh overflow-hidden bg-surface-muted">
-      <aside className="hidden w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface py-5 md:flex">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="flex shrink-0 items-center justify-end border-b border-border bg-surface px-4 py-3 md:px-6">
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Abrir menú"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted md:hidden"
+            >
+              <MenuIcon className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
+            >
+              {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+            </button>
+            <NotificationBell />
+          </div>
+        </header>
+
+        <GoogleCalendarConnectBanner />
+
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 md:p-6">
+          <Outlet />
+        </main>
+      </div>
+
+      <aside className="hidden w-60 shrink-0 flex-col overflow-y-auto border-l border-border bg-surface py-5 md:flex">
         <div className="mb-6 flex items-center gap-2 px-5">
           <span className="text-2xl" aria-hidden="true">
             🌼
@@ -96,7 +129,7 @@ export function AppLayout() {
             className="absolute inset-0 bg-black/40 animate-[drawer-backdrop-in_0.2s_ease-out]"
             onClick={() => setDrawerOpen(false)}
           />
-          <aside className="relative flex h-full w-64 flex-col bg-surface py-5 shadow-xl animate-[drawer-panel-in_0.2s_ease-out]">
+          <aside className="relative ml-auto flex h-full w-64 flex-col bg-surface py-5 shadow-xl animate-[drawer-panel-in_0.2s_ease-out]">
             <div className="mb-6 flex items-center justify-between px-5">
               <div className="flex items-center gap-2">
                 <span className="text-2xl" aria-hidden="true">
@@ -131,36 +164,6 @@ export function AppLayout() {
           </aside>
         </div>
       )}
-
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-6">
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Abrir menú"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted md:hidden"
-          >
-            <MenuIcon className="h-5 w-5" />
-          </button>
-          <div className="ml-auto flex items-center gap-1">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
-            >
-              {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-            </button>
-            <NotificationBell />
-          </div>
-        </header>
-
-        <GoogleCalendarConnectBanner />
-
-        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 md:p-6">
-          <Outlet />
-        </main>
-      </div>
 
       <button
         type="button"

@@ -12,7 +12,7 @@ vez que testeó el cambio y confirmó que quedó bien.
 
 3. Eliminar analitics
 
-[HECHO] 4. Arreglar pantalla de inicio, flashea en pantalla la pagina de inicio vieja que explicaba la app para la verificación de google, y se muestra el login
+4. [HECHO] Arreglar pantalla de inicio, flashea en pantalla la pagina de inicio vieja que explicaba la app para la verificación de google, y se muestra el login
 
 5. Cambiar calendario al de Mai
 

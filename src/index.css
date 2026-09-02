@@ -107,7 +107,10 @@ body {
 
 @keyframes drawer-panel-in {
   from {
-    transform: translateX(-100%);
+    /* +100%, no -100%: el panel ahora vive pegado al borde derecho (menú a
+       la derecha, más accesible para el pulgar de Mai que es diestra), así
+       que entra desde afuera de ese mismo borde */
+    transform: translateX(100%);
   }
   to {
     transform: translateX(0);
