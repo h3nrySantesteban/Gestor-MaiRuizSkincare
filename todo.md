@@ -45,5 +45,6 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 # 12. al precionar boton + de la app desplegar opciones para arriba (Nuevo turno, nuevo gasto, Nuevo paciente,)
 
-13. flash del desplegable de Resumen en el medio de la pantalla al ir de Resumen a Gastos (dura un milisegundo, no se puede capturar)
-    # 1. Fix aplicado (colapsar el submenu al elegir una opción) — pendiente de confirmar en el celular que el flash ya no aparece
+13. flash del side menu al cerrarse (dura un milisegundo, no se puede capturar) — pasa en cualquier cierre, no solo yendo de Resumen a Gastos
+    1. Primer intento: colapsar el submenu de Resumen al elegir una opción — revertido, rompía la persistencia pedida antes y no era la causa real
+    # 2. Causa real: faltaba `fill-mode: forwards` en las animaciones de cierre — el CSS soltaba el panel a su estado sin animar (vuelto a verse entero) en el ratito antes de que React lo desmontara. Agregado `_forwards` a las 4 animaciones del drawer — pendiente de confirmar en el celular
