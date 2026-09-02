@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
+import { Skeleton } from '../components/Skeleton/Skeleton'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { formatCurrency, formatFechaSolo, formatMesAno, parseFechaSolo } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
@@ -99,7 +100,11 @@ export function Gastos() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-ink">Gastos</h1>
-          <p className="text-sm text-ink-muted">{gastos.length} gastos cargados</p>
+          {loading ? (
+            <Skeleton className="mt-1.5 h-4 w-28" />
+          ) : (
+            <p className="text-sm text-ink-muted">{gastos.length} gastos cargados</p>
+          )}
         </div>
         <button type="button" onClick={openNuevo} className={primaryBtnClass}>
           + Nuevo gasto
@@ -125,7 +130,18 @@ export function Gastos() {
       )}
 
       <div className="flex flex-col gap-4">
-        {gruposPorMes.map((grupo) => (
+        {loading && (
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4 w-20" />
+            <div className="flex flex-col gap-2">
+              {[0, 1, 2, 3].map((i) => (
+                <GastoRowSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!loading && gruposPorMes.map((grupo) => (
           <div key={grupo.key} className="flex flex-col gap-2">
             <h2 className="text-sm font-semibold text-ink-muted">{grupo.label}</h2>
             <div className="flex flex-col gap-2">
@@ -178,5 +194,14 @@ function GastoRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) 
         <p className="font-semibold text-ink">{formatCurrency(g.valor)}</p>
       </div>
     </button>
+  )
+}
+
+function GastoRowSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+      <Skeleton className="h-4 w-40" />
+      <Skeleton className="h-4 w-16" />
+    </div>
   )
 }

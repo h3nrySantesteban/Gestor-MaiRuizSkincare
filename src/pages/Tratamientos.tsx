@@ -3,9 +3,23 @@ import type { KeyboardEvent } from 'react'
 import { useTratamientos } from '../hooks/useTratamientos'
 import { NuevoTratamientoForm } from '../components/NuevoTratamientoForm/NuevoTratamientoForm'
 import { ActualizarPreciosModal } from '../components/ActualizarPreciosModal/ActualizarPreciosModal'
+import { Skeleton } from '../components/Skeleton/Skeleton'
 import { inputClass, primaryBtnClass, secondaryBtnClass } from '../components/forms/FormField'
 import { formatCurrency } from '../lib/format'
 import type { Tratamiento } from '../types/tratamiento'
+
+// mismo shape que la card real: nombre a la izquierda, precio + botón a la derecha
+function TratamientoRowSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+      <Skeleton className="h-4 w-40" />
+      <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-9 w-20 rounded-lg" />
+      </div>
+    </div>
+  )
+}
 
 export function Tratamientos() {
   const { tratamientos, loading, refetch, setActivo, updatePrecios } = useTratamientos()
@@ -82,7 +96,11 @@ export function Tratamientos() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-ink">Tratamientos</h1>
-          <p className="text-sm text-ink-muted">{tratamientos.filter((t) => t.activo).length} activos</p>
+          {loading ? (
+            <Skeleton className="mt-1.5 h-4 w-16" />
+          ) : (
+            <p className="text-sm text-ink-muted">{tratamientos.filter((t) => t.activo).length} activos</p>
+          )}
         </div>
         <button type="button" onClick={openNuevo} className={primaryBtnClass}>
           + Nuevo tratamiento
@@ -119,7 +137,9 @@ export function Tratamientos() {
       )}
 
       <div className="flex flex-col gap-2">
-        {ordenados.map((t, index) => (
+        {loading && [0, 1, 2, 3, 4].map((i) => <TratamientoRowSkeleton key={i} />)}
+
+        {!loading && ordenados.map((t, index) => (
           <Fragment key={t.id}>
             {index === primerNoSenaIndex && index > 0 && <div className="my-1 border-t border-border" />}
             <div

@@ -7,6 +7,7 @@ import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPaciente
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { Modal } from '../components/Modal/Modal'
+import { Skeleton } from '../components/Skeleton/Skeleton'
 import { secondaryBtnClass } from '../components/forms/FormField'
 import { ArrowLeftIcon, ChevronDownIcon, InstagramIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { formatCurrency, formatFechaHora } from '../lib/format'
@@ -16,6 +17,33 @@ import { normalizeSearch } from '../lib/text'
 import type { Turno } from '../types/turno'
 
 const BACK_LABELS: Record<string, string> = { '/dashboard': 'Resumen', '/turnos': 'Turnos', '/formularios': 'Formularios' }
+
+function PacienteHeaderSkeleton() {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-surface p-5">
+      <div className="min-w-0 flex-1">
+        <Skeleton className="h-5 w-40" />
+        <div className="mt-2.5 flex flex-col gap-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+      </div>
+      <Skeleton className="h-9 w-16 shrink-0 rounded-lg" />
+    </div>
+  )
+}
+
+// sirve para las filas de formularios (título+fecha, sin badge) y de
+// turnos (dos líneas) de esta misma pantalla — ambas son "una línea corta
+// + otra más corta" dentro de una card
+function RowSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+      <Skeleton className="h-4 w-32" />
+      <Skeleton className="h-3.5 w-24" />
+    </div>
+  )
+}
 
 export function PacienteDetalle() {
   const { id } = useParams<{ id: string }>()
@@ -32,7 +60,7 @@ export function PacienteDetalle() {
   // después de editar es necesario para que este paciente se actualice acá
   const { pacientes, loading: loadingPacientes, refetch, update } = usePacientes()
   const { turnos, loading: loadingTurnos } = useTurnos({ pacienteId: id })
-  const { respuestas: formularios, asignar: asignarFormulario } = useRespuestasFormulario()
+  const { respuestas: formularios, loading: loadingFormularios, asignar: asignarFormulario } = useRespuestasFormulario()
   const [editOpen, setEditOpen] = useState(false)
   const [editingTurno, setEditingTurno] = useState<Turno | null>(null)
   const [turnoFormOpen, setTurnoFormOpen] = useState(false)
@@ -87,48 +115,56 @@ export function PacienteDetalle() {
         <ArrowLeftIcon className="h-4 w-4" /> {backLabel}
       </Link>
 
-      <div className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-surface p-5">
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-semibold text-ink">{paciente?.nombreCompleto ?? 'Cargando...'}</h1>
-          <div className="mt-2 flex flex-col gap-1.5">
-            {paciente?.telefono && (
-              <a
-                href={waLink(paciente.telefono)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-fit items-center gap-1.5 text-sm text-ink-muted hover:text-success"
-              >
-                <WhatsAppIcon className="h-4 w-4 shrink-0" /> {paciente.telefono}
-              </a>
+      {loadingPacientes ? (
+        <PacienteHeaderSkeleton />
+      ) : (
+        <div className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-surface p-5">
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-semibold text-ink">{paciente?.nombreCompleto}</h1>
+            <div className="mt-2 flex flex-col gap-1.5">
+              {paciente?.telefono && (
+                <a
+                  href={waLink(paciente.telefono)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-fit items-center gap-1.5 text-sm text-ink-muted hover:text-success"
+                >
+                  <WhatsAppIcon className="h-4 w-4 shrink-0" /> {paciente.telefono}
+                </a>
+              )}
+              {paciente?.instagram && (
+                <a
+                  href={instagramLink(paciente.instagram)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-fit items-center gap-1.5 text-sm text-ink-muted hover:text-primary-600"
+                >
+                  <InstagramIcon className="h-4 w-4 shrink-0" /> @{paciente.instagram}
+                </a>
+              )}
+              {paciente?.email && <p className="text-sm text-ink-muted">{paciente.email}</p>}
+            </div>
+            {paciente?.notas && (
+              <p className="mt-3 whitespace-pre-wrap rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-muted">
+                {paciente.notas}
+              </p>
             )}
-            {paciente?.instagram && (
-              <a
-                href={instagramLink(paciente.instagram)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-fit items-center gap-1.5 text-sm text-ink-muted hover:text-primary-600"
-              >
-                <InstagramIcon className="h-4 w-4 shrink-0" /> @{paciente.instagram}
-              </a>
-            )}
-            {paciente?.email && <p className="text-sm text-ink-muted">{paciente.email}</p>}
           </div>
-          {paciente?.notas && (
-            <p className="mt-3 whitespace-pre-wrap rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-muted">
-              {paciente.notas}
-            </p>
-          )}
+          <button type="button" onClick={() => setEditOpen(true)} className={secondaryBtnClass}>
+            Editar
+          </button>
         </div>
-        <button type="button" onClick={() => setEditOpen(true)} className={secondaryBtnClass}>
-          Editar
-        </button>
-      </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-ink-muted">
-            {formulariosPaciente.length} formulario{formulariosPaciente.length === 1 ? '' : 's'}
-          </p>
+          {loadingFormularios ? (
+            <Skeleton className="h-4 w-28" />
+          ) : (
+            <p className="text-sm font-medium text-ink-muted">
+              {formulariosPaciente.length} formulario{formulariosPaciente.length === 1 ? '' : 's'}
+            </p>
+          )}
           <button
             type="button"
             onClick={() => setAsignarFormOpen(true)}
@@ -138,7 +174,9 @@ export function PacienteDetalle() {
           </button>
         </div>
 
-        {formulariosPaciente.map((f) => {
+        {loadingFormularios && [0, 1].map((i) => <RowSkeleton key={i} />)}
+
+        {!loadingFormularios && formulariosPaciente.map((f) => {
           const expanded = expandedFormularioId === f.id
           return (
             <div key={f.id} className="rounded-xl border border-border bg-surface p-4">
@@ -166,7 +204,7 @@ export function PacienteDetalle() {
           )
         })}
 
-        {formulariosPaciente.length === 0 && (
+        {!loadingFormularios && formulariosPaciente.length === 0 && (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
             Este paciente todavía no tiene formularios asignados.
           </p>
@@ -174,11 +212,17 @@ export function PacienteDetalle() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <p className="text-sm font-medium text-ink-muted">
-          {turnos.length} turno{turnos.length === 1 ? '' : 's'}
-        </p>
+        {loadingTurnos ? (
+          <Skeleton className="h-4 w-20" />
+        ) : (
+          <p className="text-sm font-medium text-ink-muted">
+            {turnos.length} turno{turnos.length === 1 ? '' : 's'}
+          </p>
+        )}
 
-        {turnos.map((turno) => (
+        {loadingTurnos && [0, 1, 2].map((i) => <RowSkeleton key={i} />)}
+
+        {!loadingTurnos && turnos.map((turno) => (
           <div
             key={turno.id}
             role="button"

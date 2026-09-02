@@ -4,6 +4,7 @@ import { useRespuestasFormulario } from '../hooks/useRespuestasFormulario'
 import { usePacientes } from '../hooks/usePacientes'
 import { PacienteCombobox } from '../components/PacienteCombobox/PacienteCombobox'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
+import { Skeleton } from '../components/Skeleton/Skeleton'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { ArrowUpRightIcon, ChevronDownIcon } from '../components/icons'
 import { formatFechaHora } from '../lib/format'
@@ -15,6 +16,24 @@ import type { Paciente } from '../types/paciente'
 // esté asignada a un paciente. Si el form cambia de texto en esa pregunta
 // esto simplemente cae al fallback, no rompe nada.
 const CAMPO_NOMBRE = 'Nombre y apellido'
+
+// mismo shape que la card colapsada: título+fecha a la izquierda, badge+flecha a la derecha
+function RespuestaRowSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="mt-1.5 h-3.5 w-24" />
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-4 w-4" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function Formularios() {
   const { respuestas, loading, asignar } = useRespuestasFormulario()
@@ -59,14 +78,20 @@ export function Formularios() {
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-lg font-semibold text-ink">Formularios</h1>
-        <p className="text-sm text-ink-muted">
-          {respuestas.length} respuesta{respuestas.length === 1 ? '' : 's'}
-          {sinAsignar > 0 && ` — ${sinAsignar} sin asignar`}
-        </p>
+        {loading ? (
+          <Skeleton className="mt-1.5 h-4 w-32" />
+        ) : (
+          <p className="text-sm text-ink-muted">
+            {respuestas.length} respuesta{respuestas.length === 1 ? '' : 's'}
+            {sinAsignar > 0 && ` — ${sinAsignar} sin asignar`}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
-        {respuestas.map((r) => {
+        {loading && [0, 1, 2, 3].map((i) => <RespuestaRowSkeleton key={i} />)}
+
+        {!loading && respuestas.map((r) => {
           const paciente = r.pacienteId ? pacientes.find((p) => p.id === r.pacienteId) : null
           const expanded = expandedId === r.id
           const titulo = r.respuestas[CAMPO_NOMBRE] || 'Respuesta sin nombre'
