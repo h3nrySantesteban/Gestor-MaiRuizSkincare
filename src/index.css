@@ -88,6 +88,18 @@ body,
   height: 100%;
 }
 
+/* Sin esto, aunque AppLayout arma su propio scroll interno (h-svh
+   overflow-hidden + <main overflow-y-auto>), iOS Safari igual deja
+   "estirarse" al documento entero (html/body) al arrastrar más allá del
+   borde — el rebote elástico nativo, que revela el fondo detrás del header
+   como si toda la página se despegara. overflow: hidden en html/body saca
+   al documento de la ecuación: el único que puede scrollear es <main>. */
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
