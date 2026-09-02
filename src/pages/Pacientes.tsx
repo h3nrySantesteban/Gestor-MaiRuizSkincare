@@ -4,6 +4,7 @@ import { usePacientes } from '../hooks/usePacientes'
 import { usePacienteIdsConNotasEnTurnos } from '../hooks/usePacienteIdsConNotasEnTurnos'
 import { useTurnoCountsPorPaciente } from '../hooks/useTurnoCountsPorPaciente'
 import { NuevoPacienteForm } from '../components/NuevoPacienteForm/NuevoPacienteForm'
+import { Skeleton } from '../components/Skeleton/Skeleton'
 import { InstagramIcon, ListIcon, NoteIcon, SearchIcon, WhatsAppIcon } from '../components/icons'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { instagramLink, waLink } from '../lib/links'
@@ -11,6 +12,19 @@ import { normalizeSearch } from '../lib/text'
 
 const ORDENES = ['Alfabético', 'Cantidad de turnos'] as const
 type Orden = (typeof ORDENES)[number]
+
+// mismo shape que una card real: nombre + los dos íconos de contacto
+function PacienteRowSkeleton() {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+      <Skeleton className="h-4 w-40" />
+      <div className="flex shrink-0 items-center gap-2">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-8 w-8 rounded-full" />
+      </div>
+    </div>
+  )
+}
 
 export function Pacientes() {
   const { pacientes, loading, refetch } = usePacientes()
@@ -39,9 +53,13 @@ export function Pacientes() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-ink">Pacientes</h1>
-          <p className="text-sm text-ink-muted">
-            {pacientes.length} paciente{pacientes.length === 1 ? '' : 's'}
-          </p>
+          {loading ? (
+            <Skeleton className="mt-1.5 h-4 w-24" />
+          ) : (
+            <p className="text-sm text-ink-muted">
+              {pacientes.length} paciente{pacientes.length === 1 ? '' : 's'}
+            </p>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <OrdenDropdown value={orden} onChange={setOrden} />
@@ -62,7 +80,9 @@ export function Pacientes() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {filtered.map((p) => {
+        {loading && [0, 1, 2, 3, 4, 5].map((i) => <PacienteRowSkeleton key={i} />)}
+
+        {!loading && filtered.map((p) => {
           const tieneNotas = Boolean(p.notas) || pacienteIdsConNotasEnTurnos.has(p.id)
           return (
             <div
