@@ -146,6 +146,7 @@ export function AppLayout() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="flex shrink-0 items-center justify-between border-b border-border bg-surface px-4 py-3 md:px-6">
           <div className="flex items-center gap-1">
+            <NotificationBell />
             <button
               type="button"
               onClick={toggleTheme}
@@ -154,7 +155,6 @@ export function AppLayout() {
             >
               {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
             </button>
-            <NotificationBell />
           </div>
           {/* hamburguesa sigue a la derecha, junto al menú/drawer que ahora
               también vive de ese lado (ver comentario en el div raíz) */}
