@@ -146,3 +146,16 @@ body {
     transform: translateX(100%);
   }
 }
+
+/* opciones del FAB (Nuevo turno/gasto/paciente): entran deslizándose desde
+   abajo, mismo lugar de donde salen (el botón "+") */
+@keyframes fab-option-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

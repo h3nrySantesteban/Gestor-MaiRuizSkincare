@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import type { MouseEvent, TouchEvent } from 'react'
+import type { MouseEvent as ReactMouseEvent, TouchEvent } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import { NotificationBell } from '../NotificationBell/NotificationBell'
 import { NuevoTurnoForm } from '../NuevoTurnoForm/NuevoTurnoForm'
+import { NuevoGastoForm } from '../NuevoGastoForm/NuevoGastoForm'
+import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { GoogleCalendarConnectBanner } from '../GoogleCalendarConnectBanner/GoogleCalendarConnectBanner'
 import {
   BarChartIcon,
   CalendarIcon,
   ChevronDownIcon,
   ClipboardListIcon,
+  DollarSignIcon,
   HomeIcon,
   LogOutIcon,
   MenuIcon,
@@ -61,7 +64,7 @@ function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
         const isCurrentPage = location.pathname === to
         // ya estando en la página, tocar la palabra no tiene nada nuevo
         // adonde navegar — en vez de ese no-op, despliega/oculta el submenu
-        function handleLabelClick(e: MouseEvent) {
+        function handleLabelClick(e: ReactMouseEvent) {
           if (submenu.length > 0 && isCurrentPage) {
             e.preventDefault()
             onToggleSubmenu(to)
@@ -156,6 +159,10 @@ export function AppLayout() {
   const { theme, toggleTheme } = useTheme()
   const [drawerPhase, setDrawerPhase] = useState<DrawerPhase>('closed')
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
+  const [nuevoGastoOpen, setNuevoGastoOpen] = useState(false)
+  const [nuevoPacienteOpen, setNuevoPacienteOpen] = useState(false)
+  const [fabMenuOpen, setFabMenuOpen] = useState(false)
+  const fabRef = useRef<HTMLDivElement>(null)
   // acá y no dentro de NavLinks: esa instancia del drawer mobile se
   // desmonta entera al cerrarse (ver "drawerPhase !== 'closed'" abajo), así
   // que un estado local ahí se perdería en vez de mantenerse abierto
@@ -166,6 +173,33 @@ export function AppLayout() {
   function toggleSubmenu(to: string) {
     setOpenSubmenu((prev) => (prev === to ? null : to))
   }
+
+  // mismo patrón que NotificationBell: clic afuera o Escape cierra el
+  // desplegable del FAB
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (fabRef.current && !fabRef.current.contains(e.target as Node)) setFabMenuOpen(false)
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setFabMenuOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [])
+
+  // se renderizan en este orden y el FAB va último en el DOM (ver JSX más
+  // abajo) — en una columna sin invertir, el último de la lista queda
+  // pegado al botón "+" al desplegarse hacia arriba. Nuevo turno pegado al
+  // FAB por ser la acción más usada.
+  const FAB_OPTIONS = [
+    { label: 'Nuevo paciente', icon: UsersIcon, onClick: () => setNuevoPacienteOpen(true) },
+    { label: 'Nuevo gasto', icon: DollarSignIcon, onClick: () => setNuevoGastoOpen(true) },
+    { label: 'Nuevo turno', icon: CalendarIcon, onClick: () => setNuevoTurnoOpen(true) },
+  ]
 
   function openDrawer() {
     setDrawerPhase('open')
@@ -338,16 +372,38 @@ export function AppLayout() {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setNuevoTurnoOpen(true)}
-        aria-label="Nuevo turno"
-        className="fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg transition-transform hover:scale-105 hover:bg-primary-600 active:scale-95"
-      >
-        <PlusIcon className="h-6 w-6" />
-      </button>
+      <div ref={fabRef} className="fixed bottom-6 right-6 z-30 flex flex-col items-end gap-3">
+        {fabMenuOpen &&
+          FAB_OPTIONS.map(({ label, icon: Icon, onClick }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => {
+                onClick()
+                setFabMenuOpen(false)
+              }}
+              className="flex animate-[fab-option-in_0.15s_ease-out] items-center gap-3 rounded-full border border-border bg-surface py-1.5 pl-4 pr-1.5 text-sm font-medium text-ink shadow-lg hover:bg-surface-muted"
+            >
+              {label}
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                <Icon className="h-4 w-4" />
+              </span>
+            </button>
+          ))}
+        <button
+          type="button"
+          onClick={() => setFabMenuOpen((v) => !v)}
+          aria-label={fabMenuOpen ? 'Cerrar menú de creación' : 'Crear nuevo'}
+          aria-expanded={fabMenuOpen}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-500 text-white shadow-lg transition-transform hover:scale-105 hover:bg-primary-600 active:scale-95"
+        >
+          <PlusIcon className={`h-6 w-6 transition-transform ${fabMenuOpen ? 'rotate-45' : ''}`} />
+        </button>
+      </div>
 
       <NuevoTurnoForm open={nuevoTurnoOpen} onClose={() => setNuevoTurnoOpen(false)} />
+      <NuevoGastoForm open={nuevoGastoOpen} onClose={() => setNuevoGastoOpen(false)} onSaved={() => {}} />
+      <NuevoPacienteForm open={nuevoPacienteOpen} onClose={() => setNuevoPacienteOpen(false)} onSaved={() => {}} />
     </div>
   )
 }
