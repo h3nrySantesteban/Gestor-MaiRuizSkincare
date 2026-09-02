@@ -108,7 +108,7 @@ export function Tratamientos() {
       </div>
 
       {tratamientosParaAumento.length > 0 && (
-        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface p-4">
+        <div className="flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-surface p-4">
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-ink-muted">Aumentar todos los precios</span>
             <div className="relative w-28">
@@ -137,7 +137,16 @@ export function Tratamientos() {
       )}
 
       <div className="flex flex-col gap-2">
-        {loading && [0, 1, 2, 3, 4, 5, 6, 7].map((i) => <TratamientoRowSkeleton key={i} />)}
+        {loading &&
+          [0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <Fragment key={i}>
+              {/* misma separación que el real: la seña siempre va primera,
+                  separada del resto por una línea — es estructural, no
+                  depende de qué tratamientos terminen cargando */}
+              {i === 1 && <div className="my-1 border-t border-border" />}
+              <TratamientoRowSkeleton />
+            </Fragment>
+          ))}
 
         {!loading && ordenados.map((t, index) => (
           <Fragment key={t.id}>
