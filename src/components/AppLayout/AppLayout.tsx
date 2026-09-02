@@ -372,6 +372,13 @@ export function AppLayout() {
         </div>
       )}
 
+      {fabMenuOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/40 animate-[drawer-backdrop-in_0.2s_ease-out]"
+          onClick={() => setFabMenuOpen(false)}
+        />
+      )}
+
       <div ref={fabRef} className="fixed bottom-6 right-6 z-30 flex flex-col items-end gap-3">
         {fabMenuOpen &&
           FAB_OPTIONS.map(({ label, icon: Icon, onClick }) => (
