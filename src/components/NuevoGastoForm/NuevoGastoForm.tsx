@@ -5,6 +5,7 @@ import { Modal } from '../Modal/Modal'
 import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
 import { ToggleSiNo } from '../forms/ToggleSiNo'
+import { DateTimeInput } from '../forms/DateTimeInput'
 import { TrashIcon } from '../icons'
 import { useGastos, type GastoInput } from '../../hooks/useGastos'
 import type { Gasto, RecurrenciaUnidad } from '../../types/gasto'
@@ -170,14 +171,7 @@ function NuevoGastoFormInner({ onClose, onSaved, onDeleted, gasto }: NuevoGastoF
             </div>
           </Field>
           <Field label="Fecha" required error={errors.fecha}>
-            <input
-              ref={fechaRef}
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              onKeyDown={handleFechaKeyDown}
-              className={inputClass}
-            />
+            <DateTimeInput ref={fechaRef} type="date" value={fecha} onChange={setFecha} onKeyDown={handleFechaKeyDown} />
           </Field>
           <Field label="Descripción" error={errors.descripcion}>
             <textarea
