@@ -36,7 +36,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 11. analizar e implementar carga "skeleton" para que los componentes no salenten en la pagina mientras van cargando y completandose
     # 1. Resumen
     # 2. Turnos
-    3. Pacientes
+    # 3. Pacientes
     4. PacienteDetalle
     5. Tratamientos
     6. Formularios
