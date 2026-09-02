@@ -51,24 +51,16 @@
   </head>
   <body>
     <div id="root">
-      <!-- Fallback visible para revisores/crawlers que no ejecutan JS (es
-           una SPA de React, así que sin esto el <body> queda vacío hasta
-           que React monta) — React reemplaza este contenido al hidratar. -->
-      <main style="max-width: 640px; margin: 64px auto; padding: 0 24px; font-family: system-ui, sans-serif">
-        <h1>Gestor de Turnos — Mai Ruiz Skincare</h1>
-        <p>
-          Gestor de Turnos — Mai Ruiz Skincare es un sistema de uso interno para administrar la agenda de un
-          consultorio de skincare: pacientes, tratamientos y turnos. Permite registrar turnos, enviar recordatorios
-          automáticos por WhatsApp y sincronizar cada turno con Google Calendar.
-        </p>
-        <p>
-          Es una herramienta de uso exclusivo de la administradora del consultorio — no tiene registro público ni
-          usuarios externos.
-        </p>
-        <p>
-          <a href="/login">Iniciar sesión</a> · <a href="/privacidad">Política de Privacidad</a> ·
-          <a href="/terminos">Condiciones del Servicio</a>
-        </p>
+      <!-- Fallback visible antes de que React monte (SPA sin SSR, así que
+           sin esto el <body> queda vacío un instante). Antes tenía una
+           landing larga pensada para revisores/crawlers del trámite de
+           verificación de Google — trámite que se descartó (ver CLAUDE.md)
+           — y solo se veía como el flash de "otra página" antes del login.
+           Ahora es un loading mínimo con la misma identidad visual de la
+           app (clases del bundle CSS que ya está en <head>), para que no
+           se note como una pantalla distinta. -->
+      <main class="flex min-h-svh items-center justify-center bg-surface-muted">
+        <span class="text-3xl" aria-hidden="true">🌼</span>
       </main>
     </div>
     <script type="module" src="/src/main.tsx"></script>
