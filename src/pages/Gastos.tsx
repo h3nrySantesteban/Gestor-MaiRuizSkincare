@@ -77,8 +77,9 @@ function agruparPorMes(gastos: Gasto[]): GrupoMes[] {
   return grupos
 }
 
-function totalDelMes(gastos: Gasto[], year: number, month: number): number {
+function totalDelMes(gastos: Gasto[], year: number, month: number, opts?: { excluirHabituales?: boolean }): number {
   return gastos.reduce((sum, g) => {
+    if (opts?.excluirHabituales && g.esFijo) return sum
     const f = parseFechaSolo(g.fecha)
     return f.getFullYear() === year && f.getMonth() + 1 === month ? sum + g.valor : sum
   }, 0)
@@ -181,6 +182,17 @@ export function Gastos() {
     return suma / 6
   }, [gastos, anioActual, mesActual])
 
+  // mismo promedio pero sin los gastos habituales — para ver cuánto de ese
+  // promedio es gasto "suelto"/variable, sin lo recurrente (alquiler, etc.)
+  const promedio6MesesSinHabituales = useMemo(() => {
+    let suma = 0
+    for (let i = 1; i <= 6; i++) {
+      const { year, month } = restarMeses(anioActual, mesActual, i)
+      suma += totalDelMes(gastos, year, month, { excluirHabituales: true })
+    }
+    return suma / 6
+  }, [gastos, anioActual, mesActual])
+
   // gastos habituales cargados el mes pasado cuya cadencia (ver ocurreEnMes)
   // también corresponde a este mes — una proyección, no lo que ya se pagó
   const gastoAproximado = useMemo(() => {
@@ -234,6 +246,9 @@ export function Gastos() {
           <div className="rounded-xl border border-border bg-surface p-4">
             <p className="text-xs font-medium text-ink-muted">Promedio (últimos 6 meses)</p>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>
+            <p className="mt-1 text-xs font-medium text-ink-muted">
+              Sin habituales: {formatCurrency(promedio6MesesSinHabituales)}
+            </p>
           </div>
         </div>
       )}
