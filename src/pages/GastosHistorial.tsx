@@ -162,8 +162,8 @@ export function GastosHistorial() {
         <p className="text-sm text-ink-muted">Por {granularidad === 'meses' ? 'mes' : 'año'}, con la variación contra el {granularidad === 'meses' ? 'mes' : 'año'} anterior</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-sm text-ink-muted">
+      <div className="flex flex-col gap-3">
+        <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
           Agrupar por
           <select
             value={granularidad}
@@ -174,7 +174,7 @@ export function GastosHistorial() {
             <option value="años">Años</option>
           </select>
         </label>
-        <label className="flex items-center gap-2 text-sm text-ink-muted">
+        <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
           Ver como
           <select value={vista} onChange={(e) => setVista(e.target.value as typeof vista)} className={`${inputClass} w-auto`}>
             <option value="tabla">Tabla</option>
@@ -183,7 +183,7 @@ export function GastosHistorial() {
           </select>
         </label>
         {vista === 'linea' && (
-          <label className="flex items-center gap-2 text-sm text-ink-muted">
+          <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
             Métrica
             <select value={metrica} onChange={(e) => setMetrica(e.target.value as Metrica)} className={`${inputClass} w-auto`}>
               {(Object.keys(METRICA_LABEL) as Metrica[]).map((key) => (
