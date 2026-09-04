@@ -35,10 +35,13 @@
 /*
  * Modo oscuro: solo se redefinen los tokens de "extremo" (tints muy claros,
  * y primary-700 que solo se usa como texto sobre esos tints) — primary-500/
- * 600 y success/warning/danger se dejan igual en los dos modos porque son
- * tonos medios que ya funcionan bien tanto sobre superficie clara como
- * oscura (y bg-primary-500/bg-danger llevan texto blanco encima, así que no
- * conviene aclararlos para el modo oscuro).
+ * 600 y success/danger se dejan igual en los dos modos porque son tonos
+ * medios que ya funcionan bien tanto sobre superficie clara como oscura (y
+ * bg-primary-500/bg-danger llevan texto blanco encima, así que no conviene
+ * aclararlos para el modo oscuro). warning es la excepción: su tono medio
+ * (#b9791f) se veía apagado como texto plano sobre la superficie oscura
+ * (ej. "Señado" en Turnos, sin píldora de fondo detrás) — se aclara a
+ * #d99f3c en modo oscuro, igual que primary-700.
  *
  * Dos bloques a propósito: uno por preferencia de sistema (se ignora si el
  * usuario eligió explícitamente "claro" con el toggle) y uno por atributo
@@ -59,6 +62,7 @@
     --color-border: #322d3f;
 
     --color-success-bg: #14291d;
+    --color-warning: #d99f3c;
     --color-warning-bg: #2e2410;
     --color-danger-bg: #2e1616;
   }
@@ -78,6 +82,7 @@
   --color-border: #322d3f;
 
   --color-success-bg: #14291d;
+  --color-warning: #d99f3c;
   --color-warning-bg: #2e2410;
   --color-danger-bg: #2e1616;
 }
