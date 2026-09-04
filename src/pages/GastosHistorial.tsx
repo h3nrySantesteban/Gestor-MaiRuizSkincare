@@ -5,10 +5,11 @@ import { useGastos } from '../hooks/useGastos'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { inputClass } from '../components/forms/FormField'
 import { ArrowLeftIcon } from '../components/icons'
-import { formatCurrency, formatCurrencyCompact, formatMesAno, formatMesAnoCorto } from '../lib/format'
+import { formatCurrency, formatCurrencyCompact, formatMesAno, formatMesCorto } from '../lib/format'
 import type { Gasto } from '../types/gasto'
 
 type Metrica = 'total' | 'cantidad' | 'totalHabituales' | 'totalSinHabituales'
+type Granularidad = 'meses' | 'años'
 
 const METRICA_LABEL: Record<Metrica, string> = {
   total: 'Total gastado',
@@ -17,10 +18,10 @@ const METRICA_LABEL: Record<Metrica, string> = {
   totalSinHabituales: 'Gastos sin habituales',
 }
 
-interface MesGasto {
+interface Fila {
   key: string
-  mesCorto: string
-  mesLargo: string
+  periodoCorto: string
+  periodoLargo: string
   total: number
   cantidad: number
   totalHabituales: number
@@ -36,14 +37,15 @@ function pct(curr: number, prev: number | undefined): number | null {
   return ((curr - prev) / prev) * 100
 }
 
-// una fila por mes con al menos un gasto cargado (igual que agruparPorMes en
-// Gastos.tsx, no rellena meses sin datos con ceros) — el % es contra el mes
-// anterior CON datos en esta lista, no necesariamente el mes calendario
-// inmediato anterior si hubo un mes sin ningún gasto cargado en el medio
-function calcularSerieMensual(gastos: Gasto[]): MesGasto[] {
+// una fila por mes/año con al menos un gasto cargado (igual que
+// agruparPorMes en Gastos.tsx, no rellena períodos sin datos con ceros) —
+// el % es contra el período anterior CON datos en esta lista, no
+// necesariamente el inmediato anterior en el calendario si hubo uno sin
+// ningún gasto cargado en el medio
+function calcularSerie(gastos: Gasto[], granularidad: Granularidad): Fila[] {
   const porKey = new Map<string, { fechaMuestra: string; total: number; cantidad: number; totalHabituales: number }>()
   for (const g of gastos) {
-    const key = g.fecha.slice(0, 7)
+    const key = granularidad === 'meses' ? g.fecha.slice(0, 7) : g.fecha.slice(0, 4)
     let entry = porKey.get(key)
     if (!entry) {
       entry = { fechaMuestra: g.fecha, total: 0, cantidad: 0, totalHabituales: 0 }
@@ -53,7 +55,7 @@ function calcularSerieMensual(gastos: Gasto[]): MesGasto[] {
     entry.cantidad += 1
     if (g.esFijo) entry.totalHabituales += g.valor
   }
-  const keys = [...porKey.keys()].sort() // "yyyy-MM" ordena cronológico como string
+  const keys = [...porKey.keys()].sort() // "yyyy-MM"/"yyyy" ordenan cronológico como string
   return keys.map((key, i) => {
     const entry = porKey.get(key)!
     const prevEntry = i > 0 ? porKey.get(keys[i - 1]) : undefined
@@ -61,8 +63,11 @@ function calcularSerieMensual(gastos: Gasto[]): MesGasto[] {
     const prevSinHabituales = prevEntry ? prevEntry.total - prevEntry.totalHabituales : undefined
     return {
       key,
-      mesCorto: formatMesAnoCorto(entry.fechaMuestra),
-      mesLargo: formatMesAno(entry.fechaMuestra),
+      // en la vista "Meses" el mes va sin año (el desplegable de arriba ya
+      // aclara en qué granularidad se está mirando) — en "Años" el período
+      // corto y largo son lo mismo, el año solo
+      periodoCorto: granularidad === 'meses' ? formatMesCorto(entry.fechaMuestra) : key,
+      periodoLargo: granularidad === 'meses' ? formatMesAno(entry.fechaMuestra) : key,
       total: entry.total,
       cantidad: entry.cantidad,
       totalHabituales: entry.totalHabituales,
@@ -81,13 +86,13 @@ function formatPct(value: number | null): string {
 }
 
 // más gasto = rojo, menos gasto = verde — mismo criterio que la tarjeta
-// "Este mes" en Gastos.tsx
+// "Total este mes" en Gastos.tsx
 function pctColorClass(value: number | null): string {
   if (value === null || value === 0) return 'text-ink-muted'
   return value > 0 ? 'text-danger' : 'text-success'
 }
 
-type SortColumn = 'mes' | 'total' | 'cantidad' | 'totalHabituales' | 'totalSinHabituales'
+type SortColumn = 'periodo' | 'total' | 'cantidad' | 'totalHabituales' | 'totalSinHabituales'
 type SortDirection = 'asc' | 'desc'
 interface Sort {
   column: SortColumn
@@ -122,13 +127,14 @@ function SortButton({
 
 export function GastosHistorial() {
   const { gastos, loading } = useGastos()
+  const [granularidad, setGranularidad] = useState<Granularidad>('meses')
   const [vista, setVista] = useState<'tabla' | 'linea' | 'barras'>('tabla')
   const [metrica, setMetrica] = useState<Metrica>('total')
-  const [sort, setSort] = useState<Sort>({ column: 'mes', direction: 'desc' })
+  const [sort, setSort] = useState<Sort>({ column: 'periodo', direction: 'desc' })
 
   // los gráficos van siempre de más viejo a más nuevo (izquierda a derecha)
   // — el orden de la tabla es independiente, lo maneja sort
-  const serie = useMemo(() => calcularSerieMensual(gastos), [gastos])
+  const serie = useMemo(() => calcularSerie(gastos, granularidad), [gastos, granularidad])
 
   function handleSort(column: SortColumn) {
     setSort((prev) =>
@@ -139,7 +145,7 @@ export function GastosHistorial() {
   const filasTabla = useMemo(() => {
     const copia = [...serie]
     copia.sort((a, b) => {
-      const cmp = sort.column === 'mes' ? a.key.localeCompare(b.key) : a[sort.column] - b[sort.column]
+      const cmp = sort.column === 'periodo' ? a.key.localeCompare(b.key) : a[sort.column] - b[sort.column]
       return sort.direction === 'asc' ? cmp : -cmp
     })
     return copia
@@ -153,10 +159,21 @@ export function GastosHistorial() {
 
       <div>
         <h1 className="text-lg font-semibold text-ink">Historial de gastos</h1>
-        <p className="text-sm text-ink-muted">Por mes, con la variación contra el mes anterior</p>
+        <p className="text-sm text-ink-muted">Por {granularidad === 'meses' ? 'mes' : 'año'}, con la variación contra el {granularidad === 'meses' ? 'mes' : 'año'} anterior</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-sm text-ink-muted">
+          Agrupar por
+          <select
+            value={granularidad}
+            onChange={(e) => setGranularidad(e.target.value as Granularidad)}
+            className={`${inputClass} w-auto`}
+          >
+            <option value="meses">Meses</option>
+            <option value="años">Años</option>
+          </select>
+        </label>
         <label className="flex items-center gap-2 text-sm text-ink-muted">
           Ver como
           <select value={vista} onChange={(e) => setVista(e.target.value as typeof vista)} className={`${inputClass} w-auto`}>
@@ -186,7 +203,7 @@ export function GastosHistorial() {
           Todavía no hay gastos cargados.
         </p>
       ) : vista === 'tabla' ? (
-        <TablaHistorial filas={filasTabla} sort={sort} onSort={handleSort} />
+        <TablaHistorial filas={filasTabla} sort={sort} onSort={handleSort} granularidad={granularidad} />
       ) : vista === 'linea' ? (
         <GraficoLinea data={serie} metrica={metrica} />
       ) : (
@@ -196,14 +213,24 @@ export function GastosHistorial() {
   )
 }
 
-function TablaHistorial({ filas, sort, onSort }: { filas: MesGasto[]; sort: Sort; onSort: (column: SortColumn) => void }) {
+function TablaHistorial({
+  filas,
+  sort,
+  onSort,
+  granularidad,
+}: {
+  filas: Fila[]
+  sort: Sort
+  onSort: (column: SortColumn) => void
+  granularidad: Granularidad
+}) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-surface">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left text-ink-muted">
             <th className="whitespace-nowrap px-2.5 py-3 font-medium">
-              <SortButton label="Mes" column="mes" sort={sort} onSort={onSort} />
+              <SortButton label={granularidad === 'meses' ? 'Mes' : 'Año'} column="periodo" sort={sort} onSort={onSort} />
             </th>
             <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
               <SortButton label="Total" column="total" sort={sort} onSort={onSort} align="right" />
@@ -222,7 +249,7 @@ function TablaHistorial({ filas, sort, onSort }: { filas: MesGasto[]; sort: Sort
         <tbody>
           {filas.map((f) => (
             <tr key={f.key} className="border-b border-border last:border-0">
-              <td className="whitespace-nowrap px-2.5 py-3 capitalize text-ink">{f.mesCorto}</td>
+              <td className="whitespace-nowrap px-2.5 py-3 capitalize text-ink">{f.periodoCorto}</td>
               <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
                 {formatCurrency(f.total)}
                 <div className={`text-[11px] font-medium ${pctColorClass(f.pctTotal)}`}>{formatPct(f.pctTotal)}</div>
@@ -247,26 +274,26 @@ function TablaHistorial({ filas, sort, onSort }: { filas: MesGasto[]; sort: Sort
   )
 }
 
-function LineaTooltip({ active, payload, metrica }: { active?: boolean; payload?: { payload: MesGasto }[]; metrica: Metrica }) {
+function LineaTooltip({ active, payload, metrica }: { active?: boolean; payload?: { payload: Fila }[]; metrica: Metrica }) {
   if (!active || !payload || payload.length === 0) return null
   const row = payload[0].payload
   const valor = row[metrica]
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="text-xs font-medium text-ink">{row.mesLargo}</p>
+      <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
       <p className="text-sm font-semibold text-ink">{metrica === 'cantidad' ? valor : formatCurrency(valor)}</p>
     </div>
   )
 }
 
-function GraficoLinea({ data, metrica }: { data: MesGasto[]; metrica: Metrica }) {
+function GraficoLinea({ data, metrica }: { data: Fila[]; metrica: Metrica }) {
   return (
     <div className="h-64 w-full rounded-xl border border-border bg-surface p-4 sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--color-border)" />
           <XAxis
-            dataKey="mesCorto"
+            dataKey="periodoCorto"
             tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
             axisLine={{ stroke: 'var(--color-border)' }}
             tickLine={false}
@@ -293,12 +320,12 @@ function GraficoLinea({ data, metrica }: { data: MesGasto[]; metrica: Metrica })
   )
 }
 
-function BarrasTooltip({ active, payload }: { active?: boolean; payload?: { payload: MesGasto }[] }) {
+function BarrasTooltip({ active, payload }: { active?: boolean; payload?: { payload: Fila }[] }) {
   if (!active || !payload || payload.length === 0) return null
   const row = payload[0].payload
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="text-xs font-medium text-ink">{row.mesLargo}</p>
+      <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
       <p className="text-sm font-semibold text-ink">{formatCurrency(row.total)} total</p>
       <p className="text-xs text-ink-muted">Habituales: {formatCurrency(row.totalHabituales)}</p>
       <p className="text-xs text-ink-muted">Sin habituales: {formatCurrency(row.totalSinHabituales)}</p>
@@ -307,8 +334,8 @@ function BarrasTooltip({ active, payload }: { active?: boolean; payload?: { payl
 }
 
 // apiladas (stackId compartido), no una al lado de la otra — lo que importa
-// acá es ver la composición del total de cada mes, no comparar barras
-function GraficoBarras({ data }: { data: MesGasto[] }) {
+// acá es ver la composición del total de cada período, no comparar barras
+function GraficoBarras({ data }: { data: Fila[] }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -326,7 +353,7 @@ function GraficoBarras({ data }: { data: MesGasto[] }) {
           <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--color-border)" />
             <XAxis
-              dataKey="mesCorto"
+              dataKey="periodoCorto"
               tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
               axisLine={{ stroke: 'var(--color-border)' }}
               tickLine={false}

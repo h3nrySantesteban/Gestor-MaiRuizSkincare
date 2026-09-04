@@ -55,6 +55,11 @@ export function formatMesAnoCorto(fecha: string): string {
   return format(parseFechaSolo(fecha), 'MMM yyyy', { locale: es })
 }
 
+/** "sep" — mes abreviado sin año, para vistas que ya agrupan por mes dentro de un contexto sin ambigüedad de año. */
+export function formatMesCorto(fecha: string): string {
+  return format(parseFechaSolo(fecha), 'MMM', { locale: es })
+}
+
 export function formatFechaHora(iso: string): string {
   return format(new Date(iso), 'dd/MM/yyyy HH:mm', { locale: es })
 }
