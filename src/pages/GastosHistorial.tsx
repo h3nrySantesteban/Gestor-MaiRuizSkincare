@@ -202,40 +202,40 @@ function TablaHistorial({ filas, sort, onSort }: { filas: MesGasto[]; sort: Sort
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left text-ink-muted">
-            <th className="whitespace-nowrap px-4 py-3 font-medium">
+            <th className="whitespace-nowrap px-2.5 py-3 font-medium">
               <SortButton label="Mes" column="mes" sort={sort} onSort={onSort} />
             </th>
-            <th className="whitespace-nowrap px-4 py-3 text-right font-medium">
-              <SortButton label="Total gastado" column="total" sort={sort} onSort={onSort} align="right" />
+            <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
+              <SortButton label="Total" column="total" sort={sort} onSort={onSort} align="right" />
             </th>
-            <th className="whitespace-nowrap px-4 py-3 text-right font-medium">
-              <SortButton label="Cantidad" column="cantidad" sort={sort} onSort={onSort} align="right" />
+            <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
+              <SortButton label="Cant." column="cantidad" sort={sort} onSort={onSort} align="right" />
             </th>
-            <th className="whitespace-nowrap px-4 py-3 text-right font-medium">
-              <SortButton label="Habituales" column="totalHabituales" sort={sort} onSort={onSort} align="right" />
+            <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
+              <SortButton label="Hab." column="totalHabituales" sort={sort} onSort={onSort} align="right" />
             </th>
-            <th className="whitespace-nowrap px-4 py-3 text-right font-medium">
-              <SortButton label="Sin habituales" column="totalSinHabituales" sort={sort} onSort={onSort} align="right" />
+            <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
+              <SortButton label="Sin hab." column="totalSinHabituales" sort={sort} onSort={onSort} align="right" />
             </th>
           </tr>
         </thead>
         <tbody>
           {filas.map((f) => (
             <tr key={f.key} className="border-b border-border last:border-0">
-              <td className="whitespace-nowrap px-4 py-3 capitalize text-ink">{f.mesCorto}</td>
-              <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-ink">
+              <td className="whitespace-nowrap px-2.5 py-3 capitalize text-ink">{f.mesCorto}</td>
+              <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
                 {formatCurrency(f.total)}
                 <div className={`text-[11px] font-medium ${pctColorClass(f.pctTotal)}`}>{formatPct(f.pctTotal)}</div>
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-ink">
+              <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
                 {f.cantidad}
                 <div className="text-[11px] font-medium text-ink-muted">{formatPct(f.pctCantidad)}</div>
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-ink">
+              <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
                 {formatCurrency(f.totalHabituales)}
                 <div className={`text-[11px] font-medium ${pctColorClass(f.pctHabituales)}`}>{formatPct(f.pctHabituales)}</div>
               </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-ink">
+              <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
                 {formatCurrency(f.totalSinHabituales)}
                 <div className={`text-[11px] font-medium ${pctColorClass(f.pctSinHabituales)}`}>{formatPct(f.pctSinHabituales)}</div>
               </td>

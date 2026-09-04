@@ -247,7 +247,7 @@ export function Gastos() {
             >
               {diferenciaPct === null
                 ? 'Sin datos del mes ant.'
-                : `${diferencia > 0 ? '▲' : diferencia < 0 ? '▼' : ''} ${Math.abs(diferenciaPct).toFixed(0)}% vs. ant.`}
+                : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% vs. ant.`}
             </p>
           </Link>
           <div className="rounded-xl border border-border bg-surface p-4">
