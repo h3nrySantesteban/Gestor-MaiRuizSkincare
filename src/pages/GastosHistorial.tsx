@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useGastos } from '../hooks/useGastos'
 import { Skeleton } from '../components/Skeleton/Skeleton'
-import { inputClass } from '../components/forms/FormField'
 import { ArrowLeftIcon } from '../components/icons'
 import { formatCurrency, formatCurrencyCompact, formatMesAno, formatMesCorto } from '../lib/format'
 import type { Gasto } from '../types/gasto'
 
 type Metrica = 'total' | 'cantidad' | 'totalHabituales' | 'totalSinHabituales'
 type Granularidad = 'meses' | 'años'
+
+// mismo estilo visual que inputClass pero sin w-full/min-w-0: estos
+// desplegables tienen que quedar del ancho de su contenido (empujados al
+// margen derecho por justify-between en el <label>), no ocupar todo el
+// espacio disponible
+const selectClass =
+  'rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500'
 
 const METRICA_LABEL: Record<Metrica, string> = {
   total: 'Total gastado',
@@ -168,7 +174,7 @@ export function GastosHistorial() {
           <select
             value={granularidad}
             onChange={(e) => setGranularidad(e.target.value as Granularidad)}
-            className={`${inputClass} w-auto`}
+            className={selectClass}
           >
             <option value="meses">Meses</option>
             <option value="años">Años</option>
@@ -176,7 +182,7 @@ export function GastosHistorial() {
         </label>
         <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
           Ver como
-          <select value={vista} onChange={(e) => setVista(e.target.value as typeof vista)} className={`${inputClass} w-auto`}>
+          <select value={vista} onChange={(e) => setVista(e.target.value as typeof vista)} className={selectClass}>
             <option value="tabla">Tabla</option>
             <option value="linea">Línea</option>
             <option value="barras">Barras</option>
@@ -185,7 +191,7 @@ export function GastosHistorial() {
         {vista === 'linea' && (
           <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
             Métrica
-            <select value={metrica} onChange={(e) => setMetrica(e.target.value as Metrica)} className={`${inputClass} w-auto`}>
+            <select value={metrica} onChange={(e) => setMetrica(e.target.value as Metrica)} className={selectClass}>
               {(Object.keys(METRICA_LABEL) as Metrica[]).map((key) => (
                 <option key={key} value={key}>
                   {METRICA_LABEL[key]}
