@@ -236,25 +236,25 @@ export function Gastos() {
             className="rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"
           >
             <div className="flex items-center justify-between gap-1">
-              <p className="text-xs font-medium text-ink-muted">Este mes</p>
+              <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Total este mes</p>
               <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
             </div>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(totalEsteMes)}</p>
             <p
-              className={`mt-1 text-xs font-medium ${
+              className={`mt-1 whitespace-nowrap text-xs font-medium ${
                 diferenciaPct === null ? 'text-ink-muted' : diferencia > 0 ? 'text-danger' : diferencia < 0 ? 'text-success' : 'text-ink-muted'
               }`}
             >
               {diferenciaPct === null
-                ? 'Sin datos del mes pasado'
-                : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% vs. mes pasado`}
+                ? 'Sin datos del mes ant.'
+                : `${diferencia > 0 ? '▲' : diferencia < 0 ? '▼' : ''} ${Math.abs(diferenciaPct).toFixed(0)}% vs. ant.`}
             </p>
           </Link>
           <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-xs font-medium text-ink-muted">Promedio (últimos 6 meses)</p>
+            <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>
-            <p className="mt-1 text-xs font-medium text-ink-muted">
-              Sin habituales: {formatCurrency(promedio6MesesSinHabituales)}
+            <p className="mt-1 whitespace-nowrap text-xs font-medium text-ink-muted">
+              Sin hab.: {formatCurrency(promedio6MesesSinHabituales)}
             </p>
           </div>
         </div>
