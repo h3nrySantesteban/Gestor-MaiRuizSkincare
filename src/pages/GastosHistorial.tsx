@@ -296,7 +296,7 @@ function GraficoLinea({ data, metrica }: { data: Fila[]; metrica: Metrica }) {
   return (
     <div className="h-64 w-full rounded-xl border border-border bg-surface p-4 sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <LineChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--color-border)" />
           <XAxis
             dataKey="periodoCorto"
@@ -356,7 +356,7 @@ function GraficoBarras({ data }: { data: Fila[] }) {
       </div>
       <div className="h-64 w-full sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <BarChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--color-border)" />
             <XAxis
               dataKey="periodoCorto"

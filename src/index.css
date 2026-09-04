@@ -93,11 +93,14 @@ body,
   height: 100%;
 }
 
-/* Recharts le pone tabIndex a los <svg> internos por accesibilidad — al
-   tocar/clickear un punto del gráfico (línea o barra) el navegador enfoca
-   ese <svg> y dibuja su anillo de foco por defecto alrededor de toda la
-   tarjeta, que acá no representa nada navegable por teclado. Se saca en
-   todos los gráficos de la app (MonthlyChart, GastosHistorial). */
+/* El rectángulo naranja que aparecía al clickear un punto de los gráficos
+   (MonthlyChart, GastosHistorial) NO era un outline de foco del navegador
+   — era la "accessibility layer" de Recharts (tabIndex + un <rect> propio
+   que dibuja al enfocar/clickear un punto). Este outline:none no alcanzaba
+   a sacarlo porque no era CSS; la solución real es accessibilityLayer=
+   {false} en cada <LineChart>/<BarChart>. Se deja este selector igual,
+   por si el navegador de Mai además dibuja su propio anillo de foco nativo
+   sobre el <svg> con tabIndex (raro, pero inofensivo dejarlo). */
 .recharts-wrapper:focus,
 .recharts-wrapper:focus-visible,
 .recharts-surface:focus,

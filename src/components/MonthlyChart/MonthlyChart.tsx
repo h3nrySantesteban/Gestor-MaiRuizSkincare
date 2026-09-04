@@ -118,7 +118,7 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
         // lugar de sobra sin usar debajo — por eso sm: y no md: acá.
         <div className="h-44 w-full sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <BarChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="var(--color-border)" />
               <XAxis
                 dataKey="mes"
