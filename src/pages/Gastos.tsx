@@ -225,23 +225,28 @@ function GastoRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) 
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 text-left sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-1 rounded-xl border border-border bg-surface p-4 text-left"
     >
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
+      {/* fila 1: nombre+fecha a la izquierda, badge de habitual a la derecha */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <p className="font-medium text-ink">{g.nombre}</p>
           <span className="text-xs text-ink-muted">{formatFechaSolo(g.fecha)}</span>
         </div>
-        {g.descripcion && <p className="mt-0.5 truncate text-sm text-ink-muted">{g.descripcion}</p>}
-      </div>
-      {/* Habitual + valor van juntos, mismo renglón, alineados a la derecha */}
-      <div className="flex shrink-0 items-center justify-end gap-2">
         {g.esFijo && g.recurrenciaNumero && g.recurrenciaUnidad && (
-          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
+          <span className="shrink-0 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
             Habitual · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}
           </span>
         )}
-        <p className="font-semibold text-ink">{formatCurrency(g.valor)}</p>
+      </div>
+      {/* fila 2: descripción a la izquierda, precio a la derecha */}
+      <div className="flex items-center justify-between gap-2">
+        {g.descripcion ? (
+          <p className="min-w-0 truncate text-sm text-ink-muted">{g.descripcion}</p>
+        ) : (
+          <span />
+        )}
+        <p className="shrink-0 font-semibold text-ink">{formatCurrency(g.valor)}</p>
       </div>
     </button>
   )
@@ -272,7 +277,7 @@ function GastoHabitualPendienteRow({ gasto: g, onClick }: { gasto: Gasto; onClic
 
 function GastoRowSkeleton() {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-1 rounded-xl border border-border bg-surface p-4">
       <Skeleton className="h-4 w-40" />
       <Skeleton className="h-4 w-16" />
     </div>
