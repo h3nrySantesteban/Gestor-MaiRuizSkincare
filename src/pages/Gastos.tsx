@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { MarqueeText } from '../components/MarqueeText/MarqueeText'
 import { primaryBtnClass } from '../components/forms/FormField'
+import { InfoIcon } from '../components/icons'
 import { formatCurrency, formatFechaSolo, formatMesAno, parseFechaSolo } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
 
@@ -53,6 +54,7 @@ interface GrupoMes {
   key: string
   label: string
   gastos: Gasto[]
+  total: number
 }
 
 // gastos ya viene ordenado desc por fecha (useGastos) — agrupar en ese
@@ -65,13 +67,27 @@ function agruparPorMes(gastos: Gasto[]): GrupoMes[] {
     const key = g.fecha.slice(0, 7)
     let grupo = porKey.get(key)
     if (!grupo) {
-      grupo = { key, label: formatMesAno(g.fecha), gastos: [] }
+      grupo = { key, label: formatMesAno(g.fecha), gastos: [], total: 0 }
       porKey.set(key, grupo)
       grupos.push(grupo)
     }
     grupo.gastos.push(g)
+    grupo.total += g.valor
   }
   return grupos
+}
+
+function totalDelMes(gastos: Gasto[], year: number, month: number): number {
+  return gastos.reduce((sum, g) => {
+    const f = parseFechaSolo(g.fecha)
+    return f.getFullYear() === year && f.getMonth() + 1 === month ? sum + g.valor : sum
+  }, 0)
+}
+
+// month es 1-based; n meses hacia atrás (n=1 → el mes anterior)
+function restarMeses(year: number, month: number, n: number): { year: number; month: number } {
+  const d = new Date(year, month - 1 - n, 1)
+  return { year: d.getFullYear(), month: d.getMonth() + 1 }
 }
 
 export function Gastos() {
@@ -142,6 +158,43 @@ export function Gastos() {
 
   const gruposPorMes = useMemo(() => agruparPorMes(gastos), [gastos])
 
+  const hoy = new Date()
+  const anioActual = hoy.getFullYear()
+  const mesActual = hoy.getMonth() + 1
+
+  const totalEsteMes = useMemo(() => totalDelMes(gastos, anioActual, mesActual), [gastos, anioActual, mesActual])
+  const totalMesPasado = useMemo(() => {
+    const { year, month } = restarMeses(anioActual, mesActual, 1)
+    return totalDelMes(gastos, year, month)
+  }, [gastos, anioActual, mesActual])
+  const diferencia = totalEsteMes - totalMesPasado
+  const diferenciaPct = totalMesPasado > 0 ? (diferencia / totalMesPasado) * 100 : null
+
+  // promedio de los últimos 6 meses CERRADOS (sin contar el actual, que
+  // todavía está incompleto y arrastraría el promedio para abajo)
+  const promedio6Meses = useMemo(() => {
+    let suma = 0
+    for (let i = 1; i <= 6; i++) {
+      const { year, month } = restarMeses(anioActual, mesActual, i)
+      suma += totalDelMes(gastos, year, month)
+    }
+    return suma / 6
+  }, [gastos, anioActual, mesActual])
+
+  // gastos habituales cargados el mes pasado cuya cadencia (ver ocurreEnMes)
+  // también corresponde a este mes — una proyección, no lo que ya se pagó
+  const gastoAproximado = useMemo(() => {
+    const { year: prevYear, month: prevMonth } = restarMeses(anioActual, mesActual, 1)
+    return gastos
+      .filter((g) => g.esFijo)
+      .filter((g) => {
+        const f = parseFechaSolo(g.fecha)
+        return f.getFullYear() === prevYear && f.getMonth() + 1 === prevMonth
+      })
+      .filter((g) => ocurreEnMes(g, anioActual, mesActual))
+      .reduce((sum, g) => sum + g.valor, 0)
+  }, [gastos, anioActual, mesActual])
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -158,11 +211,44 @@ export function Gastos() {
         </button>
       </div>
 
+      {loading ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="text-xs font-medium text-ink-muted">Este mes</p>
+            <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(totalEsteMes)}</p>
+            <p
+              className={`mt-1 text-xs font-medium ${
+                diferenciaPct === null ? 'text-ink-muted' : diferencia > 0 ? 'text-danger' : diferencia < 0 ? 'text-success' : 'text-ink-muted'
+              }`}
+            >
+              {diferenciaPct === null
+                ? 'Sin datos del mes pasado'
+                : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% vs. mes pasado`}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="text-xs font-medium text-ink-muted">Promedio (últimos 6 meses)</p>
+            <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>
+          </div>
+        </div>
+      )}
+
       {/* solo se muestra si hay alguna serie habitual registrada — sin
           eso, quedaría duplicando el estado vacío de abajo */}
       {anclasHabituales.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold text-ink-muted">Gastos habituales de este mes</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-ink-muted">Gastos habituales de este mes</h2>
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-medium text-ink-muted">Aprox. {formatCurrency(gastoAproximado)}</span>
+              <InfoTooltip text="Suma de los gastos habituales cargados el mes pasado cuya cadencia (cada X días/semanas/meses) también corresponde a este mes. Es una proyección, no lo que ya se pagó." />
+            </div>
+          </div>
           <div className="flex flex-col gap-2">
             {habitualesPendientes.map((g) => (
               <GastoHabitualPendienteRow key={g.nombre} gasto={g} onClick={() => openCompletarHabitual(g)} />
@@ -190,7 +276,10 @@ export function Gastos() {
 
         {!loading && gruposPorMes.map((grupo) => (
           <div key={grupo.key} className="flex flex-col gap-2">
-            <h2 className="text-sm font-semibold text-ink-muted">{grupo.label}</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-ink-muted">{grupo.label}</h2>
+              <span className="text-sm font-medium text-ink-muted">Total {formatCurrency(grupo.total)}</span>
+            </div>
             <div className="flex flex-col gap-2">
               {grupo.gastos.map((g) => (
                 <GastoRow key={g.id} gasto={g} onClick={() => openEdit(g)} />
@@ -273,6 +362,47 @@ function GastoHabitualPendienteRow({ gasto: g, onClick }: { gasto: Gasto; onClic
       </div>
       <span className="shrink-0 text-xs font-medium text-primary-600">Completar</span>
     </button>
+  )
+}
+
+// mismo patrón de "click para abrir, click afuera o Escape para cerrar" que
+// TratamientoFilterDropdown (Turnos.tsx) / NotificationBell
+function InfoTooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    function onEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [open])
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Cómo se calcula"
+        className="flex h-5 w-5 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
+      >
+        <InfoIcon className="h-4 w-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-10 mt-1 w-56 rounded-lg border border-border bg-surface p-3 text-xs text-ink-muted shadow-lg">
+          {text}
+        </div>
+      )}
+    </div>
   )
 }
 
