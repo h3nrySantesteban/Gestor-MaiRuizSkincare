@@ -31,6 +31,11 @@ interface NuevoGastoFormProps {
   /** solo aplica al editar un gasto existente — al crear no hay nada que borrar */
   onDeleted?: () => void
   gasto?: Gasto | null
+  /** precarga de un "completar gasto habitual pendiente" — se ignoran si gasto viene seteado (edición) */
+  initialNombre?: string
+  initialEsFijo?: boolean
+  initialRecurrenciaNumero?: number | null
+  initialRecurrenciaUnidad?: RecurrenciaUnidad | null
 }
 
 // Mismo patrón que NuevoTratamientoForm/NuevoPacienteForm: solo monta el
@@ -41,17 +46,32 @@ export function NuevoGastoForm(props: NuevoGastoFormProps) {
   return <NuevoGastoFormInner {...props} />
 }
 
-function NuevoGastoFormInner({ onClose, onSaved, onDeleted, gasto }: NuevoGastoFormProps) {
+function NuevoGastoFormInner({
+  onClose,
+  onSaved,
+  onDeleted,
+  gasto,
+  initialNombre,
+  initialEsFijo,
+  initialRecurrenciaNumero,
+  initialRecurrenciaUnidad,
+}: NuevoGastoFormProps) {
   const { create, update, remove } = useGastos()
-  const [nombre, setNombre] = useState(gasto?.nombre ?? '')
+  const [nombre, setNombre] = useState(gasto?.nombre ?? initialNombre ?? '')
   const [valor, setValor] = useState(gasto ? String(gasto.valor) : '')
   const [fecha, setFecha] = useState(gasto?.fecha ?? hoyLocal())
   const [descripcion, setDescripcion] = useState(gasto?.descripcion ?? '')
-  const [esFijo, setEsFijo] = useState(gasto?.esFijo ?? false)
+  const [esFijo, setEsFijo] = useState(gasto?.esFijo ?? initialEsFijo ?? false)
   const [recurrenciaNumero, setRecurrenciaNumero] = useState(
-    gasto?.recurrenciaNumero != null ? String(gasto.recurrenciaNumero) : '1',
+    gasto?.recurrenciaNumero != null
+      ? String(gasto.recurrenciaNumero)
+      : initialRecurrenciaNumero != null
+        ? String(initialRecurrenciaNumero)
+        : '1',
   )
-  const [recurrenciaUnidad, setRecurrenciaUnidad] = useState<RecurrenciaUnidad>(gasto?.recurrenciaUnidad ?? 'mes')
+  const [recurrenciaUnidad, setRecurrenciaUnidad] = useState<RecurrenciaUnidad>(
+    gasto?.recurrenciaUnidad ?? initialRecurrenciaUnidad ?? 'mes',
+  )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
@@ -183,7 +203,7 @@ function NuevoGastoFormInner({ onClose, onSaved, onDeleted, gasto }: NuevoGastoF
             />
           </Field>
 
-          <Field label="Gasto fijo" hint="Se repite periódicamente (alquiler, un insumo recurrente, etc.)">
+          <Field label="Gasto habitual" hint="Se repite periódicamente (alquiler, un insumo recurrente, etc.)">
             <ToggleSiNo value={esFijo} onChange={setEsFijo} />
           </Field>
 

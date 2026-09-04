@@ -30,7 +30,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 7. volver a migrar los turnos
 
-8. Crear nueva instancia de la app si  conexión a la db, con datos hardcodeados en un json levantar como demo
+8. Crear nueva instancia de la app sin conexión a la db, con datos hardcodeados en un json levantar como demo
 
 9. Crear una landing previa a la demo
 
