@@ -159,3 +159,20 @@ body {
     transform: translateY(0);
   }
 }
+
+/* MarqueeText: se queda quieto un rato en cada punta para que se llegue a
+   leer, no un scroll continuo tipo cartel — --marquee-distance lo pone el
+   componente (JS) según cuánto se pasa el texto del ancho visible */
+@keyframes marquee-pingpong {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(var(--marquee-distance, 0));
+  }
+  85%,
+  100% {
+    transform: translateX(0);
+  }
+}

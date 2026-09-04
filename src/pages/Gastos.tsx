@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
 import { Skeleton } from '../components/Skeleton/Skeleton'
+import { MarqueeText } from '../components/MarqueeText/MarqueeText'
 import { primaryBtnClass } from '../components/forms/FormField'
 import { formatCurrency, formatFechaSolo, formatMesAno, parseFechaSolo } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
@@ -242,7 +243,7 @@ function GastoRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) 
       {/* fila 2: descripción a la izquierda, precio a la derecha */}
       <div className="flex items-center justify-between gap-2">
         {g.descripcion ? (
-          <p className="min-w-0 truncate text-sm text-ink-muted">{g.descripcion}</p>
+          <MarqueeText text={g.descripcion} className="text-sm text-ink-muted" />
         ) : (
           <span />
         )}
