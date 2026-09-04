@@ -50,6 +50,11 @@ export function formatMesAno(fecha: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
+/** "sep 2026" — versión corta para ejes de gráfico, a partir de una fecha date-only. */
+export function formatMesAnoCorto(fecha: string): string {
+  return format(parseFechaSolo(fecha), 'MMM yyyy', { locale: es })
+}
+
 export function formatFechaHora(iso: string): string {
   return format(new Date(iso), 'dd/MM/yyyy HH:mm', { locale: es })
 }

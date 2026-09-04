@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { MarqueeText } from '../components/MarqueeText/MarqueeText'
 import { primaryBtnClass } from '../components/forms/FormField'
-import { InfoIcon } from '../components/icons'
+import { ArrowRightIcon, InfoIcon } from '../components/icons'
 import { formatCurrency, formatFechaSolo, formatMesAno, parseFechaSolo } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
 
@@ -230,8 +231,14 @@ export function Gastos() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="text-xs font-medium text-ink-muted">Este mes</p>
+          <Link
+            to="/gastos/historial"
+            className="rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"
+          >
+            <div className="flex items-center justify-between gap-1">
+              <p className="text-xs font-medium text-ink-muted">Este mes</p>
+              <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
+            </div>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(totalEsteMes)}</p>
             <p
               className={`mt-1 text-xs font-medium ${
@@ -242,7 +249,7 @@ export function Gastos() {
                 ? 'Sin datos del mes pasado'
                 : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% vs. mes pasado`}
             </p>
-          </div>
+          </Link>
           <div className="rounded-xl border border-border bg-surface p-4">
             <p className="text-xs font-medium text-ink-muted">Promedio (últimos 6 meses)</p>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>

@@ -54,3 +54,6 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 
 # 14. En turnos, en el listado colocar sobre que dia estan agrupados los turnos (Hoy, mañana, el martes, el miercoles, hasta el domingo y luego 9/9, 10/9 etc) 
+
+15.  En Resumen → Pacientes: estadística de pacientes nuevos vs. pacientes que vuelven.
+
