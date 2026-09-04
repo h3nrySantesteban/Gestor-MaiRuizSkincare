@@ -93,6 +93,18 @@ body,
   height: 100%;
 }
 
+/* Recharts le pone tabIndex a los <svg> internos por accesibilidad — al
+   tocar/clickear un punto del gráfico (línea o barra) el navegador enfoca
+   ese <svg> y dibuja su anillo de foco por defecto alrededor de toda la
+   tarjeta, que acá no representa nada navegable por teclado. Se saca en
+   todos los gráficos de la app (MonthlyChart, GastosHistorial). */
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus,
+.recharts-surface:focus-visible {
+  outline: none;
+}
+
 /* Sin esto, aunque AppLayout arma su propio scroll interno (h-svh
    overflow-hidden + <main overflow-y-auto>), iOS Safari igual deja
    "estirarse" al documento entero (html/body) al arrastrar más allá del
