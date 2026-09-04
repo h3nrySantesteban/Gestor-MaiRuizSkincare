@@ -31,7 +31,7 @@ function TurnoRowSkeleton() {
         </div>
       </div>
       <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-3.5 w-28" />
         <Skeleton className="h-8 w-8 rounded-full" />
       </div>
     </div>
@@ -288,7 +288,7 @@ export function Turnos() {
                   )}
                 </div>
                 <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-                  <p className="font-semibold tracking-wide text-ink">{formatFechaHora(turno.fecha)}</p>
+                  <p className="text-xs text-ink-muted">{formatFechaHora(turno.fecha)}</p>
                   <div className="flex items-center gap-2">
                     {turno.paciente?.telefono && (
                       <a
