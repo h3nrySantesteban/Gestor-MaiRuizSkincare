@@ -265,9 +265,11 @@ export function Gastos() {
       {anclasHabituales.length > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-ink-muted">Gastos habituales de este mes</h2>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium text-ink-muted">Aprox. {formatCurrency(gastoAproximado)}</span>
+            <h2 className="whitespace-nowrap text-sm font-semibold text-ink-muted">Gastos hab. de este mes</h2>
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="whitespace-nowrap text-sm font-medium text-ink-muted">
+                ~{formatCurrency(gastoAproximado)}
+              </span>
               <InfoTooltip text="Suma de los gastos habituales cargados el mes pasado cuya cadencia (cada X días/semanas/meses) también corresponde a este mes. Es una proyección, no lo que ya se pagó." />
             </div>
           </div>
