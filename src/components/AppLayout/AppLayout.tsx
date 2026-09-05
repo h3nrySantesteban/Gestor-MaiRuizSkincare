@@ -37,6 +37,14 @@ const RESUMEN_SUBMENU: { label: string; to?: string }[] = [
   { label: 'Top pacientes' },
 ]
 
+// El submenu de "Resumen" se podía desplegar/colapsar tocando la flecha o
+// el nombre estando ya en esa página — Mai concluyó que no tiene sentido
+// que arranque cerrado con solo 5 opciones. Se deja TODO el mecanismo de
+// abrir/cerrar intacto (estado, toggle, animación) detrás de este flag en
+// vez de borrarlo: si en el futuro se agregan más opciones al menú y hace
+// falta poder colapsarlo de nuevo, alcanza con volver esto a `true`.
+const SUBMENU_COLAPSABLE = false
+
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Resumen', icon: HomeIcon, end: true, submenu: RESUMEN_SUBMENU },
   { to: '/turnos', label: 'Turnos', icon: CalendarIcon, end: false, submenu: [] },
@@ -60,12 +68,14 @@ function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
   return (
     <nav className="flex flex-1 flex-col gap-1 px-3">
       {NAV_ITEMS.map(({ to, label, icon: Icon, end, submenu }) => {
-        const expanded = openSubmenu === to
+        const expanded = SUBMENU_COLAPSABLE ? openSubmenu === to : submenu.length > 0
         const isCurrentPage = location.pathname === to
         // ya estando en la página, tocar la palabra no tiene nada nuevo
         // adonde navegar — en vez de ese no-op, despliega/oculta el submenu
+        // (solo si SUBMENU_COLAPSABLE; si no, el submenu ya está siempre
+        // desplegado y tocar el nombre se comporta como cualquier link)
         function handleLabelClick(e: ReactMouseEvent) {
-          if (submenu.length > 0 && isCurrentPage) {
+          if (SUBMENU_COLAPSABLE && submenu.length > 0 && isCurrentPage) {
             e.preventDefault()
             onToggleSubmenu(to)
           } else {
@@ -92,7 +102,7 @@ function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
                 <Icon className="h-5 w-5 shrink-0" />
                 {label}
               </NavLink>
-              {submenu.length > 0 && (
+              {SUBMENU_COLAPSABLE && submenu.length > 0 && (
                 <button
                   type="button"
                   onClick={() => onToggleSubmenu(to)}
