@@ -85,6 +85,7 @@ function NuevoGastoFormInner({
   const [formError, setFormError] = useState<string | null>(null)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDesactivarOpen, setConfirmDesactivarOpen] = useState(false)
   const [desactivando, setDesactivando] = useState(false)
 
   const valorRef = useRef<HTMLInputElement>(null)
@@ -182,6 +183,7 @@ function NuevoGastoFormInner({
       onClose()
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'No se pudo desactivar el gasto habitual.')
+      setConfirmDesactivarOpen(false)
     } finally {
       setDesactivando(false)
     }
@@ -278,11 +280,10 @@ function NuevoGastoFormInner({
               // listado general (ver onDesactivarHabitual arriba)
               <button
                 type="button"
-                onClick={handleDesactivarHabitual}
-                disabled={desactivando}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => setConfirmDesactivarOpen(true)}
+                className="rounded-lg border border-danger px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger-bg"
               >
-                {desactivando ? 'Desactivando...' : 'Desactivar habitual'}
+                Desactivar habitual
               </button>
             ) : (
               <span />
@@ -308,6 +309,17 @@ function NuevoGastoFormInner({
         submitting={deleting}
         onConfirm={handleDelete}
         onCancel={() => setConfirmDeleteOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmDesactivarOpen}
+        title="Desactivar gasto habitual"
+        message={`Esto no borra ni modifica ningún gasto de "${nombre}" ya cargado — solo hace que deje de aparecer entre los gastos habituales pendientes (y de proyectarse en el aproximado del próximo mes). Podés reactivarlo cuando quieras desde "Gastos habituales desactivados".`}
+        confirmLabel="Desactivar"
+        danger
+        submitting={desactivando}
+        onConfirm={handleDesactivarHabitual}
+        onCancel={() => setConfirmDesactivarOpen(false)}
       />
     </>
   )
