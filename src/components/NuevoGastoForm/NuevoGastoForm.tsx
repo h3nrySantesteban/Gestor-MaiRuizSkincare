@@ -260,20 +260,6 @@ function NuevoGastoFormInner({
             </div>
           )}
 
-          {/* solo presente al completar un habitual pendiente (ver
-              onDesactivarHabitual arriba) — nunca al cargar un gasto suelto
-              ni al editar uno ya guardado del listado general */}
-          {onDesactivarHabitual && (
-            <button
-              type="button"
-              onClick={handleDesactivarHabitual}
-              disabled={desactivando}
-              className={`${secondaryBtnClass} w-full disabled:cursor-not-allowed disabled:opacity-60`}
-            >
-              {desactivando ? 'Desactivando...' : 'Desactivar este gasto habitual'}
-            </button>
-          )}
-
           {formError && <p className="text-sm text-danger">{formError}</p>}
 
           <div className="mt-2 flex items-center justify-between gap-2">
@@ -285,6 +271,18 @@ function NuevoGastoFormInner({
               >
                 <TrashIcon className="h-4 w-4" />
                 Borrar gasto
+              </button>
+            ) : onDesactivarHabitual ? (
+              // solo presente al completar un habitual pendiente — nunca al
+              // cargar un gasto suelto ni al editar uno ya guardado del
+              // listado general (ver onDesactivarHabitual arriba)
+              <button
+                type="button"
+                onClick={handleDesactivarHabitual}
+                disabled={desactivando}
+                className="rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {desactivando ? 'Desactivando...' : 'Desactivar habitual'}
               </button>
             ) : (
               <span />
