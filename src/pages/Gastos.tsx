@@ -5,7 +5,7 @@ import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { MarqueeText } from '../components/MarqueeText/MarqueeText'
 import { primaryBtnClass } from '../components/forms/FormField'
-import { ArrowRightIcon, InfoIcon } from '../components/icons'
+import { BarChartIcon, InfoIcon } from '../components/icons'
 import { formatCurrency, formatFechaSolo, formatMesAno, parseFechaSolo } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
 
@@ -219,9 +219,18 @@ export function Gastos() {
             <p className="text-sm text-ink-muted">{gastos.length} gastos cargados</p>
           )}
         </div>
-        <button type="button" onClick={openNuevo} className={primaryBtnClass}>
-          + Nuevo gasto
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            to="/gastos/historial"
+            aria-label="Ver gráficos"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
+          >
+            <BarChartIcon className="h-5 w-5" />
+          </Link>
+          <button type="button" onClick={openNuevo} className={primaryBtnClass}>
+            + Nuevo gasto
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -231,14 +240,8 @@ export function Gastos() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          <Link
-            to="/gastos/historial"
-            className="rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"
-          >
-            <div className="flex items-center justify-between gap-1">
-              <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Total este mes</p>
-              <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
-            </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Total este mes</p>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(totalEsteMes)}</p>
             <p
               className={`mt-1 whitespace-nowrap text-xs font-medium ${
@@ -249,7 +252,7 @@ export function Gastos() {
                 ? 'Sin datos del mes ant.'
                 : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% que el ult. mes`}
             </p>
-          </Link>
+          </div>
           <div className="rounded-xl border border-border bg-surface p-4">
             <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>
