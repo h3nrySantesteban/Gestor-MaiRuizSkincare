@@ -12,6 +12,8 @@ export interface Gasto {
   recurrenciaNumero: number | null
   /** solo tiene valor si esFijo es true */
   recurrenciaUnidad: RecurrenciaUnidad | null
+  /** solo tiene sentido si esFijo es true — ver setHabitualActivo en useGastos.ts */
+  habitualActivo: boolean
   createdAt: string
 }
 
@@ -24,6 +26,7 @@ export interface GastoRow {
   es_fijo: boolean
   recurrencia_numero: number | null
   recurrencia_unidad: RecurrenciaUnidad | null
+  habitual_activo: boolean
   created_at: string
 }
 
@@ -37,6 +40,7 @@ export function mapGastoRow(row: GastoRow): Gasto {
     esFijo: row.es_fijo,
     recurrenciaNumero: row.recurrencia_numero,
     recurrenciaUnidad: row.recurrencia_unidad,
+    habitualActivo: row.habitual_activo,
     createdAt: row.created_at,
   }
 }

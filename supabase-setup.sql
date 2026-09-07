@@ -422,3 +422,21 @@ alter table public.gastos enable row level security;
 
 create policy "auth manage gastos" on public.gastos for all
   using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+-- ============================================================
+-- Gastos: desactivar un gasto habitual sin perder su historial
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- No hay una tabla de "series" separada — un gasto habitual es varias
+-- filas de gastos que comparten nombre (ver comentario de ocurreEnMes en
+-- Gastos.tsx), así que habitual_activo se guarda repetido en cada fila de
+-- la serie: al desactivar/reactivar, el frontend actualiza todas las filas
+-- con ese nombre en un solo update (ver setHabitualActivo en
+-- useGastos.ts). es_fijo NO se toca — la fila sigue siendo un gasto
+-- habitual a todos los efectos históricos (total del mes, promedio con/sin
+-- habituales), solo deja de generar el recordatorio de "pendiente este
+-- mes" y de proyectarse en el gasto aproximado del mes siguiente.
+-- ============================================================
+alter table public.gastos add column if not exists habitual_activo boolean not null default true;

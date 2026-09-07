@@ -93,7 +93,7 @@ function restarMeses(year: number, month: number, n: number): { year: number; mo
 }
 
 export function Gastos() {
-  const { gastos, loading, refetch } = useGastos()
+  const { gastos, loading, refetch, setHabitualActivo } = useGastos()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Gasto | null>(null)
   // gasto-ancla de la serie que se está "completando" (ver openCompletar) —
@@ -138,6 +138,17 @@ export function Gastos() {
     return [...porNombre.values()]
   }, [gastos])
 
+  // habitualActivo viene repetido en todas las filas de la serie (ver
+  // setHabitualActivo en useGastos.ts), así que da lo mismo leerlo de la
+  // fila-ancla — separa las series que Mai sigue pagando de las que
+  // desactivó (dejaron de pedir "completar" cada mes, pero sus filas viejas
+  // siguen contando en las estadísticas igual que antes).
+  const anclasHabitualesActivas = useMemo(() => anclasHabituales.filter((g) => g.habitualActivo), [anclasHabituales])
+  const anclasHabitualesInactivas = useMemo(
+    () => anclasHabituales.filter((g) => !g.habitualActivo),
+    [anclasHabituales],
+  )
+
   // nombres que ya tienen algún gasto cargado este mes (fijo o no — lo que
   // importa es que Mai ya registró el pago, no que lo haya vuelto a marcar
   // habitual)
@@ -153,10 +164,18 @@ export function Gastos() {
 
   const habitualesPendientes = useMemo(() => {
     const hoy = new Date()
-    return anclasHabituales.filter(
+    return anclasHabitualesActivas.filter(
       (g) => ocurreEnMes(g, hoy.getFullYear(), hoy.getMonth() + 1) && !nombresPagadosEsteMes.has(g.nombre),
     )
-  }, [anclasHabituales, nombresPagadosEsteMes])
+  }, [anclasHabitualesActivas, nombresPagadosEsteMes])
+
+  async function handleDesactivar(nombre: string) {
+    await setHabitualActivo(nombre, false)
+  }
+
+  async function handleReactivar(nombre: string) {
+    await setHabitualActivo(nombre, true)
+  }
 
   const gruposPorMes = useMemo(() => agruparPorMes(gastos), [gastos])
 
@@ -195,11 +214,12 @@ export function Gastos() {
   }, [gastos, anioActual, mesActual])
 
   // gastos habituales cargados el mes pasado cuya cadencia (ver ocurreEnMes)
-  // también corresponde a este mes — una proyección, no lo que ya se pagó
+  // también corresponde a este mes — una proyección, no lo que ya se pagó.
+  // Excluye series desactivadas: ya no se espera que se vuelvan a pagar.
   const gastoAproximado = useMemo(() => {
     const { year: prevYear, month: prevMonth } = restarMeses(anioActual, mesActual, 1)
     return gastos
-      .filter((g) => g.esFijo)
+      .filter((g) => g.esFijo && g.habitualActivo)
       .filter((g) => {
         const f = parseFechaSolo(g.fecha)
         return f.getFullYear() === prevYear && f.getMonth() + 1 === prevMonth
@@ -278,13 +298,51 @@ export function Gastos() {
           </div>
           <div className="flex flex-col gap-2">
             {habitualesPendientes.map((g) => (
-              <GastoHabitualPendienteRow key={g.nombre} gasto={g} onClick={() => openCompletarHabitual(g)} />
+              <GastoHabitualPendienteRow
+                key={g.nombre}
+                gasto={g}
+                onCompletar={() => openCompletarHabitual(g)}
+                onDesactivar={() => handleDesactivar(g.nombre)}
+              />
             ))}
             {habitualesPendientes.length === 0 && (
               <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-ink-muted">
                 No hay gastos habituales pendientes este mes.
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* series que Mai desactivó — sus filas viejas ya cargadas siguen
+          contando en las estadísticas de arriba, esto es solo para
+          reactivarlas si vuelve a pagarlas */}
+      {anclasHabitualesInactivas.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h2 className="text-sm font-semibold text-ink-muted">Gastos habituales desactivados</h2>
+          <div className="flex flex-col gap-2">
+            {anclasHabitualesInactivas.map((g) => (
+              <div
+                key={g.nombre}
+                className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-surface p-4 opacity-70"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-ink">{g.nombre}</p>
+                  {g.recurrenciaNumero && g.recurrenciaUnidad && (
+                    <p className="mt-0.5 text-xs text-ink-muted">
+                      Habitual · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleReactivar(g.nombre)}
+                  className="shrink-0 text-xs font-medium text-primary-600 hover:underline"
+                >
+                  Reactivar
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -374,21 +432,41 @@ function GastoRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) 
 // para diferenciarse de una card de gasto ya cargado; tocarla abre el form
 // de creación precargado con nombre/recurrencia, lista para que Mai solo
 // tenga que poner el valor de este mes
-function GastoHabitualPendienteRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) {
+function GastoHabitualPendienteRow({
+  gasto: g,
+  onCompletar,
+  onDesactivar,
+}: {
+  gasto: Gasto
+  onCompletar: () => void
+  onDesactivar: () => void
+}) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-surface p-4 text-left hover:border-primary-300"
-    >
-      <div className="min-w-0">
-        <p className="font-medium text-ink">{g.nombre}</p>
-        {g.recurrenciaNumero && g.recurrenciaUnidad && (
-          <p className="mt-0.5 text-xs text-ink-muted">Habitual · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}</p>
-        )}
-      </div>
-      <span className="shrink-0 text-xs font-medium text-primary-600">Completar</span>
-    </button>
+    <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-surface p-4">
+      {/* botón propio (no anidado en el de Desactivar) para que todo salvo
+          "Desactivar" abra el form de completar */}
+      <button
+        type="button"
+        onClick={onCompletar}
+        className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left hover:opacity-80"
+      >
+        <div className="min-w-0">
+          <p className="font-medium text-ink">{g.nombre}</p>
+          {g.recurrenciaNumero && g.recurrenciaUnidad && (
+            <p className="mt-0.5 text-xs text-ink-muted">Habitual · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}</p>
+          )}
+        </div>
+        <span className="shrink-0 text-xs font-medium text-primary-600">Completar</span>
+      </button>
+      <button
+        type="button"
+        onClick={onDesactivar}
+        aria-label={`Desactivar gasto habitual "${g.nombre}"`}
+        className="shrink-0 text-xs font-medium text-ink-muted hover:text-danger"
+      >
+        Desactivar
+      </button>
+    </div>
   )
 }
 

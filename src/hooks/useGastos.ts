@@ -12,7 +12,8 @@ export interface GastoInput {
   recurrenciaUnidad: RecurrenciaUnidad | null
 }
 
-const GASTO_SELECT = 'id, nombre, valor, fecha, descripcion, es_fijo, recurrencia_numero, recurrencia_unidad, created_at'
+const GASTO_SELECT =
+  'id, nombre, valor, fecha, descripcion, es_fijo, recurrencia_numero, recurrencia_unidad, habitual_activo, created_at'
 
 // la constraint gastos_recurrencia_solo_si_fijo es la que hace cumplir "los
 // campos de recurrencia van juntos, solo si es_fijo" — acá se arma la fila
@@ -86,5 +87,22 @@ export function useGastos() {
     [refetch],
   )
 
-  return { gastos, loading, error, refetch, create, update, remove }
+  // No hay una fila/serie "dueña" del estado activo — se guarda repetido en
+  // cada pago cargado con ese nombre (ver comentario en supabase-setup.sql),
+  // así que desactivar/reactivar pega sobre todas las filas habituales de
+  // esa serie de una sola vez, no sobre una fila puntual.
+  const setHabitualActivo = useCallback(
+    async (nombre: string, activo: boolean) => {
+      const { error: updateError } = await supabase
+        .from('gastos')
+        .update({ habitual_activo: activo })
+        .eq('nombre', nombre)
+        .eq('es_fijo', true)
+      if (updateError) throw new Error(updateError.message)
+      await refetch()
+    },
+    [refetch],
+  )
+
+  return { gastos, loading, error, refetch, create, update, remove, setHabitualActivo }
 }
