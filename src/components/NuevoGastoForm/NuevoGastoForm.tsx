@@ -36,6 +36,13 @@ interface NuevoGastoFormProps {
   initialEsFijo?: boolean
   initialRecurrenciaNumero?: number | null
   initialRecurrenciaUnidad?: RecurrenciaUnidad | null
+  /**
+   * Solo se pasa al completar un gasto habitual pendiente (ver Gastos.tsx)
+   * — nunca al crear un gasto suelto ni al editar uno ya cargado del
+   * listado general, es lo que hace que el botón de desactivar solo viva
+   * acá adentro y no en cualquier otro gasto.
+   */
+  onDesactivarHabitual?: () => void | Promise<void>
 }
 
 // Mismo patrón que NuevoTratamientoForm/NuevoPacienteForm: solo monta el
@@ -55,6 +62,7 @@ function NuevoGastoFormInner({
   initialEsFijo,
   initialRecurrenciaNumero,
   initialRecurrenciaUnidad,
+  onDesactivarHabitual,
 }: NuevoGastoFormProps) {
   const { create, update, remove } = useGastos()
   const [nombre, setNombre] = useState(gasto?.nombre ?? initialNombre ?? '')
@@ -77,6 +85,7 @@ function NuevoGastoFormInner({
   const [formError, setFormError] = useState<string | null>(null)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [desactivando, setDesactivando] = useState(false)
 
   const valorRef = useRef<HTMLInputElement>(null)
   const fechaRef = useRef<HTMLInputElement>(null)
@@ -161,6 +170,23 @@ function NuevoGastoFormInner({
     }
   }
 
+  // no borra ni edita nada de esta pantalla — cierra el modal sin crear el
+  // gasto de este mes y marca toda la serie (mismo nombre) como inactiva,
+  // ver setHabitualActivo en useGastos.ts
+  async function handleDesactivarHabitual() {
+    if (!onDesactivarHabitual) return
+    setDesactivando(true)
+    setFormError(null)
+    try {
+      await onDesactivarHabitual()
+      onClose()
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo desactivar el gasto habitual.')
+    } finally {
+      setDesactivando(false)
+    }
+  }
+
   return (
     <>
       <Modal open onClose={onClose} title={gasto ? 'Editar gasto' : 'Nuevo gasto'} widthClassName="max-w-md">
@@ -232,6 +258,20 @@ function NuevoGastoFormInner({
                 </select>
               </Field>
             </div>
+          )}
+
+          {/* solo presente al completar un habitual pendiente (ver
+              onDesactivarHabitual arriba) — nunca al cargar un gasto suelto
+              ni al editar uno ya guardado del listado general */}
+          {onDesactivarHabitual && (
+            <button
+              type="button"
+              onClick={handleDesactivarHabitual}
+              disabled={desactivando}
+              className={`${secondaryBtnClass} w-full disabled:cursor-not-allowed disabled:opacity-60`}
+            >
+              {desactivando ? 'Desactivando...' : 'Desactivar este gasto habitual'}
+            </button>
           )}
 
           {formError && <p className="text-sm text-danger">{formError}</p>}

@@ -298,12 +298,7 @@ export function Gastos() {
           </div>
           <div className="flex flex-col gap-2">
             {habitualesPendientes.map((g) => (
-              <GastoHabitualPendienteRow
-                key={g.nombre}
-                gasto={g}
-                onCompletar={() => openCompletarHabitual(g)}
-                onDesactivar={() => handleDesactivar(g.nombre)}
-              />
+              <GastoHabitualPendienteRow key={g.nombre} gasto={g} onClick={() => openCompletarHabitual(g)} />
             ))}
             {habitualesPendientes.length === 0 && (
               <p className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-ink-muted">
@@ -390,6 +385,7 @@ export function Gastos() {
         initialEsFijo={plantillaHabitual ? true : undefined}
         initialRecurrenciaNumero={plantillaHabitual?.recurrenciaNumero}
         initialRecurrenciaUnidad={plantillaHabitual?.recurrenciaUnidad}
+        onDesactivarHabitual={plantillaHabitual ? () => handleDesactivar(plantillaHabitual.nombre) : undefined}
       />
     </div>
   )
@@ -432,41 +428,23 @@ function GastoRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) 
 // para diferenciarse de una card de gasto ya cargado; tocarla abre el form
 // de creación precargado con nombre/recurrencia, lista para que Mai solo
 // tenga que poner el valor de este mes
-function GastoHabitualPendienteRow({
-  gasto: g,
-  onCompletar,
-  onDesactivar,
-}: {
-  gasto: Gasto
-  onCompletar: () => void
-  onDesactivar: () => void
-}) {
+// tocar la card abre el form de "completar" (ver openCompletarHabitual) —
+// desactivar la serie vive dentro de ESE form, no acá (ver NuevoGastoForm)
+function GastoHabitualPendienteRow({ gasto: g, onClick }: { gasto: Gasto; onClick: () => void }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-surface p-4">
-      {/* botón propio (no anidado en el de Desactivar) para que todo salvo
-          "Desactivar" abra el form de completar */}
-      <button
-        type="button"
-        onClick={onCompletar}
-        className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left hover:opacity-80"
-      >
-        <div className="min-w-0">
-          <p className="font-medium text-ink">{g.nombre}</p>
-          {g.recurrenciaNumero && g.recurrenciaUnidad && (
-            <p className="mt-0.5 text-xs text-ink-muted">Habitual · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}</p>
-          )}
-        </div>
-        <span className="shrink-0 text-xs font-medium text-primary-600">Completar</span>
-      </button>
-      <button
-        type="button"
-        onClick={onDesactivar}
-        aria-label={`Desactivar gasto habitual "${g.nombre}"`}
-        className="shrink-0 text-xs font-medium text-ink-muted hover:text-danger"
-      >
-        Desactivar
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-surface p-4 text-left hover:border-primary-300"
+    >
+      <div className="min-w-0">
+        <p className="font-medium text-ink">{g.nombre}</p>
+        {g.recurrenciaNumero && g.recurrenciaUnidad && (
+          <p className="mt-0.5 text-xs text-ink-muted">Habitual · {formatRecurrencia(g.recurrenciaNumero, g.recurrenciaUnidad)}</p>
+        )}
+      </div>
+      <span className="shrink-0 text-xs font-medium text-primary-600">Completar</span>
+    </button>
   )
 }
 
