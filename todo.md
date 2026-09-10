@@ -26,7 +26,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 5. Cambiar calendario al de Mai -sinonimo de poner la app en produccion
 
-6. Eliminar Limpieza de los turnos que tengan Limpieza + otro tratamiento
+# 6. Eliminar Limpieza de los turnos que tengan Limpieza + otro tratamiento
 
 7. volver a migrar los turnos
 

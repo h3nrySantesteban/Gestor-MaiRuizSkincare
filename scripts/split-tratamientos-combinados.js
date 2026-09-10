@@ -39,6 +39,15 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistS
 // tratamientos individuales que hacen falta y todavía no existen en el catálogo
 const NUEVOS_TRATAMIENTOS = ['Peeling', 'Dermaplaning', 'Exosomas', 'Retinoico']
 
+// "Limpieza Facial" no se cuenta como tratamiento aparte cuando el turno tiene
+// además otro tratamiento — es el paso previo de casi cualquier procedimiento,
+// no un ítem que se cobre/cuente por separado en ese caso. Al separar un combo
+// se omite esta línea (el divisor del precio_aplicado NO cambia, así los demás
+// componentes quedan con el mismo monto). Mismo criterio que el one-off
+// scripts/quitar-limpieza-facial-de-combinados.js, acá incorporado a la
+// migración para que una re-migración limpia ya no la reintroduzca.
+const LIMPIEZA_SI_HAY_MAS = 'Limpieza Facial'
+
 // combo (nombre exacto en el catálogo) -> componentes reales (nombres exactos,
 // ya sea existentes o de NUEVOS_TRATAMIENTOS de arriba)
 const MAPEO_COMBOS = {
@@ -110,10 +119,17 @@ async function main() {
       continue
     }
 
-    console.log(`\n${comboNombre}: ${lineas.length} turno(s) -> [${componentes.join(', ')}]`)
+    // "Limpieza Facial" se descarta si el combo tiene además otro tratamiento
+    const componentesReales =
+      componentes.length > 1 ? componentes.filter((c) => c !== LIMPIEZA_SI_HAY_MAS) : componentes
+    const componenteIds = componentesReales.map((c) => idPorNombre.get(c))
+
+    console.log(`\n${comboNombre}: ${lineas.length} turno(s) -> [${componentesReales.join(', ')}]`)
 
     for (const linea of lineas) {
-      const componenteIds = componentes.map((c) => idPorNombre.get(c))
+      // divisor: la cantidad original de componentes (antes de descartar la
+      // limpieza) — así los tratamientos que sí quedan mantienen el mismo
+      // precio_aplicado que tendrían sin esta regla
       const precioBase = Math.round(linea.precio_aplicado / componentes.length)
 
       // evita el choque de PK (turno_id, tratamiento_id): si el turno ya
