@@ -18,7 +18,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 2. cambiar dashboard por Resumen con un boton de desplegable para Gastos, ingresos, Turnos (panel de cuadrados tipo github), Top tratamientos (ordenarlos por cantTurnos y cantIngresos), Top pacientes
     # 1. Grafico achicado en mobile para que entre en el viewport de un iPhone sin scroll (usa sm:, no md: — md es 1200px en este proyecto)
     # 2. Menu lateral: "Dashboard" -> "Resumen", con submenu desplegable (Gastos/Ingresos/Turnos/Top tratamientos/Top pacientes). Tocar el nombre navega o, si ya estas en esa pantalla, despliega el submenu. Estado abierto/cerrado persiste al navegar y al cerrar el drawer mobile. Gastos ya no es item propio del menu, vive solo adentro de este submenu
-    3. Gastos ya navega a /gastos (pantalla propia) — Ingresos, Turnos (panel tipo github), Top tratamientos y Top pacientes todavia no tienen pantalla/seccion propia, quedan en el submenu sin destino hasta construirlas por partes
+    3. Gastos e Ingresos ya navegan a pantalla propia (/gastos, /ingresos, cada una con su historial) — Turnos (panel tipo github), Top tratamientos y Top pacientes todavia no tienen pantalla/seccion propia, quedan en el submenu sin destino hasta construirlas por partes
 
 3. Eliminar analitics
 
