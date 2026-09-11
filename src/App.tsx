@@ -17,6 +17,8 @@ const Tratamientos = lazy(() => import('./pages/Tratamientos').then((m) => ({ de
 const Formularios = lazy(() => import('./pages/Formularios').then((m) => ({ default: m.Formularios })))
 const Gastos = lazy(() => import('./pages/Gastos').then((m) => ({ default: m.Gastos })))
 const GastosHistorial = lazy(() => import('./pages/GastosHistorial').then((m) => ({ default: m.GastosHistorial })))
+const Ingresos = lazy(() => import('./pages/Ingresos').then((m) => ({ default: m.Ingresos })))
+const IngresosHistorial = lazy(() => import('./pages/IngresosHistorial').then((m) => ({ default: m.IngresosHistorial })))
 const Analytics = lazy(() => import('./pages/Analytics').then((m) => ({ default: m.Analytics })))
 
 // en blanco a propósito: el chunk de cada página se descarga rápido (unos
@@ -108,6 +110,22 @@ function App() {
               element={
                 <Suspense fallback={<PageFallback />}>
                   <GastosHistorial />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/ingresos"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <Ingresos />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/ingresos/historial"
+              element={
+                <Suspense fallback={<PageFallback />}>
+                  <IngresosHistorial />
                 </Suspense>
               }
             />

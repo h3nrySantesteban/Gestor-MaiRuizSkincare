@@ -18,7 +18,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 2. cambiar dashboard por Resumen con un boton de desplegable para Gastos, ingresos, Turnos (panel de cuadrados tipo github), Top tratamientos (ordenarlos por cantTurnos y cantIngresos), Top pacientes
     # 1. Grafico achicado en mobile para que entre en el viewport de un iPhone sin scroll (usa sm:, no md: — md es 1200px en este proyecto)
     # 2. Menu lateral: "Dashboard" -> "Resumen", con submenu desplegable (Gastos/Ingresos/Turnos/Top tratamientos/Top pacientes). Tocar el nombre navega o, si ya estas en esa pantalla, despliega el submenu. Estado abierto/cerrado persiste al navegar y al cerrar el drawer mobile. Gastos ya no es item propio del menu, vive solo adentro de este submenu
-    3. Gastos ya navega a /gastos (pantalla propia) — Ingresos, Turnos (panel tipo github), Top tratamientos y Top pacientes todavia no tienen pantalla/seccion propia, quedan en el submenu sin destino hasta construirlas por partes
+    3. Gastos e Ingresos ya navegan a pantalla propia (/gastos, /ingresos, cada una con su historial) — Turnos (panel tipo github), Top tratamientos y Top pacientes todavia no tienen pantalla/seccion propia, quedan en el submenu sin destino hasta construirlas por partes
 
 3. Eliminar analitics
 
@@ -26,7 +26,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 5. Cambiar calendario al de Mai -sinonimo de poner la app en produccion
 
-6. Eliminar Limpieza de los turnos que tengan Limpieza + otro tratamiento
+# 6. Eliminar Limpieza de los turnos que tengan Limpieza + otro tratamiento
 
 7. volver a migrar los turnos
 
@@ -48,9 +48,9 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 # 12. al precionar boton + de la app desplegar opciones para arriba (Nuevo turno, nuevo gasto, Nuevo paciente,)
 
-13. flash del side menu al cerrarse (dura un milisegundo, no se puede capturar) — pasa en cualquier cierre, no solo yendo de Resumen a Gastos
+# 13. flash del side menu al cerrarse (dura un milisegundo, no se puede capturar) — pasa en cualquier cierre, no solo yendo de Resumen a Gastos
     1. Primer intento: colapsar el submenu de Resumen al elegir una opción — revertido, rompía la persistencia pedida antes y no era la causa real
-    # 2. Causa real: faltaba `fill-mode: forwards` en las animaciones de cierre — el CSS soltaba el panel a su estado sin animar (vuelto a verse entero) en el ratito antes de que React lo desmontara. Agregado `_forwards` a las 4 animaciones del drawer — pendiente de confirmar en el celular
+    2. Causa real: faltaba `fill-mode: forwards` en las animaciones de cierre — el CSS soltaba el panel a su estado sin animar (vuelto a verse entero) en el ratito antes de que React lo desmontara. Agregado `_forwards` a las 4 animaciones del drawer — pendiente de confirmar en el celular
 
 
 # 14. En turnos, en el listado colocar sobre que dia estan agrupados los turnos (Hoy, mañana, el martes, el miercoles, hasta el domingo y luego 9/9, 10/9 etc) 

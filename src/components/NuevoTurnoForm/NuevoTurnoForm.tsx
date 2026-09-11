@@ -22,6 +22,12 @@ import { ESTADOS_TURNO, MEDIOS_PAGO, type EstadoTurno, type MedioPago, type Turn
 import type { Paciente } from '../../types/paciente'
 import type { Tratamiento } from '../../types/tratamiento'
 
+// "Limpieza Facial" no se carga como tratamiento aparte cuando el turno tiene
+// además otro tratamiento (es el paso previo de casi cualquier procedimiento).
+// Acá solo se avisa, no se bloquea — la limpieza histórica ya cargada así se
+// depura por separado (scripts/quitar-limpieza-facial-de-combinados.js).
+const NOMBRE_LIMPIEZA_FACIAL = 'Limpieza Facial'
+
 const schema = z.object({
   fecha: z.string().min(1, 'Elegí una fecha y hora.'),
   pacienteId: z.string().min(1, 'Elegí un paciente.'),
@@ -79,6 +85,10 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  // >0 mientras se muestra el aviso de "Limpieza Facial + otro"; el nonce
+  // sube en cada nueva selección que lo dispara para reiniciar el timer
+  const [avisoLimpieza, setAvisoLimpieza] = useState(0)
+
   const [nuevoPacienteOpen, setNuevoPacienteOpen] = useState(false)
   const [nuevoTratamientoOpen, setNuevoTratamientoOpen] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
@@ -90,6 +100,18 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
   const submitRef = useRef<HTMLButtonElement>(null)
 
   const tratamientosById = new Map(tratamientos.map((t) => [t.id, t]))
+
+  useEffect(() => {
+    if (avisoLimpieza === 0) return
+    const t = setTimeout(() => setAvisoLimpieza(0), 5000)
+    return () => clearTimeout(t)
+  }, [avisoLimpieza])
+
+  function avisarSiLimpiezaCombinada(sel: SeleccionTratamiento[]) {
+    const combinada =
+      sel.length >= 2 && sel.some((s) => tratamientosById.get(s.tratamientoId)?.nombre === NOMBRE_LIMPIEZA_FACIAL)
+    if (combinada) setAvisoLimpieza((n) => n + 1)
+  }
   // la seña no es un tratamiento seleccionable acá — se aplica sola al
   // cancelar un turno señado (ver aplicarPrecioSena). un tratamiento
   // desactivado sigue apareciendo si este turno ya lo tenía cargado
@@ -135,6 +157,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       if (!precioDirty) {
         setPrecio(String(next.reduce((acc, s) => acc + s.precioAplicado, 0)))
       }
+      avisarSiLimpiezaCombinada(next)
       return next
     })
   }
@@ -154,6 +177,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       if (!precioDirty) {
         setPrecio(String(next.reduce((acc, s) => acc + s.precioAplicado, 0)))
       }
+      avisarSiLimpiezaCombinada(next)
       return next
     })
     setNuevoTratamientoOpen(false)
@@ -232,6 +256,17 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
 
   return (
     <>
+      {/* fixed + z-[60]: flota por encima del modal (z-50) y de todo el form,
+          no empuja ningún campo. Se va solo a los 5s (ver efecto de arriba). */}
+      {avisoLimpieza > 0 && (
+        <div
+          role="status"
+          className="fixed left-1/2 top-4 z-[60] w-[min(92vw,26rem)] -translate-x-1/2 rounded-xl border border-warning bg-warning-bg px-4 py-3 text-sm text-ink shadow-lg"
+        >
+          La limpieza facial ya va incluida cuando se hace otro tratamiento — no hace falta cargarla aparte.
+        </div>
+      )}
+
       <Modal open onClose={onClose} title={turno ? 'Editar turno' : 'Nuevo turno'} widthClassName="max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
           <Field label="Fecha y hora" required error={errors.fecha}>

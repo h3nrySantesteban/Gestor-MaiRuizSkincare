@@ -25,13 +25,13 @@ import {
   XIcon,
 } from '../icons'
 
-// Submenu de "Resumen" (todo #2): por ahora solo Gastos tiene pantalla
-// propia adonde llevar — el resto (Ingresos, Turnos tipo panel github, Top
+// Submenu de "Resumen" (todo #2): Gastos e Ingresos ya tienen pantalla
+// propia adonde llevar — el resto (Turnos tipo panel github, Top
 // tratamientos, Top pacientes) todavía no existe como sección separada, así
 // que quedan visibles pero sin destino hasta que se construyan por partes.
 const RESUMEN_SUBMENU: { label: string; to?: string }[] = [
   { label: 'Gastos', to: '/gastos' },
-  { label: 'Ingresos' },
+  { label: 'Ingresos', to: '/ingresos' },
   { label: 'Turnos' },
   { label: 'Top tratamientos' },
   { label: 'Top pacientes' },
