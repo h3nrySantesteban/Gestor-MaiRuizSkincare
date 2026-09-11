@@ -5,7 +5,7 @@ import { es } from 'date-fns/locale'
 import { useIngresos } from '../hooks/useIngresos'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { Skeleton } from '../components/Skeleton/Skeleton'
-import { ArrowRightIcon } from '../components/icons'
+import { BarChartIcon } from '../components/icons'
 import { formatCurrency, formatFecha } from '../lib/format'
 import type { Turno } from '../types/turno'
 
@@ -119,13 +119,22 @@ export function Ingresos() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
-        {loading ? (
-          <Skeleton className="mt-1.5 h-4 w-28" />
-        ) : (
-          <p className="text-sm text-ink-muted">{turnos.length} turnos facturados</p>
-        )}
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
+          {loading ? (
+            <Skeleton className="mt-1.5 h-4 w-28" />
+          ) : (
+            <p className="text-sm text-ink-muted">{turnos.length} turnos facturados</p>
+          )}
+        </div>
+        <Link
+          to="/ingresos/historial"
+          aria-label="Ver gráficos"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
+        >
+          <BarChartIcon className="h-5 w-5" />
+        </Link>
       </div>
 
       {loading ? (
@@ -135,14 +144,8 @@ export function Ingresos() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          <Link
-            to="/ingresos/historial"
-            className="rounded-xl border border-border bg-surface p-4 transition-colors hover:border-primary-300"
-          >
-            <div className="flex items-center justify-between gap-1">
-              <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Total este mes</p>
-              <ArrowRightIcon className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
-            </div>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Total este mes</p>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(totalEsteMes)}</p>
             <p
               className={`mt-1 whitespace-nowrap text-xs font-medium ${
@@ -159,7 +162,7 @@ export function Ingresos() {
                 ? 'Sin datos del mes ant.'
                 : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% que el ult. mes`}
             </p>
-          </Link>
+          </div>
           <div className="rounded-xl border border-border bg-surface p-4">
             <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
             <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>
