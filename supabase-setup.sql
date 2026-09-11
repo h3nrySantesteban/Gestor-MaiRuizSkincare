@@ -440,3 +440,58 @@ create policy "auth manage gastos" on public.gastos for all
 -- mes" y de proyectarse en el gasto aproximado del mes siguiente.
 -- ============================================================
 alter table public.gastos add column if not exists habitual_activo boolean not null default true;
+
+-- ============================================================
+-- Notificación semanal: turnos finalizados sin tratamiento
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- Un turno puede quedar Finalizado sin ningún tratamiento cargado (se
+-- guardó el turno pero nunca se completó esa parte) y nada lo marca visible
+-- en el listado. En vez de barrer todo el histórico cada semana (eso
+-- volvería a notificar los mismos turnos viejos para siempre si Mai no los
+-- completa), la ventana es de 7 días: solo cuenta los Finalizados de la
+-- última semana, que es justo el período que cubre esta corrida.
+--
+-- Una sola fila resumen por corrida (turno_id null, como formulario_nuevo),
+-- no una por turno — mensaje_original guarda la cantidad como texto, mismo
+-- truco que formulario_nuevo reutilizando esa columna en vez de agregar una
+-- nueva. Si no hay ninguno, no inserta nada (nada que avisar = sin ruido en
+-- la campanita).
+-- ============================================================
+alter table public.notificaciones drop constraint notificaciones_tipo_check;
+alter table public.notificaciones add constraint notificaciones_tipo_check
+  check (tipo in ('confirmado', 'cancelado', 'reprogramar', 'no_reconocido', 'formulario_nuevo', 'turnos_sin_tratamiento'));
+
+create or replace function public.notificar_turnos_sin_tratamiento()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_cantidad int;
+begin
+  select count(*) into v_cantidad
+  from public.turnos t
+  where t.estado = 'Finalizado'
+    and t.fecha >= now() - interval '7 days'
+    and not exists (
+      select 1 from public.turno_tratamientos tt where tt.turno_id = t.id
+    );
+
+  if v_cantidad > 0 then
+    insert into public.notificaciones (turno_id, tipo, mensaje_original)
+    values (null, 'turnos_sin_tratamiento', v_cantidad::text);
+  end if;
+end;
+$$;
+
+-- lunes 13:00 UTC = 10:00 Argentina (mismo horario matutino que
+-- send-reminders en vercel.json, "0 13 * * *" pero solo día 1 = lunes)
+select cron.schedule(
+  'turnos-sin-tratamiento-semanal',
+  '0 13 * * 1',
+  $$ select public.notificar_turnos_sin_tratamiento(); $$
+);

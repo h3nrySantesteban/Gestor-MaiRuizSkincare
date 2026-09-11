@@ -11,6 +11,7 @@ const TIPO_LABEL: Record<TipoNotificacion, string> = {
   reprogramar: 'Quiere reprogramar',
   no_reconocido: 'Respuesta sin reconocer',
   formulario_nuevo: 'Formulario nuevo',
+  turnos_sin_tratamiento: 'Sin tratamiento',
 }
 
 const TIPO_CLASS: Record<TipoNotificacion, string> = {
@@ -19,6 +20,7 @@ const TIPO_CLASS: Record<TipoNotificacion, string> = {
   reprogramar: 'bg-warning-bg text-warning',
   no_reconocido: 'bg-surface-muted text-ink-muted',
   formulario_nuevo: 'bg-surface-muted text-ink-muted',
+  turnos_sin_tratamiento: 'bg-warning-bg text-warning',
 }
 
 export function NotificationBell() {
@@ -32,6 +34,11 @@ export function NotificationBell() {
     if (n.tipo === 'formulario_nuevo') {
       setOpen(false)
       navigate('/formularios')
+    } else if (n.tipo === 'turnos_sin_tratamiento') {
+      setOpen(false)
+      // Turnos.tsx lee este state al montar y precarga el filtro "Sin
+      // tratamiento" ya abierto, en vez de que Mai tenga que armarlo a mano
+      navigate('/turnos', { state: { sinTratamiento: true } })
     }
   }
 
@@ -86,15 +93,22 @@ export function NotificationBell() {
             )}
             {notificaciones.map((n) => {
               // la línea principal identifica de qué/quién se trata — turno
-              // si hay uno matcheado, o el nombre puesto en el form para
-              // formulario_nuevo (que no tiene turno asociado). La etiqueta
-              // de tipo va al lado, en el mismo renglón, no arriba.
+              // si hay uno matcheado, el nombre puesto en el form para
+              // formulario_nuevo, o la cantidad para turnos_sin_tratamiento
+              // (las tres son notificaciones sin turno_id, ver
+              // notificar_turnos_sin_tratamiento en supabase-setup.sql, que
+              // reutiliza mensaje_original para guardar la cantidad como
+              // texto en vez de agregar una columna nueva). La etiqueta de
+              // tipo va al lado, en el mismo renglón, no arriba.
+              const cantidadSinTratamiento = Number(n.mensajeOriginal)
               const principal = n.turno
                 ? `${n.turno.pacienteNombre} — turno ${formatFechaHora(n.turno.fecha)}`
                 : n.tipo === 'formulario_nuevo'
                   ? (n.mensajeOriginal ?? 'Formulario nuevo')
-                  : null
-              const mensajeAparte = n.mensajeOriginal && n.tipo !== 'formulario_nuevo'
+                  : n.tipo === 'turnos_sin_tratamiento'
+                    ? `${Number.isFinite(cantidadSinTratamiento) ? cantidadSinTratamiento : ''} turno${cantidadSinTratamiento === 1 ? '' : 's'} finalizado${cantidadSinTratamiento === 1 ? '' : 's'} sin tratamiento`
+                    : null
+              const mensajeAparte = n.mensajeOriginal && n.tipo !== 'formulario_nuevo' && n.tipo !== 'turnos_sin_tratamiento'
               return (
                 <button
                   key={n.id}

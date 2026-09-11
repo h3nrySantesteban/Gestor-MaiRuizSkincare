@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { endOfDay, isSameDay } from 'date-fns'
 import { useTurnos } from '../hooks/useTurnos'
 import { usePacientes } from '../hooks/usePacientes'
@@ -39,12 +39,21 @@ function TurnoRowSkeleton() {
 }
 
 export function Turnos() {
+  // la campanita de notificaciones ("turnos sin tratamiento", ver
+  // NotificationBell) navega acá con este state para llegar con el filtro
+  // ya aplicado — se lee una sola vez al montar, no en cada render
+  const location = useLocation()
+  const sinTratamientoInicial = Boolean((location.state as { sinTratamiento?: boolean } | null)?.sinTratamiento)
+
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [pacienteId, setPacienteId] = useState<string | null>(null)
   const [estados, setEstados] = useState<EstadoTurno[]>([])
   const [tratamientoIds, setTratamientoIds] = useState<string[]>([])
-  const [filtrosOpen, setFiltrosOpen] = useState(false)
+  const [sinTratamiento, setSinTratamiento] = useState(sinTratamientoInicial)
+  // abierto de entrada si se llegó con un filtro ya aplicado, así Mai ve por
+  // qué el listado no muestra todo en vez de encontrarse un filtro oculto
+  const [filtrosOpen, setFiltrosOpen] = useState(sinTratamientoInicial)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingTurno, setEditingTurno] = useState<Turno | null>(null)
@@ -58,10 +67,16 @@ export function Turnos() {
     pacienteId: pacienteId ?? undefined,
     estados: estados.length > 0 ? estados : undefined,
     tratamientoIds: tratamientoIds.length > 0 ? tratamientoIds : undefined,
+    sinTratamiento,
   })
 
   const activeFilterCount =
-    (fechaDesde ? 1 : 0) + (fechaHasta ? 1 : 0) + (pacienteId ? 1 : 0) + estados.length + tratamientoIds.length
+    (fechaDesde ? 1 : 0) +
+    (fechaHasta ? 1 : 0) +
+    (pacienteId ? 1 : 0) +
+    estados.length +
+    tratamientoIds.length +
+    (sinTratamiento ? 1 : 0)
   const hasFilters = activeFilterCount > 0
 
   // useTurnos ya ordena en 3 grupos (ver grupo() en useTurnos.ts): Agendados
@@ -91,6 +106,7 @@ export function Turnos() {
     setPacienteId(null)
     setEstados([])
     setTratamientoIds([])
+    setSinTratamiento(false)
   }
 
   return (
@@ -181,6 +197,17 @@ export function Turnos() {
                   </button>
                 )
               })}
+              <button
+                type="button"
+                onClick={() => setSinTratamiento((v) => !v)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  sinTratamiento
+                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    : 'border-border text-ink-muted hover:bg-surface-muted'
+                }`}
+              >
+                Sin tratamiento
+              </button>
             </div>
 
             {hasFilters && (

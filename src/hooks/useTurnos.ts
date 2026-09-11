@@ -9,6 +9,8 @@ export interface TurnoFilters {
   pacienteId?: string
   estados?: EstadoTurno[]
   tratamientoIds?: string[]
+  /** turnos sin NINGÚN tratamiento cargado — ver comentario en runQuery */
+  sinTratamiento?: boolean
 }
 
 // Postgrest devuelve como mucho 1000 filas por consulta (límite del
@@ -55,7 +57,7 @@ export function useTurnos(filters: TurnoFilters = {}) {
   // sí lo resetea cuando cambian los filtros)
   const historicoLimitRef = useRef(HISTORICO_PAGE_SIZE)
 
-  const { fechaDesde, fechaHasta, pacienteId, estados, tratamientoIds } = filters
+  const { fechaDesde, fechaHasta, pacienteId, estados, tratamientoIds, sinTratamiento } = filters
   // el contenido (no la identidad) del array es lo que debe disparar un refetch
   const estadosKey = estados?.join(',') ?? ''
   const tratamientoIdsKey = tratamientoIds?.join(',') ?? ''
@@ -134,8 +136,19 @@ export function useTurnos(filters: TurnoFilters = {}) {
         return
       }
       setError(null)
-      const agendados = (agendadosRes.data as unknown as TurnoRow[]).map(mapTurnoRow)
-      const historicos = (historicoRes.data as unknown as TurnoRow[]).map(mapTurnoRow).sort(compareTurnos)
+      let agendados = (agendadosRes.data as unknown as TurnoRow[]).map(mapTurnoRow)
+      let historicos = (historicoRes.data as unknown as TurnoRow[]).map(mapTurnoRow).sort(compareTurnos)
+      // "sin tratamiento" se filtra client-side, no con un .not('id','in',…):
+      // la exclusión requeriría primero traer TODOS los turno_id que sí
+      // tienen algún tratamiento (pueden ser miles), y meterlos en la URL de
+      // la consulta principal — con este volumen de turnos esa lista rompe
+      // el límite de longitud de una request GET. Al filtrar sobre la página
+      // ya traída, "cargar más" puede necesitar más de un click para que
+      // aparezcan nuevos resultados (hasMore sigue el conteo sin filtrar).
+      if (sinTratamiento) {
+        agendados = agendados.filter((t) => t.tratamientos.length === 0)
+        historicos = historicos.filter((t) => t.tratamientos.length === 0)
+      }
       setTurnos([...agendados, ...historicos])
       setHasMore((historicoRes.count ?? 0) > limit)
       setLoading(false)
@@ -143,7 +156,7 @@ export function useTurnos(filters: TurnoFilters = {}) {
     }
     // estados/tratamientoIds se resumen en sus *Key; excluirlos evita refetch cuando el caller pasa un array nuevo con el mismo contenido
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fechaDesde, fechaHasta, pacienteId, estadosKey, tratamientoIdsKey])
+  }, [fechaDesde, fechaHasta, pacienteId, estadosKey, tratamientoIdsKey, sinTratamiento])
 
   const loadMore = useCallback(() => {
     historicoLimitRef.current += HISTORICO_PAGE_SIZE
