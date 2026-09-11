@@ -59,5 +59,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 # 16. notificación semanal de turnos sin tratamiento
 
+17. Turnos con gift card: hoy el toggle se guarda pero no se ve reflejado en ningún lado (sin estadística, sin filtro, sin listado propio) — definir qué hacer con esos turnos (ej. verlos/filtrarlos en Turnos, o una estadística en Resumen)
+
 
 
