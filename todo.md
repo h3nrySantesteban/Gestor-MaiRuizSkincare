@@ -57,3 +57,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 15.  En Resumen → Pacientes: estadística de pacientes nuevos vs. pacientes que vuelven.
 
+16. notificación semanal de turnos sin tratamiento
+
+
+
