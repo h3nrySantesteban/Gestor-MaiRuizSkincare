@@ -82,24 +82,22 @@ function diasEnMes(year: number, month: number): number {
   return new Date(year, month, 0).getDate()
 }
 
-// "a esta altura" del mes anterior: mismo criterio que ingresosAlaFecha en
-// useDashboardStats, generalizado a cualquier tarjeta del carrusel (no solo
-// "hoy") — cuántos días ya transcurrieron en el mes de la tarjeta (todos,
-// si es un mes ya cerrado; hasta hoy, si es el mes en curso) y comparar el
-// mes anterior recortado a esa misma cantidad de días, para que un mes
-// todavía incompleto no se compare injustamente contra uno entero
+// "a esta altura" del mes anterior a la tarjeta: SIEMPRE hasta el día de
+// hoy del calendario real (no hasta el día que le tocaría a la tarjeta si
+// fuera el mes en curso) — mismo criterio que ingresosAlaFecha en
+// useDashboardStats, aplicado igual en todas las tarjetas para que la
+// comparación sea consistente en todo el carrusel. Para un mes ya cerrado
+// esto compara "lo que llevamos hoy" contra el mismo tramo del mes
+// anterior a esa tarjeta, no contra el mes anterior completo.
 function totalMesAnteriorAEstaAltura(
   turnos: Turno[],
   gastos: Gasto[],
   year: number,
   month: number,
-  back: number,
   hoy: Date,
 ): { bruto: number; neto: number } {
   const { year: prevYear, month: prevMonth } = restarMeses(year, month, 1)
-  // mes ya cerrado (back > 0): "esta altura" es el mes entero
-  const diasTranscurridos = back === 0 ? hoy.getDate() : diasEnMes(year, month)
-  const hastaDia = Math.min(diasTranscurridos, diasEnMes(prevYear, prevMonth))
+  const hastaDia = Math.min(hoy.getDate(), diasEnMes(prevYear, prevMonth))
 
   let bruto = 0
   for (const t of turnos) {
@@ -236,7 +234,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
           const { year, month } = restarMeses(anioActual, mesActual, back)
           const { bruto, gastos: gastosDelMes } = totalesDelMes(totalesPorMes, year, month)
           const neto = bruto - gastosDelMes
-          const mesAnterior = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, back, hoy)
+          const mesAnterior = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
           return (
             <div key={claveMes(year, month)} className="w-full shrink-0 snap-center">
               <div className="rounded-xl border border-border bg-surface p-4">
@@ -252,7 +250,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
                 </div>
                 <div className="mt-4 flex items-center gap-1 border-t border-border pt-3">
                   <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
-                  <InfoTooltip text={`Ingresos del mes anterior contando solo hasta ${back === 0 ? 'hoy' : 'el mismo día'}, para comparar contra ${back === 0 ? 'este mes' : 'esta tarjeta'} en igualdad de condiciones (no todo el mes anterior completo vs. uno todavía a mitad de camino).`} />
+                  <InfoTooltip text="Ingresos del mes anterior a esta tarjeta, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
                 </div>
                 <div className="mt-1.5 grid grid-cols-2 gap-x-4">
                   <div>
@@ -287,16 +285,35 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
   )
 }
 
-// mismo patrón que el InfoTooltip de Gastos.tsx: click para abrir, click
-// afuera o Escape para cerrar
+const TOOLTIP_WIDTH = 224 // w-56
+
+// mismo patrón de click-para-abrir/click-afuera-o-Escape-cierra que el
+// InfoTooltip de Gastos.tsx, pero con el panel en position:fixed (no
+// absolute) calculado a mano desde el botón: este ícono vive dentro de la
+// tira horizontal con scroll del carrusel, y un panel absolute ahí queda
+// recortado por el propio overflow-x-auto del contenedor (se veía partido
+// y superpuesto). fixed lo saca de esa cadena de recorte.
 function InfoTooltip({ text }: { text: string }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  function toggle() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const left = Math.min(Math.max(rect.left, 8), window.innerWidth - TOOLTIP_WIDTH - 8)
+      setPos({ top: rect.bottom + 4, left })
+    }
+    setOpen((v) => !v)
+  }
 
   useEffect(() => {
     if (!open) return
     function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (btnRef.current?.contains(target) || panelRef.current?.contains(target)) return
+      setOpen(false)
     }
     function onEscape(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false)
@@ -310,17 +327,22 @@ function InfoTooltip({ text }: { text: string }) {
   }, [open])
 
   return (
-    <div className="relative shrink-0" ref={ref}>
+    <div className="relative shrink-0">
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         aria-label="Cómo se calcula"
         className="flex h-4 w-4 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
       >
         <InfoIcon className="h-3.5 w-3.5" />
       </button>
-      {open && (
-        <div className="absolute left-0 top-full z-10 mt-1 w-56 rounded-lg border border-border bg-surface p-3 text-xs text-ink-muted shadow-lg">
+      {open && pos && (
+        <div
+          ref={panelRef}
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: TOOLTIP_WIDTH }}
+          className="z-50 rounded-lg border border-border bg-surface p-3 text-xs text-ink-muted shadow-lg"
+        >
           {text}
         </div>
       )}
