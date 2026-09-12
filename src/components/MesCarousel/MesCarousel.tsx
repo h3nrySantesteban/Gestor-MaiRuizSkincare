@@ -23,6 +23,25 @@ interface MesCarouselProps {
   datosMesAnterior?: (back: number) => DatosMes
   datosPromedio: DatosMes
   anteriorTooltip?: string
+  /** true si "subió" es una mala noticia (Gastos) — por defecto false, "subió" es buena noticia (Ingresos). Se usa para el color del % debajo de cada valor. */
+  masEsMalo?: boolean
+}
+
+function pctVsMesPasado(actual: number, pasado: number): number | null {
+  if (pasado === 0) return null
+  return ((actual - pasado) / pasado) * 100
+}
+
+function formatPct(value: number | null): string {
+  if (value === null) return '—'
+  return `${value >= 0 ? '+' : ''}${value.toFixed(0)}% que el mes pasado`
+}
+
+function pctColorClass(value: number | null, masEsMalo: boolean): string {
+  if (value === null || value === 0) return 'text-ink-muted'
+  const subio = value > 0
+  const esMalo = masEsMalo ? subio : !subio
+  return esMalo ? 'text-danger' : 'text-success'
 }
 
 /**
@@ -67,6 +86,7 @@ export function MesCarousel({
   datosMesAnterior,
   datosPromedio,
   anteriorTooltip,
+  masEsMalo = false,
 }: MesCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map())
@@ -128,6 +148,13 @@ export function MesCarousel({
           {meses.map((back) => {
             const actual = datosMes(back)
             const anterior = datosMesAnterior?.(back)
+            // "mes pasado" acá es el mes calendario completo anterior a
+            // esta tarjeta (back+1), no confundir con datosMesAnterior de
+            // arriba (que compara "a esta altura", un tramo parcial) — son
+            // dos comparaciones distintas y pueden convivir en la misma tarjeta
+            const pasado = datosMes(back + 1)
+            const pct1 = pctVsMesPasado(actual.valor1, pasado.valor1)
+            const pct2 = pctVsMesPasado(actual.valor2, pasado.valor2)
             return (
               // 88% del ancho (no 100%): deja asomar un margen de la
               // tarjeta vecina a cada lado como pista visual de que se
@@ -150,10 +177,12 @@ export function MesCarousel({
                     <div>
                       <p className="text-xs font-medium text-ink-muted">{label1}</p>
                       <p className="text-lg font-semibold text-ink">{formatCurrency(actual.valor1)}</p>
+                      <p className={`text-[11px] font-medium ${pctColorClass(pct1, masEsMalo)}`}>{formatPct(pct1)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-medium text-ink-muted">{label2}</p>
                       <p className="text-lg font-semibold text-ink">{formatCurrency(actual.valor2)}</p>
+                      <p className={`text-[11px] font-medium ${pctColorClass(pct2, masEsMalo)}`}>{formatPct(pct2)}</p>
                     </div>
                   </div>
                   {anterior && (

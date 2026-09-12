@@ -109,10 +109,11 @@ export function GastosCarousel({ gastos, loading }: GastosCarouselProps) {
       meses={meses}
       anioActual={anioActual}
       mesActual={mesActual}
-      label1="Total gastado"
+      label1="Gasto mensual"
       label2="Gastos habituales"
       datosMes={datosMes}
       datosPromedio={{ valor1: promedio.total, valor2: promedio.habituales }}
+      masEsMalo
     />
   )
 }
