@@ -68,16 +68,9 @@ export function Ingresos() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-1.5">
-            <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
-            <InfoTooltip text="Bruto: suma de lo facturado por los turnos finalizados (o cancelados con seña) de ese período. Neto: Bruto menos el total de gastos cargados en ese mismo período." />
-          </div>
-          {loading ? (
-            <Skeleton className="mt-1.5 h-4 w-28" />
-          ) : (
-            <p className="text-sm text-ink-muted">{turnos.length} turnos facturados</p>
-          )}
+        <div className="flex items-center gap-1.5">
+          <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
+          <InfoTooltip text="Bruto: suma de lo facturado por los turnos finalizados (o cancelados con seña) de ese período. Neto: Bruto menos el total de gastos cargados en ese mismo período." />
         </div>
         <Link
           to="/ingresos/historial"

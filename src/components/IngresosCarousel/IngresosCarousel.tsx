@@ -239,7 +239,8 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
           return (
             <div key={claveMes(year, month)} className="w-full shrink-0 snap-center">
               <div className="rounded-xl border border-border bg-surface p-3">
-                <div className="grid grid-cols-2 gap-x-4">
+                <p className="text-center text-xs font-medium text-ink-muted">Ingresos</p>
+                <div className="mt-1 grid grid-cols-2 gap-x-4">
                   <div>
                     <p className="text-xs font-medium text-ink-muted">Neto</p>
                     <p className="text-lg font-semibold text-ink">{formatCurrency(neto)}</p>
@@ -249,7 +250,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
                     <p className="text-lg font-semibold text-ink">{formatCurrency(bruto)}</p>
                   </div>
                 </div>
-                <div className="mt-2.5 flex items-center gap-1 border-t border-border pt-2">
+                <div className="mt-2.5 flex items-center justify-center gap-1 border-t border-border pt-2">
                   <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
                   <InfoTooltip text="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
                 </div>
@@ -270,7 +271,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
       </div>
 
       <div className="mt-2 rounded-xl border border-border bg-surface p-3">
-        <p className="text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
+        <p className="text-center text-xs font-medium text-ink-muted">Ingresos · Promedio (6 meses)</p>
         <div className="mt-1 grid grid-cols-2 gap-x-4">
           <div>
             <p className="text-[11px] text-ink-muted">Neto</p>
