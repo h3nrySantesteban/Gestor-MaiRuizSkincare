@@ -12,7 +12,12 @@ import { formatCurrency, formatCurrencyCompact, parseFechaSolo } from '../lib/fo
 import type { Turno } from '../types/turno'
 import type { Gasto } from '../types/gasto'
 
+// "bruto"/"neto" ya no se eligen por separado: se fusionaron en la opción
+// "ingresos" del selector (ver MetricaSeleccionable), que muestra las dos
+// líneas juntas con leyenda — Metrica sigue existiendo porque Fila todavía
+// tiene un campo por cada una y el tooltip/leyenda necesitan sus labels.
 type Metrica = 'bruto' | 'neto' | 'cantidad' | 'ticket'
+type MetricaSeleccionable = 'ingresos' | 'cantidad' | 'ticket'
 type Granularidad = 'meses' | 'años'
 type RangoTiempo = '6m' | '1a' | '2a' | 'todo'
 
@@ -29,27 +34,10 @@ const METRICA_LABEL: Record<Metrica, string> = {
   ticket: 'Ticket promedio',
 }
 
-// "cantidad" es un conteo, no un monto — no puede compartir eje con las
-// demás (moneda) sin inventar una correlación falsa (ver CLAUDE.md: los
-// gráficos de esta app son de un solo eje a propósito). toggleMetrica de
-// abajo usa esto para que elegir una métrica de un grupo reemplace la
-// selección en vez de sumarse a una del otro grupo.
-const METRICA_GRUPO: Record<Metrica, 'moneda' | 'cantidad'> = {
-  bruto: 'moneda',
-  neto: 'moneda',
-  ticket: 'moneda',
-  cantidad: 'cantidad',
-}
-
-// paleta categórica fija por métrica (no por posición/orden de selección) —
-// así sacar o poner una métrica no repinta el color de las que ya estaban
-// (ver --color-chart-1/2/3 en index.css, validada con el script del skill
-// de dataviz contra las superficies clara/oscura de esta app)
-const METRICA_COLOR: Record<Metrica, string> = {
-  bruto: 'var(--color-chart-1)',
-  neto: 'var(--color-chart-2)',
-  ticket: 'var(--color-chart-3)',
-  cantidad: 'var(--color-chart-1)',
+const SELECTOR_LABEL: Record<MetricaSeleccionable, string> = {
+  ingresos: 'Ingresos',
+  cantidad: 'Cantidad de turnos',
+  ticket: 'Ticket promedio',
 }
 
 // cortos a propósito: son chips angostos arriba del gráfico, un label largo
@@ -207,8 +195,7 @@ function SortButton({
   )
 }
 
-// chip de selección — se usa tanto para "Desde cuándo" (una sola activa a
-// la vez) como para "Métrica" (varias activas a la vez, ver toggleMetrica)
+// chip de selección para "Desde cuándo" (una sola activa a la vez)
 function ChipButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
   return (
     <button
@@ -228,31 +215,17 @@ export function IngresosHistorial() {
   const { gastos, loading: gastosLoading } = useGastos()
   const [granularidad, setGranularidad] = useState<Granularidad>('meses')
   const [vista, setVista] = useState<'tabla' | 'linea' | 'barras'>('tabla')
-  const [metricas, setMetricas] = useState<Metrica[]>(['bruto'])
+  const [metrica, setMetrica] = useState<MetricaSeleccionable>('ingresos')
   const [rango, setRango] = useState<RangoTiempo>('1a')
   const [sort, setSort] = useState<Sort>({ column: 'periodo', direction: 'desc' })
 
   const loadingSerie = loading || gastosLoading
 
-  // no se puede deseleccionar la última métrica (el gráfico necesita al
-  // menos una) y cambiar de grupo (moneda <-> cantidad) reemplaza la
-  // selección entera en vez de sumarse — no comparten eje (ver METRICA_GRUPO)
-  function toggleMetrica(m: Metrica) {
-    setMetricas((prev) => {
-      if (prev.includes(m)) {
-        if (prev.length === 1) return prev
-        return prev.filter((x) => x !== m)
-      }
-      if (METRICA_GRUPO[m] !== METRICA_GRUPO[prev[0]]) return [m]
-      return [...prev, m]
-    })
-  }
-
   // los gráficos van siempre de más viejo a más nuevo (izquierda a derecha)
   // — el orden de la tabla es independiente, lo maneja sort
   const serie = useMemo(() => calcularSerie(turnos, gastos, granularidad), [turnos, gastos, granularidad])
 
-  // el rango solo recorta los gráficos (línea y barras, ver selector "Desde
+  // el rango recorta los gráficos (línea y barras, ver selector "Desde
   // cuándo" más abajo) — la tabla sigue mostrando todo el historial
   const serieFiltrada = useMemo(() => {
     const corte = claveDeCorte(rango, granularidad)
@@ -310,17 +283,17 @@ export function IngresosHistorial() {
             <option value="barras">Barras</option>
           </select>
         </label>
-        {esGrafico && (
-          <div className="flex flex-col gap-1.5 text-sm text-ink-muted">
-            Métrica (podés elegir varias, del mismo tipo)
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(METRICA_LABEL) as Metrica[]).map((key) => (
-                <ChipButton key={key} active={metricas.includes(key)} onClick={() => toggleMetrica(key)}>
-                  {METRICA_LABEL[key]}
-                </ChipButton>
+        {vista === 'linea' && (
+          <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
+            Métrica
+            <select value={metrica} onChange={(e) => setMetrica(e.target.value as MetricaSeleccionable)} className={selectClass}>
+              {(Object.keys(SELECTOR_LABEL) as MetricaSeleccionable[]).map((key) => (
+                <option key={key} value={key}>
+                  {SELECTOR_LABEL[key]}
+                </option>
               ))}
-            </div>
-          </div>
+            </select>
+          </label>
         )}
       </div>
 
@@ -343,9 +316,9 @@ export function IngresosHistorial() {
       ) : vista === 'tabla' ? (
         <TablaHistorial filas={filasTabla} sort={sort} onSort={handleSort} granularidad={granularidad} />
       ) : vista === 'linea' ? (
-        <GraficoLinea data={serieFiltrada} metricas={metricas} />
+        <GraficoLinea data={serieFiltrada} metrica={metrica} />
       ) : (
-        <GraficoBarras data={serieFiltrada} metricas={metricas} />
+        <GraficoBarras data={serieFiltrada} />
       )}
     </div>
   )
@@ -415,55 +388,54 @@ function TablaHistorial({
   )
 }
 
-// leyenda compartida por línea y barras — mismo layout, solo cambia la
-// forma del swatch (redondo en línea, cuadrado en barras) vía el className
-// que le pasa cada gráfico
-function LeyendaMetricas({ metricas, swatchClassName }: { metricas: Metrica[]; swatchClassName: string }) {
-  if (metricas.length < 2) return null
+// "Ingresos" es la única opción que enciende 2 series a la vez (Bruto +
+// Neto) — necesita su propia leyenda para que se entienda qué color es
+// cada una; el resto de las métricas son una sola línea, la leyenda no
+// aporta nada ahí (el eje/tooltip ya identifican el valor sin ambigüedad)
+function LeyendaBrutoNeto() {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-      {metricas.map((m) => (
-        <span key={m} className="flex items-center gap-1.5 text-xs text-ink-muted">
-          <span className={swatchClassName} style={{ backgroundColor: METRICA_COLOR[m] }} />
-          {METRICA_LABEL[m]}
-        </span>
-      ))}
+      <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--color-primary-600)' }} />
+        Bruto
+      </span>
+      <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: 'var(--color-primary-300)' }} />
+        Neto
+      </span>
     </div>
   )
 }
 
-function valorFormateado(metrica: Metrica, valor: number): string {
-  return metrica === 'cantidad' ? String(valor) : formatCurrency(valor)
-}
-
-function GraficoTooltip({ active, payload, metricas }: { active?: boolean; payload?: { payload: Fila }[]; metricas: Metrica[] }) {
+function LineaTooltip({ active, payload, metrica }: { active?: boolean; payload?: { payload: Fila }[]; metrica: MetricaSeleccionable }) {
   if (!active || !payload || payload.length === 0) return null
   const row = payload[0].payload
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
       <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
-      {metricas.map((m) => (
-        <p key={m} className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: METRICA_COLOR[m] }} />
-          {valorFormateado(m, row[m])}
-        </p>
-      ))}
+      {metrica === 'ingresos' ? (
+        <>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--color-primary-600)' }} />
+            {METRICA_LABEL.bruto}: {formatCurrency(row.bruto)}
+          </p>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--color-primary-300)' }} />
+            {METRICA_LABEL.neto}: {formatCurrency(row.neto)}
+          </p>
+        </>
+      ) : (
+        <p className="text-sm font-semibold text-ink">{metrica === 'cantidad' ? row.cantidad : formatCurrency(row.ticket)}</p>
+      )}
     </div>
   )
 }
 
-// eje único a propósito (ver CLAUDE.md) — si la selección mezclara "moneda"
-// y "cantidad" el eje quedaría inventando una escala falsa entre las dos,
-// por eso toggleMetrica no deja combinar ambos grupos
-function ejeSoloCantidad(metricas: Metrica[]): boolean {
-  return metricas.every((m) => METRICA_GRUPO[m] === 'cantidad')
-}
-
-function GraficoLinea({ data, metricas }: { data: Fila[]; metricas: Metrica[] }) {
-  const soloCantidad = ejeSoloCantidad(metricas)
+function GraficoLinea({ data, metrica }: { data: Fila[]; metrica: MetricaSeleccionable }) {
+  const esIngresos = metrica === 'ingresos'
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
-      <LeyendaMetricas metricas={metricas} swatchClassName="h-2.5 w-2.5 rounded-full" />
+      {esIngresos && <LeyendaBrutoNeto />}
       <div className="h-64 w-full sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -476,23 +448,41 @@ function GraficoLinea({ data, metricas }: { data: Fila[]; metricas: Metrica[] })
             />
             <YAxis
               tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
-              tickFormatter={(v: number) => (soloCantidad ? String(v) : formatCurrencyCompact(v))}
+              tickFormatter={(v: number) => (metrica === 'cantidad' ? String(v) : formatCurrencyCompact(v))}
               axisLine={false}
               tickLine={false}
               width={56}
             />
-            <Tooltip cursor={{ stroke: 'var(--color-border)' }} content={<GraficoTooltip metricas={metricas} />} />
-            {metricas.map((m) => (
+            <Tooltip cursor={{ stroke: 'var(--color-border)' }} content={<LineaTooltip metrica={metrica} />} />
+            {esIngresos ? (
+              <>
+                <Line
+                  type="monotone"
+                  dataKey="bruto"
+                  name={METRICA_LABEL.bruto}
+                  stroke="var(--color-primary-600)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: 'var(--color-primary-600)' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="neto"
+                  name={METRICA_LABEL.neto}
+                  stroke="var(--color-primary-300)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: 'var(--color-primary-300)' }}
+                />
+              </>
+            ) : (
               <Line
-                key={m}
                 type="monotone"
-                dataKey={m}
-                name={METRICA_LABEL[m]}
-                stroke={METRICA_COLOR[m]}
+                dataKey={metrica}
+                name={SELECTOR_LABEL[metrica]}
+                stroke="var(--color-primary-600)"
                 strokeWidth={2}
-                dot={{ r: 3, fill: METRICA_COLOR[m] }}
+                dot={{ r: 3, fill: 'var(--color-primary-600)' }}
               />
-            ))}
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -500,16 +490,35 @@ function GraficoLinea({ data, metricas }: { data: Fila[]; metricas: Metrica[] })
   )
 }
 
-// barras agrupadas (sin stackId), no apiladas: al permitir cualquier
-// combinación de métricas ya no hay una composición parte-todo garantizada
-// (ej. elegir "Bruto" + "Neto" a la vez se superpondría si se apilaran) —
-// agrupado es lo único que sigue siendo correcto para una selección
-// arbitraria
-function GraficoBarras({ data, metricas }: { data: Fila[]; metricas: Metrica[] }) {
-  const soloCantidad = ejeSoloCantidad(metricas)
+function BarrasTooltip({ active, payload }: { active?: boolean; payload?: { payload: Fila }[] }) {
+  if (!active || !payload || payload.length === 0) return null
+  const row = payload[0].payload
+  return (
+    <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
+      <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
+      <p className="text-sm font-semibold text-ink">{formatCurrency(row.bruto)} total</p>
+      <p className="text-xs text-ink-muted">Turnos: {formatCurrency(row.totalTurnos)}</p>
+      <p className="text-xs text-ink-muted">Señas: {formatCurrency(row.totalSenas)}</p>
+    </div>
+  )
+}
+
+// apiladas (stackId compartido), no una al lado de la otra — lo que importa
+// es ver de qué se compone el total de cada período: turnos finalizados vs.
+// señas de turnos cancelados
+function GraficoBarras({ data }: { data: Fila[] }) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
-      <LeyendaMetricas metricas={metricas} swatchClassName="h-2.5 w-2.5 rounded-sm" />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--color-primary-600)' }} />
+          Turnos
+        </span>
+        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--color-primary-300)' }} />
+          Señas
+        </span>
+      </div>
       <div className="h-64 w-full sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -522,15 +531,21 @@ function GraficoBarras({ data, metricas }: { data: Fila[]; metricas: Metrica[] }
             />
             <YAxis
               tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
-              tickFormatter={(v: number) => (soloCantidad ? String(v) : formatCurrencyCompact(v))}
+              tickFormatter={(v: number) => formatCurrencyCompact(v)}
               axisLine={false}
               tickLine={false}
               width={56}
             />
-            <Tooltip cursor={{ fill: 'var(--color-surface-muted)' }} content={<GraficoTooltip metricas={metricas} />} />
-            {metricas.map((m) => (
-              <Bar key={m} dataKey={m} name={METRICA_LABEL[m]} fill={METRICA_COLOR[m]} radius={[4, 4, 0, 0]} maxBarSize={32} />
-            ))}
+            <Tooltip cursor={false} content={<BarrasTooltip />} />
+            <Bar dataKey="totalTurnos" stackId="ingreso" name="Turnos" fill="var(--color-primary-600)" maxBarSize={32} />
+            <Bar
+              dataKey="totalSenas"
+              stackId="ingreso"
+              name="Señas"
+              fill="var(--color-primary-300)"
+              radius={[4, 4, 0, 0]}
+              maxBarSize={32}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
