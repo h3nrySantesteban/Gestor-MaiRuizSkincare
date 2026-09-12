@@ -52,11 +52,13 @@ const METRICA_COLOR: Record<Metrica, string> = {
   cantidad: 'var(--color-chart-1)',
 }
 
+// cortos a propósito: son chips angostos arriba del gráfico, un label largo
+// ("Últimos 6 meses") los hacía demasiado anchos
 const RANGO_LABEL: Record<RangoTiempo, string> = {
-  '6m': 'Últimos 6 meses',
-  '1a': 'Último año',
-  '2a': 'Últimos 2 años',
-  todo: 'Todo el tiempo',
+  '6m': '6M',
+  '1a': '1A',
+  '2a': '2A',
+  todo: 'Max',
 }
 
 // las keys de la serie ("yyyy-MM"/"yyyy") ordenan cronológico como string
