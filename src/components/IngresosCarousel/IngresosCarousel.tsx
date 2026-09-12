@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { Skeleton } from '../Skeleton/Skeleton'
 import { InfoTooltip } from '../InfoTooltip/InfoTooltip'
 import { formatCurrency, parseFechaSolo } from '../../lib/format'
@@ -75,6 +77,12 @@ function promedios6MesesCerrados(map: Map<string, MesTotales>, anioActual: numbe
   return { bruto: bruto / 6, neto: (bruto - gastos) / 6 }
 }
 
+function formatMesLabel(year: number, month: number, anioActual: number): string {
+  const nombre = format(new Date(year, month - 1, 1), 'MMMM', { locale: es })
+  const capitalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1)
+  return year === anioActual ? capitalizado : `${capitalizado} ${year}`
+}
+
 function diasEnMes(year: number, month: number): number {
   // día 0 del mes siguiente = último día de este mes
   return new Date(year, month, 0).getDate()
@@ -130,6 +138,12 @@ function totalMesAnteriorAEstaAltura(
  */
 export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map())
+  // "back" (0 = mes actual) de la tarjeta centrada — arranca en 0 porque el
+  // carrusel también arranca mostrando el mes actual (ver el useEffect de
+  // scrollTo más abajo), y de ahí en más lo mantiene al día el
+  // IntersectionObserver de más abajo
+  const [activeBack, setActiveBack] = useState(0)
 
   const hoy = new Date()
   const anioActual = hoy.getFullYear()
@@ -161,6 +175,28 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
     el.scrollTo({ left: el.scrollWidth, behavior: 'auto' })
   }, [meses.length])
 
+  // qué tarjeta está centrada, para la etiqueta de mes de arriba —
+  // rootMargin "-50%" a los costados angosta el área de intersección a una
+  // línea vertical en el centro del carrusel, así el callback dispara con
+  // la tarjeta que cruza esa línea (la que está centrada), sin tener que
+  // recalcular a mano posiciones de scroll mezclando %/px (spacers, gap,
+  // tarjetas al 88%)
+  useEffect(() => {
+    const root = scrollRef.current
+    if (!root) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((entry) => entry.isIntersecting)
+        if (!visible) return
+        const back = Number((visible.target as HTMLElement).dataset.back)
+        setActiveBack(back)
+      },
+      { root, rootMargin: '0px -50% 0px -50%', threshold: 0 },
+    )
+    for (const el of cardRefs.current.values()) observer.observe(el)
+    return () => observer.disconnect()
+  }, [meses])
+
   if (loading) {
     return (
       <div className="flex flex-col gap-2">
@@ -171,9 +207,14 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
   }
 
   const promedio6Meses = promedios6MesesCerrados(totalesPorMes, anioActual, mesActual)
+  const { year: activeYear, month: activeMonth } = restarMeses(anioActual, mesActual, activeBack)
 
   return (
     <div>
+      <p className="mb-1.5 text-center text-sm font-semibold text-ink">
+        {formatMesLabel(activeYear, activeMonth, anioActual)}
+      </p>
+
       {/* -mx-4 md:-mx-6 cancela el padding de <main> en AppLayout.tsx (p-4
           md:p-6) — sin esto, el peek de las tarjetas vecinas quedaba
           recortado por ese margen de la página en vez de llegar al borde
@@ -203,6 +244,11 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
               // deslizar — scrollIntoView respeta el snap-center de abajo.
               <div
                 key={claveMes(year, month)}
+                ref={(el) => {
+                  if (el) cardRefs.current.set(back, el)
+                  else cardRefs.current.delete(back)
+                }}
+                data-back={back}
                 onClick={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })}
                 className="w-[88%] shrink-0 snap-center"
               >
