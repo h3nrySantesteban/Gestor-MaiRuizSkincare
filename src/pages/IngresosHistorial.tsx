@@ -14,6 +14,7 @@ import type { Gasto } from '../types/gasto'
 
 type Metrica = 'bruto' | 'neto' | 'cantidad' | 'ticket'
 type Granularidad = 'meses' | 'años'
+type RangoTiempo = '6m' | '1a' | '2a' | 'todo'
 
 // mismo estilo visual que inputClass pero sin w-full/min-w-0: estos
 // desplegables tienen que quedar del ancho de su contenido (empujados al
@@ -26,6 +27,26 @@ const METRICA_LABEL: Record<Metrica, string> = {
   neto: 'Neto',
   cantidad: 'Cantidad de turnos',
   ticket: 'Ticket promedio',
+}
+
+const RANGO_LABEL: Record<RangoTiempo, string> = {
+  '6m': 'Últimos 6 meses',
+  '1a': 'Último año',
+  '2a': 'Últimos 2 años',
+  todo: 'Todo el tiempo',
+}
+
+// las keys de la serie ("yyyy-MM"/"yyyy") ordenan cronológico como string
+// (ver calcularSerie) — comparar contra un corte con el mismo formato evita
+// tener que parsear fechas de vuelta acá
+function claveDeCorte(rango: RangoTiempo, granularidad: Granularidad): string | null {
+  if (rango === 'todo') return null
+  const meses = rango === '6m' ? 6 : rango === '1a' ? 12 : 24
+  const hoy = new Date()
+  // -1: el mes actual (parcial) ya cuenta como uno de los "meses" del rango
+  const corte = new Date(hoy.getFullYear(), hoy.getMonth() - (meses - 1), 1)
+  if (granularidad === 'años') return String(corte.getFullYear())
+  return `${corte.getFullYear()}-${String(corte.getMonth() + 1).padStart(2, '0')}`
 }
 
 interface Fila {
@@ -167,6 +188,7 @@ export function IngresosHistorial() {
   const [granularidad, setGranularidad] = useState<Granularidad>('meses')
   const [vista, setVista] = useState<'tabla' | 'linea' | 'barras'>('tabla')
   const [metrica, setMetrica] = useState<Metrica>('bruto')
+  const [rango, setRango] = useState<RangoTiempo>('1a')
   const [sort, setSort] = useState<Sort>({ column: 'periodo', direction: 'desc' })
 
   const loadingSerie = loading || gastosLoading
@@ -174,6 +196,14 @@ export function IngresosHistorial() {
   // los gráficos van siempre de más viejo a más nuevo (izquierda a derecha)
   // — el orden de la tabla es independiente, lo maneja sort
   const serie = useMemo(() => calcularSerie(turnos, gastos, granularidad), [turnos, gastos, granularidad])
+
+  // el rango solo recorta el gráfico de línea (ver selector "Desde cuándo"
+  // más abajo, igual de condicional que "Métrica") — tabla y barras siguen
+  // mostrando todo el historial
+  const serieLinea = useMemo(() => {
+    const corte = claveDeCorte(rango, granularidad)
+    return corte === null ? serie : serie.filter((f) => f.key >= corte)
+  }, [serie, rango, granularidad])
 
   function handleSort(column: SortColumn) {
     setSort((prev) =>
@@ -225,16 +255,28 @@ export function IngresosHistorial() {
           </select>
         </label>
         {vista === 'linea' && (
-          <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
-            Métrica
-            <select value={metrica} onChange={(e) => setMetrica(e.target.value as Metrica)} className={selectClass}>
-              {(Object.keys(METRICA_LABEL) as Metrica[]).map((key) => (
-                <option key={key} value={key}>
-                  {METRICA_LABEL[key]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <>
+            <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
+              Métrica
+              <select value={metrica} onChange={(e) => setMetrica(e.target.value as Metrica)} className={selectClass}>
+                {(Object.keys(METRICA_LABEL) as Metrica[]).map((key) => (
+                  <option key={key} value={key}>
+                    {METRICA_LABEL[key]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
+              Desde cuándo
+              <select value={rango} onChange={(e) => setRango(e.target.value as RangoTiempo)} className={selectClass}>
+                {(Object.keys(RANGO_LABEL) as RangoTiempo[]).map((key) => (
+                  <option key={key} value={key}>
+                    {RANGO_LABEL[key]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
         )}
       </div>
 
@@ -247,7 +289,7 @@ export function IngresosHistorial() {
       ) : vista === 'tabla' ? (
         <TablaHistorial filas={filasTabla} sort={sort} onSort={handleSort} granularidad={granularidad} />
       ) : vista === 'linea' ? (
-        <GraficoLinea data={serie} metrica={metrica} />
+        <GraficoLinea data={serieLinea} metrica={metrica} />
       ) : (
         <GraficoBarras data={serie} />
       )}
