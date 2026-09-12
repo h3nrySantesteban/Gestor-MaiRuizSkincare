@@ -174,45 +174,59 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
 
   return (
     <div>
-      <div ref={scrollRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth">
-        {meses.map((back) => {
-          const { year, month } = restarMeses(anioActual, mesActual, back)
-          const { bruto, gastos: gastosDelMes } = totalesDelMes(totalesPorMes, year, month)
-          const neto = bruto - gastosDelMes
-          const mesAnterior = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
-          return (
-            // 88% del ancho (no 100%): deja asomar un margen de la tarjeta
-            // vecina a cada lado como pista visual de que se puede deslizar
-            <div key={claveMes(year, month)} className="w-[88%] shrink-0 snap-center">
-              <div className="rounded-xl border border-border bg-surface p-3">
-                <div className="grid grid-cols-2 gap-x-4">
-                  <div>
-                    <p className="text-xs font-medium text-ink-muted">Ingreso Neto</p>
-                    <p className="text-lg font-semibold text-ink">{formatCurrency(neto)}</p>
+      {/* -mx-4 md:-mx-6 cancela el padding de <main> en AppLayout.tsx (p-4
+          md:p-6) — sin esto, el peek de las tarjetas vecinas quedaba
+          recortado por ese margen de la página en vez de llegar al borde
+          real de la pantalla. px-[6%] adentro reintroduce ese espacio pero
+          del tamaño exacto del peek (mitad del 12% que sobra de un ancho de
+          tarjeta w-[88%]), así la primera y la última tarjeta también
+          quedan centradas — sin este padding, scrollTo(scrollWidth) las
+          dejaba pegadas al borde en vez de centradas como las del medio. */}
+      <div className="-mx-4 md:-mx-6">
+        <div
+          ref={scrollRef}
+          className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-[6%]"
+        >
+          {meses.map((back) => {
+            const { year, month } = restarMeses(anioActual, mesActual, back)
+            const { bruto, gastos: gastosDelMes } = totalesDelMes(totalesPorMes, year, month)
+            const neto = bruto - gastosDelMes
+            const mesAnterior = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
+            return (
+              // 88% del ancho (no 100%): deja asomar un margen de la
+              // tarjeta vecina a cada lado como pista visual de que se
+              // puede deslizar
+              <div key={claveMes(year, month)} className="w-[88%] shrink-0 snap-center">
+                <div className="rounded-xl border border-border bg-surface p-3">
+                  <div className="grid grid-cols-2 gap-x-4">
+                    <div>
+                      <p className="text-xs font-medium text-ink-muted">Ingreso Neto</p>
+                      <p className="text-lg font-semibold text-ink">{formatCurrency(neto)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-medium text-ink-muted">Ingreso Bruto</p>
+                      <p className="text-lg font-semibold text-ink">{formatCurrency(bruto)}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-ink-muted">Ingreso Bruto</p>
-                    <p className="text-lg font-semibold text-ink">{formatCurrency(bruto)}</p>
+                  <div className="mt-2.5 flex items-center justify-center gap-1 border-t border-border pt-2">
+                    <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
+                    <InfoTooltip text="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
                   </div>
-                </div>
-                <div className="mt-2.5 flex items-center justify-center gap-1 border-t border-border pt-2">
-                  <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
-                  <InfoTooltip text="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
-                </div>
-                <div className="mt-1 grid grid-cols-2 gap-x-4">
-                  <div>
-                    <p className="text-[11px] text-ink-muted">Ingreso Neto</p>
-                    <p className="text-sm font-medium text-ink-muted">{formatCurrency(mesAnterior.neto)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[11px] text-ink-muted">Ingreso Bruto</p>
-                    <p className="text-sm font-medium text-ink-muted">{formatCurrency(mesAnterior.bruto)}</p>
+                  <div className="mt-1 grid grid-cols-2 gap-x-4">
+                    <div>
+                      <p className="text-[11px] text-ink-muted">Ingreso Neto</p>
+                      <p className="text-sm font-medium text-ink-muted">{formatCurrency(mesAnterior.neto)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] text-ink-muted">Ingreso Bruto</p>
+                      <p className="text-sm font-medium text-ink-muted">{formatCurrency(mesAnterior.bruto)}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
 
       <div className="mt-3 flex flex-col gap-1.5">
