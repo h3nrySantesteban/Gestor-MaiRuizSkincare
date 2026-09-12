@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useIngresos } from '../hooks/useIngresos'
+import { useGastos } from '../hooks/useGastos'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
+import { IngresosCarousel } from '../components/IngresosCarousel/IngresosCarousel'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { BarChartIcon } from '../components/icons'
 import { formatCurrency, formatFecha } from '../lib/format'
@@ -49,28 +51,9 @@ function agruparPorMes(turnos: Turno[]): GrupoMes[] {
   return grupos
 }
 
-function totalDelMes(turnos: Turno[], year: number, month: number): number {
-  return turnos.reduce((sum, t) => {
-    const f = new Date(t.fecha)
-    return f.getFullYear() === year && f.getMonth() + 1 === month ? sum + t.precio : sum
-  }, 0)
-}
-
-function cantDelMes(turnos: Turno[], year: number, month: number): number {
-  return turnos.reduce((n, t) => {
-    const f = new Date(t.fecha)
-    return f.getFullYear() === year && f.getMonth() + 1 === month ? n + 1 : n
-  }, 0)
-}
-
-// month es 1-based; n meses hacia atrás (n=1 → el mes anterior)
-function restarMeses(year: number, month: number, n: number): { year: number; month: number } {
-  const d = new Date(year, month - 1 - n, 1)
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
-
 export function Ingresos() {
   const { turnos, loading, refetch } = useIngresos()
+  const { gastos, loading: gastosLoading } = useGastos()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Turno | null>(null)
 
@@ -80,42 +63,6 @@ export function Ingresos() {
   }
 
   const gruposPorMes = useMemo(() => agruparPorMes(turnos), [turnos])
-
-  const hoy = new Date()
-  const anioActual = hoy.getFullYear()
-  const mesActual = hoy.getMonth() + 1
-
-  const totalEsteMes = useMemo(() => totalDelMes(turnos, anioActual, mesActual), [turnos, anioActual, mesActual])
-  const totalMesPasado = useMemo(() => {
-    const { year, month } = restarMeses(anioActual, mesActual, 1)
-    return totalDelMes(turnos, year, month)
-  }, [turnos, anioActual, mesActual])
-  const diferencia = totalEsteMes - totalMesPasado
-  const diferenciaPct = totalMesPasado > 0 ? (diferencia / totalMesPasado) * 100 : null
-
-  // promedio de los últimos 6 meses CERRADOS (sin el actual, que todavía
-  // está incompleto y tiraría el promedio para abajo)
-  const promedio6Meses = useMemo(() => {
-    let suma = 0
-    for (let i = 1; i <= 6; i++) {
-      const { year, month } = restarMeses(anioActual, mesActual, i)
-      suma += totalDelMes(turnos, year, month)
-    }
-    return suma / 6
-  }, [turnos, anioActual, mesActual])
-
-  // ticket promedio de esos mismos 6 meses: total facturado / cantidad de
-  // turnos facturados (no es promedio6Meses/6, que sería promedio mensual)
-  const ticketPromedio = useMemo(() => {
-    let suma = 0
-    let cant = 0
-    for (let i = 1; i <= 6; i++) {
-      const { year, month } = restarMeses(anioActual, mesActual, i)
-      suma += totalDelMes(turnos, year, month)
-      cant += cantDelMes(turnos, year, month)
-    }
-    return cant > 0 ? suma / cant : 0
-  }, [turnos, anioActual, mesActual])
 
   return (
     <div className="flex flex-col gap-6">
@@ -137,41 +84,7 @@ export function Ingresos() {
         </Link>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-2 gap-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Total este mes</p>
-            <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(totalEsteMes)}</p>
-            <p
-              className={`mt-1 whitespace-nowrap text-xs font-medium ${
-                diferenciaPct === null
-                  ? 'text-ink-muted'
-                  : diferencia > 0
-                    ? 'text-success'
-                    : diferencia < 0
-                      ? 'text-danger'
-                      : 'text-ink-muted'
-              }`}
-            >
-              {diferenciaPct === null
-                ? 'Sin datos del mes ant.'
-                : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% que el ult. mes`}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
-            <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>
-            <p className="mt-1 whitespace-nowrap text-xs font-medium text-ink-muted">
-              Ticket prom.: {formatCurrency(ticketPromedio)}
-            </p>
-          </div>
-        </div>
-      )}
+      <IngresosCarousel turnos={turnos} gastos={gastos} loading={loading || gastosLoading} />
 
       <div className="flex flex-col gap-4">
         {loading && (

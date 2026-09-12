@@ -59,7 +59,14 @@ functions under `/api`.
 - `gastos`: Mai's own expense log (servicios/insumos), entirely separate from
   `turnos` — **not** netted against revenue anywhere (Dashboard/Analytics
   `ingresos` stay untouched), this is expense bookkeeping only, not a P&L
-  view. `es_fijo` + `recurrencia_numero`/`recurrencia_unidad` are
+  view. The one deliberate exception is the "Neto" figure in
+  [IngresosCarousel](src/components/IngresosCarousel/IngresosCarousel.tsx)
+  (the month-by-month cards at the top of `/ingresos`), which explicitly
+  computes `bruto − gastos del mes` — Mai asked for that one spot to work as
+  a light P&L view. That subtraction stays local to this component; it
+  doesn't change how `ingresos` is computed anywhere else, including
+  `useIngresos.ts` and `IngresosHistorial.tsx`. `es_fijo` +
+  `recurrencia_numero`/`recurrencia_unidad` are
   informational only ("cada 1 mes", shown as a badge in
   [Gastos.tsx](src/pages/Gastos.tsx)) — nothing generates the next
   occurrence automatically, Mai still logs each one by hand when it happens.
