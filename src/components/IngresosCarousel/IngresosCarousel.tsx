@@ -177,16 +177,19 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
       {/* -mx-4 md:-mx-6 cancela el padding de <main> en AppLayout.tsx (p-4
           md:p-6) — sin esto, el peek de las tarjetas vecinas quedaba
           recortado por ese margen de la página en vez de llegar al borde
-          real de la pantalla. px-[6%] adentro reintroduce ese espacio pero
-          del tamaño exacto del peek (mitad del 12% que sobra de un ancho de
-          tarjeta w-[88%]), así la primera y la última tarjeta también
-          quedan centradas — sin este padding, scrollTo(scrollWidth) las
-          dejaba pegadas al borde en vez de centradas como las del medio. */}
+          real de la pantalla.
+          Los dos "espaciadores" (antes/después de las tarjetas) reservan el
+          mismo ancho que le falta a una tarjeta w-[88%] para llegar al
+          100% (6% de cada lado) — así la primera y la última tarjeta
+          también pueden centrarse igual que las del medio, que ya tienen
+          ese espacio gratis gracias al peek de su vecina. Iban como
+          padding del contenedor, pero un padding ahí encoge el ancho
+          disponible para los hijos (88% de un 88%, ~77% en vez de 88%) —
+          un espaciador es un hijo más del flex, mide 6% del mismo 100%
+          que las tarjetas y no arrastra ese problema. */}
       <div className="-mx-4 md:-mx-6">
-        <div
-          ref={scrollRef}
-          className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-[6%]"
-        >
+        <div ref={scrollRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth">
+          <div aria-hidden className="w-[6%] shrink-0" />
           {meses.map((back) => {
             const { year, month } = restarMeses(anioActual, mesActual, back)
             const { bruto, gastos: gastosDelMes } = totalesDelMes(totalesPorMes, year, month)
@@ -226,6 +229,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
               </div>
             )
           })}
+          <div aria-hidden className="w-[6%] shrink-0" />
         </div>
       </div>
 
