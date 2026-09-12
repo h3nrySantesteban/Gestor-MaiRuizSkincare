@@ -269,16 +269,18 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
         })}
       </div>
 
-      <div className="mt-2 rounded-xl border border-border bg-surface p-3">
-        <p className="text-center text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
-        <div className="mt-1 grid grid-cols-2 gap-x-4">
-          <div>
-            <p className="text-[11px] text-ink-muted">Ingreso Neto</p>
-            <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.neto)}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] text-ink-muted">Ingreso Bruto</p>
-            <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.bruto)}</p>
+      <div className="mt-3 flex flex-col gap-1.5">
+        <p className="text-left text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
+        <div className="rounded-xl border border-border bg-surface p-3">
+          <div className="grid grid-cols-2 gap-x-4">
+            <div>
+              <p className="text-[11px] text-ink-muted">Ingreso Neto</p>
+              <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.neto)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] text-ink-muted">Ingreso Bruto</p>
+              <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.bruto)}</p>
+            </div>
           </div>
         </div>
       </div>

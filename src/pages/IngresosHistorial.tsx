@@ -73,16 +73,10 @@ interface Fila {
   neto: number
   cantidad: number
   ticket: number
-  totalTurnos: number
-  totalSenas: number
   pctBruto: number | null
   pctNeto: number | null
   pctCantidad: number | null
   pctTicket: number | null
-}
-
-function esSena(t: Turno): boolean {
-  return t.estado === 'Cancelado' && t.senado
 }
 
 function formatMesLargo(fecha: Date): string {
@@ -100,11 +94,11 @@ function pct(curr: number, prev: number | undefined): number | null {
 // anterior CON datos en esta lista, no necesariamente el inmediato
 // anterior del calendario
 function calcularSerie(turnos: Turno[], gastos: Gasto[], granularidad: Granularidad): Fila[] {
-  const porKey = new Map<string, { fechaMuestra: Date; bruto: number; cantidad: number; totalSenas: number; gastos: number }>()
+  const porKey = new Map<string, { fechaMuestra: Date; bruto: number; cantidad: number; gastos: number }>()
   function entrada(key: string, fechaMuestra: Date) {
     let e = porKey.get(key)
     if (!e) {
-      e = { fechaMuestra, bruto: 0, cantidad: 0, totalSenas: 0, gastos: 0 }
+      e = { fechaMuestra, bruto: 0, cantidad: 0, gastos: 0 }
       porKey.set(key, e)
     }
     return e
@@ -115,7 +109,6 @@ function calcularSerie(turnos: Turno[], gastos: Gasto[], granularidad: Granulari
     const e = entrada(key, d)
     e.bruto += t.precio
     e.cantidad += 1
-    if (esSena(t)) e.totalSenas += t.precio
   }
   for (const g of gastos) {
     // gastos.fecha es date-only (no timestamptz, a diferencia de
@@ -141,8 +134,6 @@ function calcularSerie(turnos: Turno[], gastos: Gasto[], granularidad: Granulari
       neto,
       cantidad: entry.cantidad,
       ticket,
-      totalTurnos: entry.bruto - entry.totalSenas,
-      totalSenas: entry.totalSenas,
       pctBruto: pct(entry.bruto, prevEntry?.bruto),
       pctNeto: pct(neto, prevNeto),
       pctCantidad: pct(entry.cantidad, prevEntry?.cantidad),
@@ -216,7 +207,7 @@ export function IngresosHistorial() {
   const [granularidad, setGranularidad] = useState<Granularidad>('meses')
   const [vista, setVista] = useState<'tabla' | 'linea' | 'barras'>('tabla')
   const [metrica, setMetrica] = useState<MetricaSeleccionable>('ingresos')
-  const [rango, setRango] = useState<RangoTiempo>('1a')
+  const [rango, setRango] = useState<RangoTiempo>('6m')
   const [sort, setSort] = useState<Sort>({ column: 'periodo', direction: 'desc' })
 
   const loadingSerie = loading || gastosLoading
@@ -283,7 +274,7 @@ export function IngresosHistorial() {
             <option value="barras">Barras</option>
           </select>
         </label>
-        {vista === 'linea' && (
+        {esGrafico && (
           <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
             Métrica
             <select value={metrica} onChange={(e) => setMetrica(e.target.value as MetricaSeleccionable)} className={selectClass}>
@@ -318,7 +309,7 @@ export function IngresosHistorial() {
       ) : vista === 'linea' ? (
         <GraficoLinea data={serieFiltrada} metrica={metrica} />
       ) : (
-        <GraficoBarras data={serieFiltrada} />
+        <GraficoBarras data={serieFiltrada} metrica={metrica} />
       )}
     </div>
   )
@@ -490,35 +481,39 @@ function GraficoLinea({ data, metrica }: { data: Fila[]; metrica: MetricaSelecci
   )
 }
 
-function BarrasTooltip({ active, payload }: { active?: boolean; payload?: { payload: Fila }[] }) {
+function BarrasTooltip({ active, payload, metrica }: { active?: boolean; payload?: { payload: Fila }[]; metrica: MetricaSeleccionable }) {
   if (!active || !payload || payload.length === 0) return null
   const row = payload[0].payload
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
       <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
-      <p className="text-sm font-semibold text-ink">{formatCurrency(row.bruto)} total</p>
-      <p className="text-xs text-ink-muted">Turnos: {formatCurrency(row.totalTurnos)}</p>
-      <p className="text-xs text-ink-muted">Señas: {formatCurrency(row.totalSenas)}</p>
+      {metrica === 'ingresos' ? (
+        <>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--color-primary-600)' }} />
+            {METRICA_LABEL.bruto}: {formatCurrency(row.bruto)}
+          </p>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--color-primary-300)' }} />
+            {METRICA_LABEL.neto}: {formatCurrency(row.neto)}
+          </p>
+        </>
+      ) : (
+        <p className="text-sm font-semibold text-ink">{metrica === 'cantidad' ? row.cantidad : formatCurrency(row.ticket)}</p>
+      )}
     </div>
   )
 }
 
-// apiladas (stackId compartido), no una al lado de la otra — lo que importa
-// es ver de qué se compone el total de cada período: turnos finalizados vs.
-// señas de turnos cancelados
-function GraficoBarras({ data }: { data: Fila[] }) {
+// mismas métricas que el gráfico de línea (ver GraficoLinea) — "Ingresos"
+// dibuja Bruto y Neto lado a lado (no apilados: neto = bruto − gastos, no
+// son partes de un todo, apilarlos sumaría un número sin sentido), el
+// resto de las métricas es una sola barra
+function GraficoBarras({ data, metrica }: { data: Fila[]; metrica: MetricaSeleccionable }) {
+  const esIngresos = metrica === 'ingresos'
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--color-primary-600)' }} />
-          Turnos
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-          <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: 'var(--color-primary-300)' }} />
-          Señas
-        </span>
-      </div>
+      {esIngresos && <LeyendaBrutoNeto />}
       <div className="h-64 w-full sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -531,21 +526,20 @@ function GraficoBarras({ data }: { data: Fila[] }) {
             />
             <YAxis
               tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
-              tickFormatter={(v: number) => formatCurrencyCompact(v)}
+              tickFormatter={(v: number) => (metrica === 'cantidad' ? String(v) : formatCurrencyCompact(v))}
               axisLine={false}
               tickLine={false}
               width={56}
             />
-            <Tooltip cursor={false} content={<BarrasTooltip />} />
-            <Bar dataKey="totalTurnos" stackId="ingreso" name="Turnos" fill="var(--color-primary-600)" maxBarSize={32} />
-            <Bar
-              dataKey="totalSenas"
-              stackId="ingreso"
-              name="Señas"
-              fill="var(--color-primary-300)"
-              radius={[4, 4, 0, 0]}
-              maxBarSize={32}
-            />
+            <Tooltip cursor={{ fill: 'var(--color-surface-muted)' }} content={<BarrasTooltip metrica={metrica} />} />
+            {esIngresos ? (
+              <>
+                <Bar dataKey="bruto" name={METRICA_LABEL.bruto} fill="var(--color-primary-600)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                <Bar dataKey="neto" name={METRICA_LABEL.neto} fill="var(--color-primary-300)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+              </>
+            ) : (
+              <Bar dataKey={metrica} name={SELECTOR_LABEL[metrica]} fill="var(--color-primary-600)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+            )}
           </BarChart>
         </ResponsiveContainer>
       </div>
