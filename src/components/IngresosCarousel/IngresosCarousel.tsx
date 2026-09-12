@@ -1,8 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { useEffect, useMemo, useRef } from 'react'
 import { Skeleton } from '../Skeleton/Skeleton'
-import { ArrowLeftIcon, ArrowRightIcon } from '../icons'
 import { InfoTooltip } from '../InfoTooltip/InfoTooltip'
 import { formatCurrency, parseFechaSolo } from '../../lib/format'
 import type { Turno } from '../../types/turno'
@@ -113,17 +110,9 @@ function totalMesAnteriorAEstaAltura(
   return { bruto, neto: bruto - gastosTotal }
 }
 
-function formatLabel(year: number, month: number, back: number, anioActual: number): string {
-  if (back === 0) return 'Actual'
-  const nombre = format(new Date(year, month - 1, 1), 'MMMM', { locale: es })
-  const capitalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1)
-  return year === anioActual ? capitalizado : `${capitalizado} ${year}`
-}
-
 /**
- * Carrusel de "Ingresos por mes": una tarjeta por mes, navegable con flechas
- * (arriba, a los costados del nombre del mes) o deslizando/scrolleando
- * horizontalmente — arranca mostrando el mes actual ("Actual"), a la
+ * Carrusel de "Ingresos por mes": una tarjeta por mes, navegable deslizando/
+ * scrolleando horizontalmente — arranca mostrando el mes actual, a la
  * derecha del todo, con los meses anteriores hacia la izquierda.
  *
  * Bruto = suma de turno.precio de los turnos facturables del mes (mismo
@@ -141,7 +130,6 @@ function formatLabel(year: number, month: number, back: number, anioActual: numb
  */
 export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
 
   const hoy = new Date()
   const anioActual = hoy.getFullYear()
@@ -150,7 +138,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
   const totalesPorMes = useMemo(() => construirTotalesPorMes(turnos, gastos), [turnos, gastos])
 
   // cuántos meses hacia atrás llega el carrusel: hasta el mes más viejo con
-  // algún turno o gasto cargado (0 si no hay nada todavía, solo "Actual")
+  // algún turno o gasto cargado (0 si no hay nada todavía, solo el mes en curso)
   const maxBack = useMemo(() => {
     let max = 0
     for (const key of totalesPorMes.keys()) {
@@ -162,7 +150,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
   }, [totalesPorMes])
 
   // de más viejo (índice 0) a más nuevo (último índice = mes actual) — así
-  // el scroll arranca de entrada pegado a la derecha, mostrando "Actual"
+  // el scroll arranca de entrada pegado a la derecha, mostrando el mes en curso
   const meses = useMemo(() => Array.from({ length: maxBack + 1 }, (_, i) => maxBack - i), [maxBack])
 
   // al cargar (o cuando cambia la cantidad de meses disponibles) arranca
@@ -171,23 +159,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
     const el = scrollRef.current
     if (!el) return
     el.scrollTo({ left: el.scrollWidth, behavior: 'auto' })
-    setActiveIndex(meses.length - 1)
   }, [meses.length])
-
-  function handleScroll() {
-    const el = scrollRef.current
-    if (!el || el.clientWidth === 0) return
-    const idx = Math.round(el.scrollLeft / el.clientWidth)
-    setActiveIndex(Math.min(Math.max(idx, 0), meses.length - 1))
-  }
-
-  function goTo(index: number) {
-    const el = scrollRef.current
-    if (!el) return
-    const clamped = Math.min(Math.max(index, 0), meses.length - 1)
-    el.scrollTo({ left: clamped * el.clientWidth, behavior: 'smooth' })
-    setActiveIndex(clamped)
-  }
 
   if (loading) {
     return (
@@ -199,45 +171,19 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
   }
 
   const promedio6Meses = promedios6MesesCerrados(totalesPorMes, anioActual, mesActual)
-  const activeBack = meses[activeIndex] ?? 0
-  const { year: activeYear, month: activeMonth } = restarMeses(anioActual, mesActual, activeBack)
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => goTo(activeIndex - 1)}
-          disabled={activeIndex === 0}
-          aria-label="Mes anterior"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-30 disabled:hover:bg-transparent"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-        </button>
-        <span className="text-sm font-semibold text-ink">{formatLabel(activeYear, activeMonth, activeBack, anioActual)}</span>
-        <button
-          type="button"
-          onClick={() => goTo(activeIndex + 1)}
-          disabled={activeIndex === meses.length - 1}
-          aria-label="Mes siguiente"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-30 disabled:hover:bg-transparent"
-        >
-          <ArrowRightIcon className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto scroll-smooth"
-      >
+      <div ref={scrollRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth">
         {meses.map((back) => {
           const { year, month } = restarMeses(anioActual, mesActual, back)
           const { bruto, gastos: gastosDelMes } = totalesDelMes(totalesPorMes, year, month)
           const neto = bruto - gastosDelMes
           const mesAnterior = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
           return (
-            <div key={claveMes(year, month)} className="w-full shrink-0 snap-center">
+            // 88% del ancho (no 100%): deja asomar un margen de la tarjeta
+            // vecina a cada lado como pista visual de que se puede deslizar
+            <div key={claveMes(year, month)} className="w-[88%] shrink-0 snap-center">
               <div className="rounded-xl border border-border bg-surface p-3">
                 <div className="grid grid-cols-2 gap-x-4">
                   <div>
