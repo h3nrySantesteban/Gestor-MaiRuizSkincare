@@ -4,12 +4,15 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useIngresos } from '../hooks/useIngresos'
+import { useGastos } from '../hooks/useGastos'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { ArrowLeftIcon } from '../components/icons'
-import { formatCurrency, formatCurrencyCompact } from '../lib/format'
+import { InfoTooltip } from '../components/InfoTooltip/InfoTooltip'
+import { formatCurrency, formatCurrencyCompact, parseFechaSolo } from '../lib/format'
 import type { Turno } from '../types/turno'
+import type { Gasto } from '../types/gasto'
 
-type Metrica = 'total' | 'cantidad' | 'ticket'
+type Metrica = 'bruto' | 'neto' | 'cantidad' | 'ticket'
 type Granularidad = 'meses' | 'años'
 
 // mismo estilo visual que inputClass pero sin w-full/min-w-0: estos
@@ -19,7 +22,8 @@ const selectClass =
   'rounded-lg border border-border px-3 py-2 text-sm text-ink outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500'
 
 const METRICA_LABEL: Record<Metrica, string> = {
-  total: 'Total facturado',
+  bruto: 'Bruto',
+  neto: 'Neto',
   cantidad: 'Cantidad de turnos',
   ticket: 'Ticket promedio',
 }
@@ -30,12 +34,15 @@ interface Fila {
   /** para la tabla en granularidad "meses": mes + año, evita ambigüedad entre "jul" de un año y otro (el gráfico sigue usando periodoCorto, sin año, para no recargar el eje) */
   periodoTabla: string
   periodoLargo: string
-  total: number
+  bruto: number
+  /** bruto − gastos cargados en ese mismo período — mismo criterio que IngresosCarousel */
+  neto: number
   cantidad: number
   ticket: number
   totalTurnos: number
   totalSenas: number
-  pctTotal: number | null
+  pctBruto: number | null
+  pctNeto: number | null
   pctCantidad: number | null
   pctTicket: number | null
 }
@@ -44,8 +51,8 @@ function esSena(t: Turno): boolean {
   return t.estado === 'Cancelado' && t.senado
 }
 
-function formatMesLargo(iso: string): string {
-  const label = format(new Date(iso), 'MMMM yyyy', { locale: es })
+function formatMesLargo(fecha: Date): string {
+  const label = format(fecha, 'MMMM yyyy', { locale: es })
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
@@ -54,40 +61,56 @@ function pct(curr: number, prev: number | undefined): number | null {
   return ((curr - prev) / prev) * 100
 }
 
-// una fila por mes/año con al menos un turno facturado (no rellena períodos
-// vacíos con ceros) — el % es contra el período anterior CON datos en esta
-// lista, no necesariamente el inmediato anterior del calendario
-function calcularSerie(turnos: Turno[], granularidad: Granularidad): Fila[] {
-  const porKey = new Map<string, { fechaMuestra: string; total: number; cantidad: number; totalSenas: number }>()
+// una fila por mes/año con al menos un turno facturado o un gasto cargado
+// (no rellena períodos vacíos con ceros) — el % es contra el período
+// anterior CON datos en esta lista, no necesariamente el inmediato
+// anterior del calendario
+function calcularSerie(turnos: Turno[], gastos: Gasto[], granularidad: Granularidad): Fila[] {
+  const porKey = new Map<string, { fechaMuestra: Date; bruto: number; cantidad: number; totalSenas: number; gastos: number }>()
+  function entrada(key: string, fechaMuestra: Date) {
+    let e = porKey.get(key)
+    if (!e) {
+      e = { fechaMuestra, bruto: 0, cantidad: 0, totalSenas: 0, gastos: 0 }
+      porKey.set(key, e)
+    }
+    return e
+  }
   for (const t of turnos) {
     const d = new Date(t.fecha)
     const key = granularidad === 'meses' ? format(d, 'yyyy-MM') : format(d, 'yyyy')
-    let entry = porKey.get(key)
-    if (!entry) {
-      entry = { fechaMuestra: t.fecha, total: 0, cantidad: 0, totalSenas: 0 }
-      porKey.set(key, entry)
-    }
-    entry.total += t.precio
-    entry.cantidad += 1
-    if (esSena(t)) entry.totalSenas += t.precio
+    const e = entrada(key, d)
+    e.bruto += t.precio
+    e.cantidad += 1
+    if (esSena(t)) e.totalSenas += t.precio
+  }
+  for (const g of gastos) {
+    // gastos.fecha es date-only (no timestamptz, a diferencia de
+    // turnos.fecha) — parseFechaSolo evita el corrimiento de día por UTC
+    const d = parseFechaSolo(g.fecha)
+    const key = granularidad === 'meses' ? format(d, 'yyyy-MM') : format(d, 'yyyy')
+    entrada(key, d).gastos += g.valor
   }
   const keys = [...porKey.keys()].sort() // "yyyy-MM"/"yyyy" ordenan cronológico como string
   return keys.map((key, i) => {
     const entry = porKey.get(key)!
     const prevEntry = i > 0 ? porKey.get(keys[i - 1]) : undefined
-    const ticket = entry.cantidad > 0 ? entry.total / entry.cantidad : 0
-    const prevTicket = prevEntry && prevEntry.cantidad > 0 ? prevEntry.total / prevEntry.cantidad : undefined
+    const ticket = entry.cantidad > 0 ? entry.bruto / entry.cantidad : 0
+    const prevTicket = prevEntry && prevEntry.cantidad > 0 ? prevEntry.bruto / prevEntry.cantidad : undefined
+    const neto = entry.bruto - entry.gastos
+    const prevNeto = prevEntry ? prevEntry.bruto - prevEntry.gastos : undefined
     return {
       key,
-      periodoCorto: granularidad === 'meses' ? format(new Date(entry.fechaMuestra), 'MMM', { locale: es }) : key,
-      periodoTabla: granularidad === 'meses' ? format(new Date(entry.fechaMuestra), 'MMM yyyy', { locale: es }) : key,
+      periodoCorto: granularidad === 'meses' ? format(entry.fechaMuestra, 'MMM', { locale: es }) : key,
+      periodoTabla: granularidad === 'meses' ? format(entry.fechaMuestra, 'MMM yyyy', { locale: es }) : key,
       periodoLargo: granularidad === 'meses' ? formatMesLargo(entry.fechaMuestra) : key,
-      total: entry.total,
+      bruto: entry.bruto,
+      neto,
       cantidad: entry.cantidad,
       ticket,
-      totalTurnos: entry.total - entry.totalSenas,
+      totalTurnos: entry.bruto - entry.totalSenas,
       totalSenas: entry.totalSenas,
-      pctTotal: pct(entry.total, prevEntry?.total),
+      pctBruto: pct(entry.bruto, prevEntry?.bruto),
+      pctNeto: pct(neto, prevNeto),
       pctCantidad: pct(entry.cantidad, prevEntry?.cantidad),
       pctTicket: pct(ticket, prevTicket),
     }
@@ -105,7 +128,7 @@ function pctColorClass(value: number | null): string {
   return value > 0 ? 'text-success' : 'text-danger'
 }
 
-type SortColumn = 'periodo' | 'total' | 'cantidad' | 'ticket'
+type SortColumn = 'periodo' | 'bruto' | 'neto' | 'cantidad' | 'ticket'
 type SortDirection = 'asc' | 'desc'
 interface Sort {
   column: SortColumn
@@ -140,14 +163,17 @@ function SortButton({
 
 export function IngresosHistorial() {
   const { turnos, loading } = useIngresos()
+  const { gastos, loading: gastosLoading } = useGastos()
   const [granularidad, setGranularidad] = useState<Granularidad>('meses')
   const [vista, setVista] = useState<'tabla' | 'linea' | 'barras'>('tabla')
-  const [metrica, setMetrica] = useState<Metrica>('total')
+  const [metrica, setMetrica] = useState<Metrica>('bruto')
   const [sort, setSort] = useState<Sort>({ column: 'periodo', direction: 'desc' })
+
+  const loadingSerie = loading || gastosLoading
 
   // los gráficos van siempre de más viejo a más nuevo (izquierda a derecha)
   // — el orden de la tabla es independiente, lo maneja sort
-  const serie = useMemo(() => calcularSerie(turnos, granularidad), [turnos, granularidad])
+  const serie = useMemo(() => calcularSerie(turnos, gastos, granularidad), [turnos, gastos, granularidad])
 
   function handleSort(column: SortColumn) {
     setSort((prev) =>
@@ -212,7 +238,7 @@ export function IngresosHistorial() {
         )}
       </div>
 
-      {loading ? (
+      {loadingSerie ? (
         <Skeleton className="h-64 w-full rounded-xl" />
       ) : serie.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
@@ -249,13 +275,19 @@ function TablaHistorial({
               <SortButton label={granularidad === 'meses' ? 'Mes' : 'Año'} column="periodo" sort={sort} onSort={onSort} />
             </th>
             <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
-              <SortButton label="Total" column="total" sort={sort} onSort={onSort} align="right" />
+              <SortButton label="Neto" column="neto" sort={sort} onSort={onSort} align="right" />
+            </th>
+            <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
+              <SortButton label="Bruto" column="bruto" sort={sort} onSort={onSort} align="right" />
             </th>
             <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
               <SortButton label="Cant." column="cantidad" sort={sort} onSort={onSort} align="right" />
             </th>
             <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
-              <SortButton label="Ticket" column="ticket" sort={sort} onSort={onSort} align="right" />
+              <div className="flex items-center justify-end gap-1">
+                <SortButton label="Ticket" column="ticket" sort={sort} onSort={onSort} />
+                <InfoTooltip text="Ticket promedio: el total Bruto del período dividido por la cantidad de turnos facturados — el monto promedio por turno." />
+              </div>
             </th>
           </tr>
         </thead>
@@ -264,8 +296,12 @@ function TablaHistorial({
             <tr key={f.key} className="border-b border-border last:border-0">
               <td className="whitespace-nowrap px-2.5 py-3 capitalize text-ink">{f.periodoTabla}</td>
               <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
-                {formatCurrency(f.total)}
-                <div className={`text-[11px] font-medium ${pctColorClass(f.pctTotal)}`}>{formatPct(f.pctTotal)}</div>
+                {formatCurrency(f.neto)}
+                <div className={`text-[11px] font-medium ${pctColorClass(f.pctNeto)}`}>{formatPct(f.pctNeto)}</div>
+              </td>
+              <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
+                {formatCurrency(f.bruto)}
+                <div className={`text-[11px] font-medium ${pctColorClass(f.pctBruto)}`}>{formatPct(f.pctBruto)}</div>
               </td>
               <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
                 {f.cantidad}
@@ -335,7 +371,7 @@ function BarrasTooltip({ active, payload }: { active?: boolean; payload?: { payl
   return (
     <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
       <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
-      <p className="text-sm font-semibold text-ink">{formatCurrency(row.total)} total</p>
+      <p className="text-sm font-semibold text-ink">{formatCurrency(row.bruto)} total</p>
       <p className="text-xs text-ink-muted">Turnos: {formatCurrency(row.totalTurnos)}</p>
       <p className="text-xs text-ink-muted">Señas: {formatCurrency(row.totalSenas)}</p>
     </div>

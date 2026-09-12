@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -7,7 +7,8 @@ import { useGastos } from '../hooks/useGastos'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { IngresosCarousel } from '../components/IngresosCarousel/IngresosCarousel'
 import { Skeleton } from '../components/Skeleton/Skeleton'
-import { BarChartIcon, InfoIcon } from '../components/icons'
+import { BarChartIcon } from '../components/icons'
+import { InfoTooltip } from '../components/InfoTooltip/InfoTooltip'
 import { formatCurrency, formatFecha } from '../lib/format'
 import type { Turno } from '../types/turno'
 
@@ -165,47 +166,6 @@ function IngresoRowSkeleton() {
     <div className="flex flex-col gap-1 rounded-xl border border-border bg-surface p-4">
       <Skeleton className="h-4 w-40" />
       <Skeleton className="h-4 w-16" />
-    </div>
-  )
-}
-
-// mismo patrón que el InfoTooltip de Gastos.tsx: click para abrir, click
-// afuera o Escape para cerrar
-function InfoTooltip({ text }: { text: string }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    document.addEventListener('keydown', onEscape)
-    return () => {
-      document.removeEventListener('mousedown', onClickOutside)
-      document.removeEventListener('keydown', onEscape)
-    }
-  }, [open])
-
-  return (
-    <div className="relative shrink-0" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Cómo se calcula"
-        className="flex h-5 w-5 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
-      >
-        <InfoIcon className="h-4 w-4" />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-10 mt-1 w-64 rounded-lg border border-border bg-surface p-3 text-xs text-ink-muted shadow-lg">
-          {text}
-        </div>
-      )}
     </div>
   )
 }

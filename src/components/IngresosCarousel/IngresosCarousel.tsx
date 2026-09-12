@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Skeleton } from '../Skeleton/Skeleton'
-import { ArrowLeftIcon, ArrowRightIcon, InfoIcon } from '../icons'
+import { ArrowLeftIcon, ArrowRightIcon } from '../icons'
+import { InfoTooltip } from '../InfoTooltip/InfoTooltip'
 import { formatCurrency, parseFechaSolo } from '../../lib/format'
 import type { Turno } from '../../types/turno'
 import type { Gasto } from '../../types/gasto'
@@ -190,9 +191,9 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-40 rounded-xl" />
-        <Skeleton className="h-16 rounded-xl" />
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-36 rounded-xl" />
+        <Skeleton className="h-14 rounded-xl" />
       </div>
     )
   }
@@ -237,22 +238,22 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
           const mesAnterior = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
           return (
             <div key={claveMes(year, month)} className="w-full shrink-0 snap-center">
-              <div className="rounded-xl border border-border bg-surface p-4">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              <div className="rounded-xl border border-border bg-surface p-3">
+                <div className="grid grid-cols-2 gap-x-4">
                   <div>
                     <p className="text-xs font-medium text-ink-muted">Neto</p>
-                    <p className="mt-1 text-lg font-semibold text-ink">{formatCurrency(neto)}</p>
+                    <p className="text-lg font-semibold text-ink">{formatCurrency(neto)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs font-medium text-ink-muted">Bruto</p>
-                    <p className="mt-1 text-lg font-semibold text-ink">{formatCurrency(bruto)}</p>
+                    <p className="text-lg font-semibold text-ink">{formatCurrency(bruto)}</p>
                   </div>
                 </div>
-                <div className="mt-4 flex items-center gap-1 border-t border-border pt-3">
+                <div className="mt-2.5 flex items-center gap-1 border-t border-border pt-2">
                   <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
                   <InfoTooltip text="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
                 </div>
-                <div className="mt-1.5 grid grid-cols-2 gap-x-4">
+                <div className="mt-1 grid grid-cols-2 gap-x-4">
                   <div>
                     <p className="text-[11px] text-ink-muted">Neto</p>
                     <p className="text-sm font-medium text-ink-muted">{formatCurrency(mesAnterior.neto)}</p>
@@ -268,16 +269,16 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
         })}
       </div>
 
-      <div className="mt-3 rounded-xl border border-border bg-surface p-4">
+      <div className="mt-2 rounded-xl border border-border bg-surface p-3">
         <p className="text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
-        <div className="mt-1.5 grid grid-cols-2 gap-x-4">
+        <div className="mt-1 grid grid-cols-2 gap-x-4">
           <div>
-            <p className="text-xs text-ink-muted">Neto</p>
-            <p className="text-lg font-semibold text-ink">{formatCurrency(promedio6Meses.neto)}</p>
+            <p className="text-[11px] text-ink-muted">Neto</p>
+            <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.neto)}</p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-ink-muted">Bruto</p>
-            <p className="text-lg font-semibold text-ink">{formatCurrency(promedio6Meses.bruto)}</p>
+            <p className="text-[11px] text-ink-muted">Bruto</p>
+            <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.bruto)}</p>
           </div>
         </div>
       </div>
@@ -285,67 +286,3 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
   )
 }
 
-const TOOLTIP_WIDTH = 224 // w-56
-
-// mismo patrón de click-para-abrir/click-afuera-o-Escape-cierra que el
-// InfoTooltip de Gastos.tsx, pero con el panel en position:fixed (no
-// absolute) calculado a mano desde el botón: este ícono vive dentro de la
-// tira horizontal con scroll del carrusel, y un panel absolute ahí queda
-// recortado por el propio overflow-x-auto del contenedor (se veía partido
-// y superpuesto). fixed lo saca de esa cadena de recorte.
-function InfoTooltip({ text }: { text: string }) {
-  const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
-  const btnRef = useRef<HTMLButtonElement>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
-
-  function toggle() {
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect()
-      const left = Math.min(Math.max(rect.left, 8), window.innerWidth - TOOLTIP_WIDTH - 8)
-      setPos({ top: rect.bottom + 4, left })
-    }
-    setOpen((v) => !v)
-  }
-
-  useEffect(() => {
-    if (!open) return
-    function onClickOutside(e: MouseEvent) {
-      const target = e.target as Node
-      if (btnRef.current?.contains(target) || panelRef.current?.contains(target)) return
-      setOpen(false)
-    }
-    function onEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    document.addEventListener('keydown', onEscape)
-    return () => {
-      document.removeEventListener('mousedown', onClickOutside)
-      document.removeEventListener('keydown', onEscape)
-    }
-  }, [open])
-
-  return (
-    <div className="relative shrink-0">
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={toggle}
-        aria-label="Cómo se calcula"
-        className="flex h-4 w-4 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
-      >
-        <InfoIcon className="h-3.5 w-3.5" />
-      </button>
-      {open && pos && (
-        <div
-          ref={panelRef}
-          style={{ position: 'fixed', top: pos.top, left: pos.left, width: TOOLTIP_WIDTH }}
-          className="z-50 rounded-lg border border-border bg-surface p-3 text-xs text-ink-muted shadow-lg"
-        >
-          {text}
-        </div>
-      )}
-    </div>
-  )
-}
