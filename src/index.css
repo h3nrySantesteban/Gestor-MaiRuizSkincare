@@ -29,6 +29,16 @@
   --color-danger: #c1443b;
   --color-danger-bg: #fcebe9;
 
+  /* Paleta categórica para gráficos con varias métricas a la vez (líneas y
+     barras agrupadas en GastosHistorial/IngresosHistorial) — deliberadamente
+     NO reutiliza success/warning/danger (esos son de estado, no de serie).
+     Azul/naranja/aqua, en ese orden: valida CVD y contraste corridos contra
+     las superficies claras y oscuras de esta app (ver scripts/validate_palette.js
+     del skill de dataviz) — no cambiar el orden, es lo que la hace segura. */
+  --color-chart-1: #2a78d6;
+  --color-chart-2: #eb6834;
+  --color-chart-3: #1baf7a;
+
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -65,6 +75,10 @@
     --color-warning: #d99f3c;
     --color-warning-bg: #2e2410;
     --color-danger-bg: #2e1616;
+
+    --color-chart-1: #3987e5;
+    --color-chart-2: #d95926;
+    --color-chart-3: #199e70;
   }
 }
 
@@ -85,6 +99,10 @@
   --color-warning: #d99f3c;
   --color-warning-bg: #2e2410;
   --color-danger-bg: #2e1616;
+
+  --color-chart-1: #3987e5;
+  --color-chart-2: #d95926;
+  --color-chart-3: #199e70;
 }
 
 html,
