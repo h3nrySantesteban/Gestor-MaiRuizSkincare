@@ -7,7 +7,14 @@ import { ArrowLeftIcon } from '../components/icons'
 import { formatCurrency, formatCurrencyCompact, formatMesAno, formatMesCorto } from '../lib/format'
 import type { Gasto } from '../types/gasto'
 
+// "total"/"totalHabituales"/"totalSinHabituales" ya no se eligen por
+// separado en el gráfico de línea: se fusionaron en la opción "gastos" del
+// selector (ver MetricaSeleccionable), que muestra las tres líneas juntas
+// con leyenda — Metrica sigue existiendo porque Fila tiene un campo por
+// cada una y el tooltip/leyenda necesitan sus labels. El gráfico de barras
+// no usa esto, sigue con su composición fija (ver GraficoBarras).
 type Metrica = 'total' | 'cantidad' | 'totalHabituales' | 'totalSinHabituales'
+type MetricaSeleccionable = 'gastos' | 'cantidad'
 type Granularidad = 'meses' | 'años'
 type RangoTiempo = '6m' | '1a' | '2a' | 'todo'
 
@@ -23,6 +30,23 @@ const METRICA_LABEL: Record<Metrica, string> = {
   cantidad: 'Cantidad de gastos',
   totalHabituales: 'Gastos habituales',
   totalSinHabituales: 'Gastos sin habituales',
+}
+
+const SELECTOR_LABEL: Record<MetricaSeleccionable, string> = {
+  gastos: 'Gastos',
+  cantidad: 'Cantidad de gastos',
+}
+
+// paleta fija por métrica — un solo hue (violeta), oscuro a claro para
+// Total/Habituales/Sin habituales: son "la misma familia" (partes de un
+// mismo total), no series sin relación entre sí, así que un degradé de un
+// solo color es más honesto que colores categóricos sin parentesco (y de
+// paso es seguro para daltonismo: no depende de distinguir tonos)
+const METRICA_COLOR: Record<Metrica, string> = {
+  total: 'var(--color-primary-700)',
+  totalHabituales: 'var(--color-primary-500)',
+  totalSinHabituales: 'var(--color-primary-300)',
+  cantidad: 'var(--color-primary-600)',
 }
 
 // cortos a propósito: son chips angostos arriba del gráfico, un label largo
@@ -173,7 +197,7 @@ export function GastosHistorial() {
   const { gastos, loading } = useGastos()
   const [granularidad, setGranularidad] = useState<Granularidad>('meses')
   const [vista, setVista] = useState<'tabla' | 'linea' | 'barras'>('tabla')
-  const [metrica, setMetrica] = useState<Metrica>('total')
+  const [metrica, setMetrica] = useState<MetricaSeleccionable>('gastos')
   const [rango, setRango] = useState<RangoTiempo>('1a')
   const [sort, setSort] = useState<Sort>({ column: 'periodo', direction: 'desc' })
 
@@ -239,10 +263,10 @@ export function GastosHistorial() {
         {vista === 'linea' && (
           <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
             Métrica
-            <select value={metrica} onChange={(e) => setMetrica(e.target.value as Metrica)} className={selectClass}>
-              {(Object.keys(METRICA_LABEL) as Metrica[]).map((key) => (
+            <select value={metrica} onChange={(e) => setMetrica(e.target.value as MetricaSeleccionable)} className={selectClass}>
+              {(Object.keys(SELECTOR_LABEL) as MetricaSeleccionable[]).map((key) => (
                 <option key={key} value={key}>
-                  {METRICA_LABEL[key]}
+                  {SELECTOR_LABEL[key]}
                 </option>
               ))}
             </select>
@@ -338,48 +362,89 @@ function TablaHistorial({
   )
 }
 
-function LineaTooltip({ active, payload, metrica }: { active?: boolean; payload?: { payload: Fila }[]; metrica: Metrica }) {
-  if (!active || !payload || payload.length === 0) return null
-  const row = payload[0].payload
-  const valor = row[metrica]
+// leyenda para "Gastos" (3 líneas a la vez) — con "Cantidad de gastos" (1
+// sola línea) no aporta nada, el título/eje ya identifican el valor
+function LeyendaGastos() {
   return (
-    <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
-      <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
-      <p className="text-sm font-semibold text-ink">{metrica === 'cantidad' ? valor : formatCurrency(valor)}</p>
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      {(['total', 'totalHabituales', 'totalSinHabituales'] as const).map((m) => (
+        <span key={m} className="flex items-center gap-1.5 text-xs text-ink-muted">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: METRICA_COLOR[m] }} />
+          {METRICA_LABEL[m]}
+        </span>
+      ))}
     </div>
   )
 }
 
-function GraficoLinea({ data, metrica }: { data: Fila[]; metrica: Metrica }) {
+function LineaTooltip({ active, payload, metrica }: { active?: boolean; payload?: { payload: Fila }[]; metrica: MetricaSeleccionable }) {
+  if (!active || !payload || payload.length === 0) return null
+  const row = payload[0].payload
   return (
-    <div className="h-64 w-full rounded-xl border border-border bg-surface p-4 sm:h-80">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} stroke="var(--color-border)" />
-          <XAxis
-            dataKey="periodoCorto"
-            tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
-            axisLine={{ stroke: 'var(--color-border)' }}
-            tickLine={false}
-          />
-          <YAxis
-            tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
-            tickFormatter={(v: number) => (metrica === 'cantidad' ? String(v) : formatCurrencyCompact(v))}
-            axisLine={false}
-            tickLine={false}
-            width={56}
-          />
-          <Tooltip cursor={{ stroke: 'var(--color-border)' }} content={<LineaTooltip metrica={metrica} />} />
-          <Line
-            type="monotone"
-            dataKey={metrica}
-            name={METRICA_LABEL[metrica]}
-            stroke="var(--color-primary-600)"
-            strokeWidth={2}
-            dot={{ r: 3, fill: 'var(--color-primary-600)' }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="rounded-lg border border-border bg-surface px-3 py-2 shadow-lg">
+      <p className="text-xs font-medium capitalize text-ink">{row.periodoLargo}</p>
+      {metrica === 'gastos' ? (
+        (['total', 'totalHabituales', 'totalSinHabituales'] as const).map((m) => (
+          <p key={m} className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: METRICA_COLOR[m] }} />
+            {METRICA_LABEL[m]}: {formatCurrency(row[m])}
+          </p>
+        ))
+      ) : (
+        <p className="text-sm font-semibold text-ink">{row.cantidad}</p>
+      )}
+    </div>
+  )
+}
+
+function GraficoLinea({ data, metrica }: { data: Fila[]; metrica: MetricaSeleccionable }) {
+  const esGastos = metrica === 'gastos'
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+      {esGastos && <LeyendaGastos />}
+      <div className="h-64 w-full sm:h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} accessibilityLayer={false} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="var(--color-border)" />
+            <XAxis
+              dataKey="periodoCorto"
+              tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
+              axisLine={{ stroke: 'var(--color-border)' }}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 12, fill: 'var(--color-ink-muted)' }}
+              tickFormatter={(v: number) => (esGastos ? formatCurrencyCompact(v) : String(v))}
+              axisLine={false}
+              tickLine={false}
+              width={56}
+            />
+            <Tooltip cursor={{ stroke: 'var(--color-border)' }} content={<LineaTooltip metrica={metrica} />} />
+            {esGastos ? (
+              (['total', 'totalHabituales', 'totalSinHabituales'] as const).map((m) => (
+                <Line
+                  key={m}
+                  type="monotone"
+                  dataKey={m}
+                  name={METRICA_LABEL[m]}
+                  stroke={METRICA_COLOR[m]}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: METRICA_COLOR[m] }}
+                />
+              ))
+            ) : (
+              <Line
+                type="monotone"
+                dataKey="cantidad"
+                name={SELECTOR_LABEL.cantidad}
+                stroke={METRICA_COLOR.cantidad}
+                strokeWidth={2}
+                dot={{ r: 3, fill: METRICA_COLOR.cantidad }}
+              />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }
