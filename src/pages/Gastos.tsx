@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
+import { GastosCarousel } from '../components/GastosCarousel/GastosCarousel'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { MarqueeText } from '../components/MarqueeText/MarqueeText'
 import { primaryBtnClass } from '../components/forms/FormField'
@@ -76,14 +77,6 @@ function agruparPorMes(gastos: Gasto[]): GrupoMes[] {
     grupo.total += g.valor
   }
   return grupos
-}
-
-function totalDelMes(gastos: Gasto[], year: number, month: number, opts?: { excluirHabituales?: boolean }): number {
-  return gastos.reduce((sum, g) => {
-    if (opts?.excluirHabituales && g.esFijo) return sum
-    const f = parseFechaSolo(g.fecha)
-    return f.getFullYear() === year && f.getMonth() + 1 === month ? sum + g.valor : sum
-  }, 0)
 }
 
 // month es 1-based; n meses hacia atrás (n=1 → el mes anterior)
@@ -183,36 +176,6 @@ export function Gastos() {
   const anioActual = hoy.getFullYear()
   const mesActual = hoy.getMonth() + 1
 
-  const totalEsteMes = useMemo(() => totalDelMes(gastos, anioActual, mesActual), [gastos, anioActual, mesActual])
-  const totalMesPasado = useMemo(() => {
-    const { year, month } = restarMeses(anioActual, mesActual, 1)
-    return totalDelMes(gastos, year, month)
-  }, [gastos, anioActual, mesActual])
-  const diferencia = totalEsteMes - totalMesPasado
-  const diferenciaPct = totalMesPasado > 0 ? (diferencia / totalMesPasado) * 100 : null
-
-  // promedio de los últimos 6 meses CERRADOS (sin contar el actual, que
-  // todavía está incompleto y arrastraría el promedio para abajo)
-  const promedio6Meses = useMemo(() => {
-    let suma = 0
-    for (let i = 1; i <= 6; i++) {
-      const { year, month } = restarMeses(anioActual, mesActual, i)
-      suma += totalDelMes(gastos, year, month)
-    }
-    return suma / 6
-  }, [gastos, anioActual, mesActual])
-
-  // mismo promedio pero sin los gastos habituales — para ver cuánto de ese
-  // promedio es gasto "suelto"/variable, sin lo recurrente (alquiler, etc.)
-  const promedio6MesesSinHabituales = useMemo(() => {
-    let suma = 0
-    for (let i = 1; i <= 6; i++) {
-      const { year, month } = restarMeses(anioActual, mesActual, i)
-      suma += totalDelMes(gastos, year, month, { excluirHabituales: true })
-    }
-    return suma / 6
-  }, [gastos, anioActual, mesActual])
-
   // gastos habituales cargados el mes pasado cuya cadencia (ver ocurreEnMes)
   // también corresponde a este mes — una proyección, no lo que ya se pagó.
   // Excluye series desactivadas: ya no se espera que se vuelvan a pagar.
@@ -253,35 +216,7 @@ export function Gastos() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="grid grid-cols-2 gap-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Total este mes</p>
-            <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(totalEsteMes)}</p>
-            <p
-              className={`mt-1 whitespace-nowrap text-xs font-medium ${
-                diferenciaPct === null ? 'text-ink-muted' : diferencia > 0 ? 'text-danger' : diferencia < 0 ? 'text-success' : 'text-ink-muted'
-              }`}
-            >
-              {diferenciaPct === null
-                ? 'Sin datos del mes ant.'
-                : `${diferencia >= 0 ? '+' : ''}${diferenciaPct.toFixed(0)}% que el ult. mes`}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-surface p-4">
-            <p className="whitespace-nowrap text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
-            <p className="mt-1 text-xl font-semibold text-ink">{formatCurrency(promedio6Meses)}</p>
-            <p className="mt-1 whitespace-nowrap text-xs font-medium text-ink-muted">
-              Sin hab.: {formatCurrency(promedio6MesesSinHabituales)}
-            </p>
-          </div>
-        </div>
-      )}
+      <GastosCarousel gastos={gastos} loading={loading} />
 
       {/* solo se muestra si hay alguna serie habitual registrada — sin
           eso, quedaría duplicando el estado vacío de abajo */}

@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { Skeleton } from '../Skeleton/Skeleton'
-import { InfoTooltip } from '../InfoTooltip/InfoTooltip'
-import { formatCurrency, parseFechaSolo } from '../../lib/format'
+import { useMemo } from 'react'
+import { MesCarousel, type DatosMes } from '../MesCarousel/MesCarousel'
+import { claveMes, diasEnMes, mesesAtras, restarMeses } from '../../lib/mesCarousel'
+import { parseFechaSolo } from '../../lib/format'
 import type { Turno } from '../../types/turno'
 import type { Gasto } from '../../types/gasto'
 
@@ -16,10 +14,6 @@ interface IngresosCarouselProps {
 interface MesTotales {
   bruto: number
   gastos: number
-}
-
-function claveMes(year: number, month: number): string {
-  return `${year}-${String(month).padStart(2, '0')}`
 }
 
 // un solo recorrido de turnos + gastos arma el mapa mes -> totales; todo lo
@@ -48,22 +42,12 @@ function construirTotalesPorMes(turnos: Turno[], gastos: Gasto[]): Map<string, M
   return map
 }
 
-// month es 1-based; n meses hacia atrás (n=0 → el mismo mes, n=1 → el mes anterior)
-function restarMeses(year: number, month: number, n: number): { year: number; month: number } {
-  const d = new Date(year, month - 1 - n, 1)
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
-
-function mesesAtras(anioActual: number, mesActual: number, year: number, month: number): number {
-  return (anioActual - year) * 12 + (mesActual - month)
-}
-
 function totalesDelMes(map: Map<string, MesTotales>, year: number, month: number): MesTotales {
   return map.get(claveMes(year, month)) ?? { bruto: 0, gastos: 0 }
 }
 
 // promedio de los 6 meses CERRADOS anteriores a HOY — un solo número fijo,
-// no uno por tarjeta (ver comentario en el componente: recalcularlo para
+// no uno por tarjeta (ver comentario en MesCarousel: recalcularlo para
 // cada mes del carrusel no tenía sentido, así que vive afuera del slider)
 function promedios6MesesCerrados(map: Map<string, MesTotales>, anioActual: number, mesActual: number): { bruto: number; neto: number } {
   let bruto = 0
@@ -75,17 +59,6 @@ function promedios6MesesCerrados(map: Map<string, MesTotales>, anioActual: numbe
     gastos += t.gastos
   }
   return { bruto: bruto / 6, neto: (bruto - gastos) / 6 }
-}
-
-function formatMesLabel(year: number, month: number, anioActual: number): string {
-  const nombre = format(new Date(year, month - 1, 1), 'MMMM', { locale: es })
-  const capitalizado = nombre.charAt(0).toUpperCase() + nombre.slice(1)
-  return year === anioActual ? capitalizado : `${capitalizado} ${year}`
-}
-
-function diasEnMes(year: number, month: number): number {
-  // día 0 del mes siguiente = último día de este mes
-  return new Date(year, month, 0).getDate()
 }
 
 // "a esta altura" del mes anterior a la tarjeta: SIEMPRE hasta el día de
@@ -119,10 +92,6 @@ function totalMesAnteriorAEstaAltura(
 }
 
 /**
- * Carrusel de "Ingresos por mes": una tarjeta por mes, navegable deslizando/
- * scrolleando horizontalmente — arranca mostrando el mes actual, a la
- * derecha del todo, con los meses anteriores hacia la izquierda.
- *
  * Bruto = suma de turno.precio de los turnos facturables del mes (mismo
  * criterio que useIngresos). Neto = bruto menos el total de gastos
  * cargados ese mismo mes — es la ÚNICA cuenta de toda la app que resta
@@ -130,26 +99,15 @@ function totalMesAnteriorAEstaAltura(
  * nunca se netean), acá es a propósito porque Mai lo pidió como vista
  * puntual, no cambia ningún otro cálculo de ingresos existente.
  *
- * Cada tarjeta también compara contra el mes anterior "a esta altura" (ver
- * totalMesAnteriorAEstaAltura). El promedio de 6 meses NO vive por tarjeta
- * — es un solo número relativo a hoy, mostrado una vez debajo del slider
- * (recalcularlo para cada mes del carrusel no aportaba nada distinto mes a
- * mes, solo ruido).
+ * La estructura visual (peek, navegación, tarjeta de promedio) vive en
+ * MesCarousel — esto solo calcula qué números le corresponden a cada mes.
  */
 export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map())
-  // "back" (0 = mes actual) de la tarjeta centrada — arranca en 0 porque el
-  // carrusel también arranca mostrando el mes actual (ver el useEffect de
-  // scrollTo más abajo), y de ahí en más lo mantiene al día el
-  // IntersectionObserver de más abajo
-  const [activeBack, setActiveBack] = useState(0)
-
   const hoy = new Date()
   const anioActual = hoy.getFullYear()
   const mesActual = hoy.getMonth() + 1
 
-  const totalesPorMes = useMemo(() => construirTotalesPorMes(turnos, gastos), [turnos, gastos])
+  const totalesPorMes = construirTotalesPorMes(turnos, gastos)
 
   // cuántos meses hacia atrás llega el carrusel: hasta el mes más viejo con
   // algún turno o gasto cargado (0 si no hay nada todavía, solo el mes en curso)
@@ -164,143 +122,35 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
   }, [totalesPorMes])
 
   // de más viejo (índice 0) a más nuevo (último índice = mes actual) — así
-  // el scroll arranca de entrada pegado a la derecha, mostrando el mes en curso
+  // el carrusel arranca de entrada pegado a la derecha, mostrando el mes en curso
   const meses = useMemo(() => Array.from({ length: maxBack + 1 }, (_, i) => maxBack - i), [maxBack])
 
-  // al cargar (o cuando cambia la cantidad de meses disponibles) arranca
-  // mostrando el mes actual, pegado al borde derecho del carrusel
-  useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    el.scrollTo({ left: el.scrollWidth, behavior: 'auto' })
-  }, [meses.length])
+  const promedio = promedios6MesesCerrados(totalesPorMes, anioActual, mesActual)
 
-  // qué tarjeta está centrada, para la etiqueta de mes de arriba —
-  // rootMargin "-50%" a los costados angosta el área de intersección a una
-  // línea vertical en el centro del carrusel, así el callback dispara con
-  // la tarjeta que cruza esa línea (la que está centrada), sin tener que
-  // recalcular a mano posiciones de scroll mezclando %/px (spacers, gap,
-  // tarjetas al 88%)
-  useEffect(() => {
-    const root = scrollRef.current
-    if (!root) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.find((entry) => entry.isIntersecting)
-        if (!visible) return
-        const back = Number((visible.target as HTMLElement).dataset.back)
-        setActiveBack(back)
-      },
-      { root, rootMargin: '0px -50% 0px -50%', threshold: 0 },
-    )
-    for (const el of cardRefs.current.values()) observer.observe(el)
-    return () => observer.disconnect()
-  }, [meses])
-
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-36 rounded-xl" />
-        <Skeleton className="h-14 rounded-xl" />
-      </div>
-    )
+  function datosMes(back: number): DatosMes {
+    const { year, month } = restarMeses(anioActual, mesActual, back)
+    const { bruto, gastos: gastosDelMes } = totalesDelMes(totalesPorMes, year, month)
+    return { valor1: bruto - gastosDelMes, valor2: bruto }
   }
 
-  const promedio6Meses = promedios6MesesCerrados(totalesPorMes, anioActual, mesActual)
-  const { year: activeYear, month: activeMonth } = restarMeses(anioActual, mesActual, activeBack)
+  function datosMesAnterior(back: number): DatosMes {
+    const { year, month } = restarMeses(anioActual, mesActual, back)
+    const r = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
+    return { valor1: r.neto, valor2: r.bruto }
+  }
 
   return (
-    <div>
-      <p className="mb-1.5 text-center text-sm font-semibold text-ink">
-        {formatMesLabel(activeYear, activeMonth, anioActual)}
-      </p>
-
-      {/* -mx-4 md:-mx-6 cancela el padding de <main> en AppLayout.tsx (p-4
-          md:p-6) — sin esto, el peek de las tarjetas vecinas quedaba
-          recortado por ese margen de la página en vez de llegar al borde
-          real de la pantalla.
-          Los dos "espaciadores" (antes/después de las tarjetas) reservan el
-          mismo ancho que le falta a una tarjeta w-[88%] para llegar al
-          100% (6% de cada lado) — así la primera y la última tarjeta
-          también pueden centrarse igual que las del medio, que ya tienen
-          ese espacio gratis gracias al peek de su vecina. Iban como
-          padding del contenedor, pero un padding ahí encoge el ancho
-          disponible para los hijos (88% de un 88%, ~77% en vez de 88%) —
-          un espaciador es un hijo más del flex, mide 6% del mismo 100%
-          que las tarjetas y no arrastra ese problema. */}
-      <div className="-mx-4 md:-mx-6">
-        <div ref={scrollRef} className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth">
-          <div aria-hidden className="w-[6%] shrink-0" />
-          {meses.map((back) => {
-            const { year, month } = restarMeses(anioActual, mesActual, back)
-            const { bruto, gastos: gastosDelMes } = totalesDelMes(totalesPorMes, year, month)
-            const neto = bruto - gastosDelMes
-            const mesAnterior = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
-            return (
-              // 88% del ancho (no 100%): deja asomar un margen de la
-              // tarjeta vecina a cada lado como pista visual de que se
-              // puede deslizar. onClick: tocar ese margen (la tarjeta de al
-              // lado, todavía asomando) la trae al centro sin necesidad de
-              // deslizar — scrollIntoView respeta el snap-center de abajo.
-              <div
-                key={claveMes(year, month)}
-                ref={(el) => {
-                  if (el) cardRefs.current.set(back, el)
-                  else cardRefs.current.delete(back)
-                }}
-                data-back={back}
-                onClick={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })}
-                className="w-[88%] shrink-0 snap-center"
-              >
-                <div className="rounded-xl border border-border bg-surface p-3">
-                  <div className="grid grid-cols-2 gap-x-4">
-                    <div>
-                      <p className="text-xs font-medium text-ink-muted">Ingreso Neto</p>
-                      <p className="text-lg font-semibold text-ink">{formatCurrency(neto)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-medium text-ink-muted">Ingreso Bruto</p>
-                      <p className="text-lg font-semibold text-ink">{formatCurrency(bruto)}</p>
-                    </div>
-                  </div>
-                  <div className="mt-2.5 flex items-center justify-center gap-1 border-t border-border pt-2">
-                    <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
-                    <InfoTooltip text="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
-                  </div>
-                  <div className="mt-1 grid grid-cols-2 gap-x-4">
-                    <div>
-                      <p className="text-[11px] text-ink-muted">Ingreso Neto</p>
-                      <p className="text-sm font-medium text-ink-muted">{formatCurrency(mesAnterior.neto)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[11px] text-ink-muted">Ingreso Bruto</p>
-                      <p className="text-sm font-medium text-ink-muted">{formatCurrency(mesAnterior.bruto)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-          <div aria-hidden className="w-[6%] shrink-0" />
-        </div>
-      </div>
-
-      <div className="mt-3 flex flex-col gap-1.5">
-        <p className="text-left text-xs font-medium text-ink-muted">Promedio (6 meses)</p>
-        <div className="rounded-xl border border-border bg-surface p-3">
-          <div className="grid grid-cols-2 gap-x-4">
-            <div>
-              <p className="text-[11px] text-ink-muted">Ingreso Neto</p>
-              <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.neto)}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] text-ink-muted">Ingreso Bruto</p>
-              <p className="text-sm font-medium text-ink-muted">{formatCurrency(promedio6Meses.bruto)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <MesCarousel
+      loading={loading}
+      meses={meses}
+      anioActual={anioActual}
+      mesActual={mesActual}
+      label1="Ingreso Neto"
+      label2="Ingreso Bruto"
+      datosMes={datosMes}
+      datosMesAnterior={datosMesAnterior}
+      datosPromedio={{ valor1: promedio.neto, valor2: promedio.bruto }}
+      anteriorTooltip="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones."
+    />
   )
 }
-
