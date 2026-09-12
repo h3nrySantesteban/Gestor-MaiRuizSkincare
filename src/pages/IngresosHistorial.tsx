@@ -241,7 +241,7 @@ export function IngresosHistorial() {
   const esGrafico = vista === 'linea' || vista === 'barras'
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <Link to="/ingresos" className="flex w-fit items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink">
         <ArrowLeftIcon className="h-4 w-4" /> Ingresos
       </Link>
@@ -254,7 +254,7 @@ export function IngresosHistorial() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <label className="flex items-center justify-between gap-3 text-sm text-ink-muted">
           Agrupar por
           <select
@@ -425,7 +425,7 @@ function LineaTooltip({ active, payload, metrica }: { active?: boolean; payload?
 function GraficoLinea({ data, metrica }: { data: Fila[]; metrica: MetricaSeleccionable }) {
   const esIngresos = metrica === 'ingresos'
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-surface p-3">
       {esIngresos && <LeyendaBrutoNeto />}
       <div className="h-64 w-full sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
@@ -512,7 +512,7 @@ function BarrasTooltip({ active, payload, metrica }: { active?: boolean; payload
 function GraficoBarras({ data, metrica }: { data: Fila[]; metrica: MetricaSeleccionable }) {
   const esIngresos = metrica === 'ingresos'
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+    <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-surface p-3">
       {esIngresos && <LeyendaBrutoNeto />}
       <div className="h-64 w-full sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
