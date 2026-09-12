@@ -198,8 +198,14 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
             return (
               // 88% del ancho (no 100%): deja asomar un margen de la
               // tarjeta vecina a cada lado como pista visual de que se
-              // puede deslizar
-              <div key={claveMes(year, month)} className="w-[88%] shrink-0 snap-center">
+              // puede deslizar. onClick: tocar ese margen (la tarjeta de al
+              // lado, todavía asomando) la trae al centro sin necesidad de
+              // deslizar — scrollIntoView respeta el snap-center de abajo.
+              <div
+                key={claveMes(year, month)}
+                onClick={(e) => e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })}
+                className="w-[88%] shrink-0 snap-center"
+              >
                 <div className="rounded-xl border border-border bg-surface p-3">
                   <div className="grid grid-cols-2 gap-x-4">
                     <div>
