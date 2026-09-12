@@ -27,6 +27,8 @@ const METRICA_LABEL: Record<Metrica, string> = {
 interface Fila {
   key: string
   periodoCorto: string
+  /** para la tabla en granularidad "meses": mes + año, evita ambigüedad entre "jul" de un año y otro (el gráfico sigue usando periodoCorto, sin año, para no recargar el eje) */
+  periodoTabla: string
   periodoLargo: string
   total: number
   cantidad: number
@@ -78,6 +80,7 @@ function calcularSerie(turnos: Turno[], granularidad: Granularidad): Fila[] {
     return {
       key,
       periodoCorto: granularidad === 'meses' ? format(new Date(entry.fechaMuestra), 'MMM', { locale: es }) : key,
+      periodoTabla: granularidad === 'meses' ? format(new Date(entry.fechaMuestra), 'MMM yyyy', { locale: es }) : key,
       periodoLargo: granularidad === 'meses' ? formatMesLargo(entry.fechaMuestra) : key,
       total: entry.total,
       cantidad: entry.cantidad,
@@ -259,7 +262,7 @@ function TablaHistorial({
         <tbody>
           {filas.map((f) => (
             <tr key={f.key} className="border-b border-border last:border-0">
-              <td className="whitespace-nowrap px-2.5 py-3 capitalize text-ink">{f.periodoCorto}</td>
+              <td className="whitespace-nowrap px-2.5 py-3 capitalize text-ink">{f.periodoTabla}</td>
               <td className="whitespace-nowrap px-2.5 py-3 text-right tabular-nums text-ink">
                 {formatCurrency(f.total)}
                 <div className={`text-[11px] font-medium ${pctColorClass(f.pctTotal)}`}>{formatPct(f.pctTotal)}</div>

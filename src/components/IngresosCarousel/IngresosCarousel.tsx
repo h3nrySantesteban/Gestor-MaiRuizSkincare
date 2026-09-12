@@ -250,7 +250,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
                 </div>
                 <div className="mt-4 flex items-center gap-1 border-t border-border pt-3">
                   <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
-                  <InfoTooltip text="Ingresos del mes anterior a esta tarjeta, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
+                  <InfoTooltip text="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones." />
                 </div>
                 <div className="mt-1.5 grid grid-cols-2 gap-x-4">
                   <div>
