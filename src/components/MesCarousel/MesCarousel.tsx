@@ -19,9 +19,10 @@ interface MesCarouselProps {
   label1: string
   label2: string
   datosMes: (back: number) => DatosMes
-  datosMesAnterior: (back: number) => DatosMes
+  /** si no se pasa, la tarjeta no muestra la comparación "mes anterior a esta altura" (ver Gastos: no tiene sentido comparar un gasto puntual contra el mismo tramo del mes pasado) */
+  datosMesAnterior?: (back: number) => DatosMes
   datosPromedio: DatosMes
-  anteriorTooltip: string
+  anteriorTooltip?: string
 }
 
 /**
@@ -34,7 +35,9 @@ interface MesCarouselProps {
  * dos valores" (bruto/neto, total/habituales, etc.) vive en el componente
  * que llama a este — acá solo hay estructura visual + navegación.
  *
- * Cada tarjeta también compara contra el mes anterior "a esta altura":
+ * Cada tarjeta puede comparar además contra el mes anterior "a esta altura"
+ * (si el caller pasa datosMesAnterior — opcional, ver Gastos: no tiene
+ * sentido comparar un gasto puntual contra el mismo tramo del mes pasado):
  * SIEMPRE hasta el día de hoy del calendario real (no hasta el día que le
  * tocaría a la tarjeta si fuera el mes en curso), para que la comparación
  * sea consistente en todo el carrusel — ver totalMesAnteriorAEstaAltura en
@@ -124,7 +127,7 @@ export function MesCarousel({
           <div aria-hidden className="w-[6%] shrink-0" />
           {meses.map((back) => {
             const actual = datosMes(back)
-            const anterior = datosMesAnterior(back)
+            const anterior = datosMesAnterior?.(back)
             return (
               // 88% del ancho (no 100%): deja asomar un margen de la
               // tarjeta vecina a cada lado como pista visual de que se
@@ -153,20 +156,24 @@ export function MesCarousel({
                       <p className="text-lg font-semibold text-ink">{formatCurrency(actual.valor2)}</p>
                     </div>
                   </div>
-                  <div className="mt-2.5 flex items-center justify-center gap-1 border-t border-border pt-2">
-                    <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
-                    <InfoTooltip text={anteriorTooltip} />
-                  </div>
-                  <div className="mt-1 grid grid-cols-2 gap-x-4">
-                    <div>
-                      <p className="text-[11px] text-ink-muted">{label1}</p>
-                      <p className="text-sm font-medium text-ink-muted">{formatCurrency(anterior.valor1)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[11px] text-ink-muted">{label2}</p>
-                      <p className="text-sm font-medium text-ink-muted">{formatCurrency(anterior.valor2)}</p>
-                    </div>
-                  </div>
+                  {anterior && (
+                    <>
+                      <div className="mt-2.5 flex items-center justify-center gap-1 border-t border-border pt-2">
+                        <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
+                        {anteriorTooltip && <InfoTooltip text={anteriorTooltip} />}
+                      </div>
+                      <div className="mt-1 grid grid-cols-2 gap-x-4">
+                        <div>
+                          <p className="text-[11px] text-ink-muted">{label1}</p>
+                          <p className="text-sm font-medium text-ink-muted">{formatCurrency(anterior.valor1)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[11px] text-ink-muted">{label2}</p>
+                          <p className="text-sm font-medium text-ink-muted">{formatCurrency(anterior.valor2)}</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )

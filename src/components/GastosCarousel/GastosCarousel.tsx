@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { MesCarousel, type DatosMes } from '../MesCarousel/MesCarousel'
-import { claveMes, diasEnMes, mesesAtras, restarMeses } from '../../lib/mesCarousel'
+import { claveMes, mesesAtras, restarMeses } from '../../lib/mesCarousel'
 import { parseFechaSolo } from '../../lib/format'
 import type { Gasto } from '../../types/gasto'
 
@@ -57,32 +57,17 @@ function promedios6MesesCerrados(map: Map<string, MesTotales>, anioActual: numbe
   return { total: total / 6, habituales: habituales / 6 }
 }
 
-// "a esta altura" del mes anterior a la tarjeta: SIEMPRE hasta el día de
-// hoy del calendario real (no hasta el día que le tocaría a la tarjeta si
-// fuera el mes en curso) — mismo criterio que IngresosCarousel, aplicado
-// igual en todas las tarjetas para que la comparación sea consistente en
-// todo el carrusel.
-function totalMesAnteriorAEstaAltura(gastos: Gasto[], year: number, month: number, hoy: Date): MesTotales {
-  const { year: prevYear, month: prevMonth } = restarMeses(year, month, 1)
-  const hastaDia = Math.min(hoy.getDate(), diasEnMes(prevYear, prevMonth))
-
-  let total = 0
-  let habituales = 0
-  for (const g of gastos) {
-    const d = parseFechaSolo(g.fecha)
-    if (d.getFullYear() === prevYear && d.getMonth() + 1 === prevMonth && d.getDate() <= hastaDia) {
-      total += g.valor
-      if (g.esFijo) habituales += g.valor
-    }
-  }
-  return { total, habituales }
-}
-
 /**
  * Total gastado = suma de gastos.valor del mes (mismo criterio que
  * totalDelMes en Gastos.tsx). Gastos habituales = la porción de ese total
  * que corresponde a gastos marcados es_fijo — no resta nada, es un
  * desglose del mismo total, no una cuenta neta.
+ *
+ * A diferencia de IngresosCarousel, no pasa datosMesAnterior: comparar
+ * "cuánto llevamos gastado este mes vs. el mismo tramo del mes pasado" no
+ * aporta nada útil acá (los gastos no se acumulan progresivamente como un
+ * ingreso que se va facturando en el mes, dependen de cuándo Mai los
+ * carga) — MesCarousel ya soporta que ese dato venga o no.
  *
  * La estructura visual (peek, navegación, tarjeta de promedio) vive en
  * MesCarousel — esto solo calcula qué números le corresponden a cada mes.
@@ -118,12 +103,6 @@ export function GastosCarousel({ gastos, loading }: GastosCarouselProps) {
     return { valor1: t.total, valor2: t.habituales }
   }
 
-  function datosMesAnterior(back: number): DatosMes {
-    const { year, month } = restarMeses(anioActual, mesActual, back)
-    const t = totalMesAnteriorAEstaAltura(gastos, year, month, hoy)
-    return { valor1: t.total, valor2: t.habituales }
-  }
-
   return (
     <MesCarousel
       loading={loading}
@@ -133,9 +112,7 @@ export function GastosCarousel({ gastos, loading }: GastosCarouselProps) {
       label1="Total gastado"
       label2="Gastos habituales"
       datosMes={datosMes}
-      datosMesAnterior={datosMesAnterior}
       datosPromedio={{ valor1: promedio.total, valor2: promedio.habituales }}
-      anteriorTooltip="Gastos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones."
     />
   )
 }
