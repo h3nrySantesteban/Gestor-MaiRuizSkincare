@@ -67,21 +67,23 @@ export function Ingresos() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
-          <InfoTooltip text="Bruto: suma de lo facturado por los turnos finalizados (o cancelados con seña) de ese período. Neto: Bruto menos el total de gastos cargados en ese mismo período." />
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
+            <InfoTooltip text="Bruto: suma de lo facturado por los turnos finalizados (o cancelados con seña) de ese período. Neto: Bruto menos el total de gastos cargados en ese mismo período." />
+          </div>
+          <Link
+            to="/ingresos/historial"
+            aria-label="Ver gráficos"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
+          >
+            <BarChartIcon className="h-5 w-5" />
+          </Link>
         </div>
-        <Link
-          to="/ingresos/historial"
-          aria-label="Ver gráficos"
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
-        >
-          <BarChartIcon className="h-5 w-5" />
-        </Link>
-      </div>
 
-      <IngresosCarousel turnos={turnos} gastos={gastos} loading={loading || gastosLoading} />
+        <IngresosCarousel turnos={turnos} gastos={gastos} loading={loading || gastosLoading} />
+      </div>
 
       <div className="flex flex-col gap-4">
         {loading && (
