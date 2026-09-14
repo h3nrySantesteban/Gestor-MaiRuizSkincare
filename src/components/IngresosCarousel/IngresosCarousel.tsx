@@ -105,6 +105,18 @@ function totalMesAnteriorAEstaAltura(
   return { bruto, neto: bruto - gastosTotal }
 }
 
+// mismo mes calendario, un año atrás — para un mes ya CERRADO, comparar
+// contra el año pasado tiene más sentido que "a esta altura" (que se
+// recorta según el día de hoy real, sin relación con un mes que ya
+// terminó, ver discusión con Mai): esto controla estacionalidad (ej. un
+// mes flojo todos los años) en vez de solo el mes inmediato anterior.
+// Todavía no aporta mucho con poca antigüedad de datos, pero queda armado
+// para cuando la haya.
+function totalMismoMesAnioPasado(map: Map<string, MesTotales>, year: number, month: number): { bruto: number; neto: number } {
+  const { bruto, gastos } = totalesDelMes(map, year - 1, month)
+  return { bruto, neto: bruto - gastos }
+}
+
 /**
  * Bruto = suma de turno.precio de los turnos facturables del mes (mismo
  * criterio que useIngresos) más los ingresos_extra (subalquiler, etc.)
@@ -148,10 +160,29 @@ export function IngresosCarousel({ turnos, gastos, ingresosExtra, loading }: Ing
     return { valor1: bruto - gastosDelMes, valor2: bruto }
   }
 
+  // mes actual (back=0): compara contra el mismo tramo del mes anterior,
+  // recortado a hoy — el mes en curso todavía no cerró, así que el único
+  // punto de comparación justo es "hasta acá, cuánto llevaba el mes
+  // pasado". Meses ya cerrados (back>0): esa lógica no aplica (el total de
+  // arriba ya es el mes completo, no algo "hasta hoy") — ahí compara contra
+  // el mismo mes del año pasado en su lugar.
   function datosMesAnterior(back: number): DatosMes {
     const { year, month } = restarMeses(anioActual, mesActual, back)
-    const r = totalMesAnteriorAEstaAltura(turnos, gastos, ingresosExtra, year, month, hoy)
+    const r =
+      back === 0
+        ? totalMesAnteriorAEstaAltura(turnos, gastos, ingresosExtra, year, month, hoy)
+        : totalMismoMesAnioPasado(totalesPorMes, year, month)
     return { valor1: r.neto, valor2: r.bruto }
+  }
+
+  function anteriorLabel(back: number): string {
+    return back === 0 ? 'Mes anterior a esta altura' : 'Mismo mes, año pasado'
+  }
+
+  function anteriorTooltip(back: number): string {
+    return back === 0
+      ? 'Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones.'
+      : 'Bruto y Neto de este mismo mes, pero del año anterior — compara estacionalidad (ej. si este mes suele ser más flojo o más fuerte todos los años) en vez de contra el mes inmediato anterior. Si todavía no hay un año de historial cargado, o ese mes no tuvo datos, se muestra $0.'
   }
 
   return (
@@ -164,8 +195,9 @@ export function IngresosCarousel({ turnos, gastos, ingresosExtra, loading }: Ing
       label2="Ingreso Bruto"
       datosMes={datosMes}
       datosMesAnterior={datosMesAnterior}
+      anteriorLabel={anteriorLabel}
       datosPromedio={{ valor1: promedio.neto, valor2: promedio.bruto }}
-      anteriorTooltip="Ingresos del mes anterior, contando solo hasta el día de hoy del calendario — mismo tramo que ya lleva el mes en curso, para comparar en igualdad de condiciones."
+      anteriorTooltip={anteriorTooltip}
     />
   )
 }

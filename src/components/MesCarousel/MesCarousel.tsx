@@ -19,10 +19,12 @@ interface MesCarouselProps {
   label1: string
   label2: string
   datosMes: (back: number) => DatosMes
-  /** si no se pasa, la tarjeta no muestra la comparación "mes anterior a esta altura" (ver Gastos: no tiene sentido comparar un gasto puntual contra el mismo tramo del mes pasado) */
+  /** si no se pasa, la tarjeta no muestra el bloque de comparación de abajo (ver Gastos: no tiene sentido comparar un gasto puntual contra el mismo tramo del mes pasado) */
   datosMesAnterior?: (back: number) => DatosMes
+  /** label de ese bloque — puede variar por tarjeta (ver IngresosCarousel: "Mes anterior a esta altura" en el mes actual, "Mismo mes, año pasado" en los cerrados). Si no se pasa, usa "Mes anterior a esta altura" fijo. */
+  anteriorLabel?: (back: number) => string
   datosPromedio: DatosMes
-  anteriorTooltip?: string
+  anteriorTooltip?: (back: number) => string | undefined
   /** true si "subió" es una mala noticia (Gastos) — por defecto false, "subió" es buena noticia (Ingresos). Se usa para el color del % debajo de cada valor. */
   masEsMalo?: boolean
 }
@@ -54,13 +56,14 @@ function pctColorClass(value: number | null, masEsMalo: boolean): string {
  * dos valores" (bruto/neto, total/habituales, etc.) vive en el componente
  * que llama a este — acá solo hay estructura visual + navegación.
  *
- * Cada tarjeta puede comparar además contra el mes anterior "a esta altura"
- * (si el caller pasa datosMesAnterior — opcional, ver Gastos: no tiene
- * sentido comparar un gasto puntual contra el mismo tramo del mes pasado):
- * SIEMPRE hasta el día de hoy del calendario real (no hasta el día que le
- * tocaría a la tarjeta si fuera el mes en curso), para que la comparación
- * sea consistente en todo el carrusel — ver totalMesAnteriorAEstaAltura en
- * cada caller. El promedio de 6 meses NO vive por tarjeta — es un solo
+ * Cada tarjeta puede mostrar además un segundo bloque de comparación (si el
+ * caller pasa datosMesAnterior — opcional, ver Gastos: no tiene sentido
+ * comparar un gasto puntual contra el mismo tramo del mes pasado). Qué
+ * compara exactamente puede variar por tarjeta — ver IngresosCarousel:
+ * "mes anterior a esta altura" (recortado a hoy) solo tiene sentido en el
+ * mes en curso, así que ahí compara contra el mismo mes del año pasado en
+ * vez de eso; anteriorLabel/anteriorTooltip acompañan ese cambio de
+ * significado por tarjeta. El promedio de 6 meses NO vive por tarjeta — es un solo
  * valor relativo a hoy, mostrado una vez debajo del slider (recalcularlo
  * para cada mes del carrusel no aportaba nada distinto mes a mes, solo
  * ruido).
@@ -84,6 +87,7 @@ export function MesCarousel({
   label2,
   datosMes,
   datosMesAnterior,
+  anteriorLabel,
   datosPromedio,
   anteriorTooltip,
   masEsMalo = false,
@@ -188,8 +192,10 @@ export function MesCarousel({
                   {anterior && (
                     <>
                       <div className="mt-2.5 flex items-center justify-center gap-1 border-t border-border pt-2">
-                        <p className="text-[11px] font-medium text-ink-muted">Mes anterior a esta altura</p>
-                        {anteriorTooltip && <InfoTooltip text={anteriorTooltip} />}
+                        <p className="text-[11px] font-medium text-ink-muted">
+                          {anteriorLabel ? anteriorLabel(back) : 'Mes anterior a esta altura'}
+                        </p>
+                        {anteriorTooltip?.(back) && <InfoTooltip text={anteriorTooltip(back)!} />}
                       </div>
                       <div className="mt-1 grid grid-cols-2 gap-x-4">
                         <div>
