@@ -25,9 +25,15 @@
 // con ellos, es esperado.
 //
 // Orden de borrado (obligatorio por las foreign keys):
-//   turnos (turno_tratamientos cascadea) -> pacientes -> tratamientos
-//   (pacientes.id tiene "on delete restrict" desde turnos.paciente_id, así
-//   que no se puede borrar un paciente mientras le queden turnos)
+//   turnos (turno_tratamientos cascadea) -> desvincular respuestas_formulario
+//   -> pacientes -> tratamientos
+//   (pacientes.id tiene "on delete restrict" desde turnos.paciente_id, y
+//   respuestas_formulario.paciente_id la referencia SIN cascade/set null —
+//   bloquea el delete si queda alguna fila apuntando a un paciente a
+//   borrar, así que esas se desvinculan primero con paciente_id = null; no
+//   se borra la fila, solo pierde el match manual que Mai ya había hecho —
+//   de todos modos hay que rehacerlo porque los pacientes van a tener un id
+//   nuevo después de re-migrar)
 //
 // Uso:
 //   node --env-file=.env.local scripts/reset-migracion.js                                 (simulación — solo reporta)
@@ -106,6 +112,22 @@ async function main() {
     console.log(`\n⚠️  ${turnosConCalendar.length} turno(s) con evento en Google Calendar — al borrarlos acá, el evento real NO se borra del calendario de Mai (queda huérfano).`)
   }
 
+  // ---------- aviso 3: respuestas_formulario ya matcheadas a mano ----------
+  // no se borran (son historial del form, independiente de la migración),
+  // pero su paciente_id apunta a un id que está por desaparecer — se
+  // desvincula más abajo, acá solo se avisa cuántas
+  const { count: respuestasMatcheadas, error: respuestasError } = await supabase
+    .from('respuestas_formulario')
+    .select('id', { count: 'exact', head: true })
+    .not('paciente_id', 'is', null)
+  if (respuestasError) {
+    console.error('Error leyendo respuestas_formulario:', respuestasError.message)
+    process.exit(1)
+  }
+  if (respuestasMatcheadas > 0) {
+    console.log(`\n⚠️  ${respuestasMatcheadas} respuesta(s) de formulario ya matcheadas a un paciente — pierden ese match (paciente_id -> null), Mai va a tener que re-matchearlas a mano después de re-migrar. La respuesta en sí no se borra.`)
+  }
+
   if (!COMMIT) {
     console.log('\nEsto fue una simulación — no se borró nada. Correr con --commit --confirmo-borrado-total para borrar de verdad.')
     return
@@ -116,6 +138,16 @@ async function main() {
   const { error: turnosError } = await supabase.from('turnos').delete().not('id', 'is', null)
   if (turnosError) {
     console.error('Error borrando turnos:', turnosError.message)
+    process.exit(1)
+  }
+
+  console.log('Desvinculando respuestas_formulario de pacientes (no se borran, solo pierden el match)...')
+  const { error: desvincularError } = await supabase
+    .from('respuestas_formulario')
+    .update({ paciente_id: null })
+    .not('paciente_id', 'is', null)
+  if (desvincularError) {
+    console.error('Error desvinculando respuestas_formulario:', desvincularError.message)
     process.exit(1)
   }
 
