@@ -9,8 +9,9 @@ import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
 import { NuevoIngresoExtraForm } from '../components/NuevoIngresoExtraForm/NuevoIngresoExtraForm'
 import { IngresosCarousel } from '../components/IngresosCarousel/IngresosCarousel'
 import { Skeleton } from '../components/Skeleton/Skeleton'
-import { BarChartIcon, HomeIcon } from '../components/icons'
+import { BarChartIcon } from '../components/icons'
 import { InfoTooltip } from '../components/InfoTooltip/InfoTooltip'
+import { primaryBtnClass } from '../components/forms/FormField'
 import { formatCurrency, formatFecha, formatFechaSolo } from '../lib/format'
 import type { Turno } from '../types/turno'
 import type { IngresoExtra } from '../types/ingresoExtra'
@@ -89,15 +90,7 @@ export function Ingresos() {
             <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
             <InfoTooltip text="Bruto: suma de lo facturado por los turnos finalizados (o cancelados con seña) de ese período. Neto: Bruto menos el total de gastos cargados en ese mismo período." />
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={openNuevoIngresoExtra}
-              aria-label="Agregar ingreso extra"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
-            >
-              <HomeIcon className="h-5 w-5" />
-            </button>
+          <div className="flex shrink-0 items-center gap-2">
             <Link
               to="/ingresos/historial"
               aria-label="Ver gráficos"
@@ -105,6 +98,9 @@ export function Ingresos() {
             >
               <BarChartIcon className="h-5 w-5" />
             </Link>
+            <button type="button" onClick={openNuevoIngresoExtra} className={primaryBtnClass}>
+              + Nuevo ingreso extra
+            </button>
           </div>
         </div>
 

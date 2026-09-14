@@ -135,7 +135,7 @@ function NuevoIngresoExtraFormInner({ onClose, onSaved, onDeleted, ingresoExtra 
         widthClassName="max-w-md"
       >
         <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
-          <Field label="Concepto" required error={errors.concepto} hint="Ej: Subalquiler del consultorio">
+          <Field label="Nombre del Ingreso" required error={errors.concepto} hint="Ej: Subalquiler del consultorio">
             <input
               autoFocus
               value={concepto}
