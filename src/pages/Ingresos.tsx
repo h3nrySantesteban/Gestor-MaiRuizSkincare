@@ -99,7 +99,7 @@ export function Ingresos() {
               <BarChartIcon className="h-5 w-5" />
             </Link>
             <button type="button" onClick={openNuevoIngresoExtra} className={primaryBtnClass}>
-              + Nuevo ingreso extra
+              + Nuevo Ingreso
             </button>
           </div>
         </div>
