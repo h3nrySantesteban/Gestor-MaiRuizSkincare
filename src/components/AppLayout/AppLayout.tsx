@@ -207,7 +207,7 @@ export function AppLayout() {
   // FAB por ser la acción más usada.
   const FAB_OPTIONS = [
     { label: 'Nuevo paciente', icon: UsersIcon, onClick: () => setNuevoPacienteOpen(true) },
-    { label: 'Nuevo ingreso extra', icon: HomeIcon, onClick: () => setNuevoIngresoExtraOpen(true) },
+    { label: 'Nuevo Ingreso', icon: HomeIcon, onClick: () => setNuevoIngresoExtraOpen(true) },
     { label: 'Nuevo gasto', icon: DollarSignIcon, onClick: () => setNuevoGastoOpen(true) },
     { label: 'Nuevo turno', icon: CalendarIcon, onClick: () => setNuevoTurnoOpen(true) },
   ]
