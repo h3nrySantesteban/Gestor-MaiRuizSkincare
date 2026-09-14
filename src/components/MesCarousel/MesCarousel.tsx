@@ -195,7 +195,12 @@ export function MesCarousel({
                         <p className="text-[11px] font-medium text-ink-muted">
                           {anteriorLabel ? anteriorLabel(back) : 'Mes anterior a esta altura'}
                         </p>
-                        {anteriorTooltip?.(back) && <InfoTooltip text={anteriorTooltip(back)!} />}
+                        {anteriorTooltip?.(back) && (
+                          <InfoTooltip
+                            title={anteriorLabel ? anteriorLabel(back) : 'Mes anterior a esta altura'}
+                            text={anteriorTooltip(back)!}
+                          />
+                        )}
                       </div>
                       <div className="mt-1 grid grid-cols-2 gap-x-4">
                         <div>

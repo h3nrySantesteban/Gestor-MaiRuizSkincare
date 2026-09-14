@@ -366,7 +366,10 @@ function TablaHistorial({
             <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
               <div className="flex items-center justify-end gap-1">
                 <SortButton label="Ticket" column="ticket" sort={sort} onSort={onSort} />
-                <InfoTooltip text="Ticket promedio: lo facturado por turnos del período (sin contar ingresos extra) dividido por la cantidad de turnos facturados — el monto promedio por turno." />
+                <InfoTooltip
+                  title='¿Cómo se calcula "Ticket promedio"?'
+                  text="Lo facturado por turnos del período (sin contar ingresos extra) dividido por la cantidad de turnos facturados — el monto promedio por turno."
+                />
               </div>
             </th>
           </tr>

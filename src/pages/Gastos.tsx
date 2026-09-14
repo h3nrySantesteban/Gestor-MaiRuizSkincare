@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGastos } from '../hooks/useGastos'
 import { NuevoGastoForm } from '../components/NuevoGastoForm/NuevoGastoForm'
 import { GastosCarousel } from '../components/GastosCarousel/GastosCarousel'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { MarqueeText } from '../components/MarqueeText/MarqueeText'
+import { InfoTooltip } from '../components/InfoTooltip/InfoTooltip'
 import { primaryBtnClass } from '../components/forms/FormField'
-import { BarChartIcon, InfoIcon } from '../components/icons'
+import { BarChartIcon } from '../components/icons'
 import { formatCurrency, formatFechaSolo, formatMesAno, parseFechaSolo } from '../lib/format'
 import type { Gasto, RecurrenciaUnidad } from '../types/gasto'
 
@@ -228,7 +229,10 @@ export function Gastos() {
               <span className="whitespace-nowrap text-sm font-medium text-ink-muted">
                 ~{formatCurrency(gastoAproximado)}
               </span>
-              <InfoTooltip text="Suma de los gastos habituales cargados el mes pasado cuya cadencia (cada X días/semanas/meses) también corresponde a este mes. Es una proyección, no lo que ya se pagó." />
+              <InfoTooltip
+                title='¿Cómo se calcula el "Gasto aproximado"?'
+                text="Suma de los gastos habituales cargados el mes pasado cuya cadencia (cada X días/semanas/meses) también corresponde a este mes. Es una proyección, no lo que ya se pagó."
+              />
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -380,47 +384,6 @@ function GastoHabitualPendienteRow({ gasto: g, onClick }: { gasto: Gasto; onClic
       </div>
       <span className="shrink-0 text-xs font-medium text-primary-600">Completar</span>
     </button>
-  )
-}
-
-// mismo patrón de "click para abrir, click afuera o Escape para cerrar" que
-// TratamientoFilterDropdown (Turnos.tsx) / NotificationBell
-function InfoTooltip({ text }: { text: string }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    document.addEventListener('keydown', onEscape)
-    return () => {
-      document.removeEventListener('mousedown', onClickOutside)
-      document.removeEventListener('keydown', onEscape)
-    }
-  }, [open])
-
-  return (
-    <div className="relative shrink-0" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Cómo se calcula"
-        className="flex h-5 w-5 items-center justify-center rounded-full text-ink-muted hover:bg-surface-muted hover:text-ink"
-      >
-        <InfoIcon className="h-4 w-4" />
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full z-10 mt-1 w-56 rounded-lg border border-border bg-surface p-3 text-xs text-ink-muted shadow-lg">
-          {text}
-        </div>
-      )}
-    </div>
   )
 }
 
