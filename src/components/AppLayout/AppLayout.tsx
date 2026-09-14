@@ -27,22 +27,26 @@ import {
 
 // Submenu de "Resumen" (todo #2): Gastos e Ingresos ya tienen pantalla
 // propia adonde llevar — el resto (Turnos tipo panel github, Top
-// tratamientos, Top pacientes) todavía no existe como sección separada, así
-// que quedan visibles pero sin destino hasta que se construyan por partes.
+// tratamientos, Top pacientes, Bot WhatsApp, Inventario, Store) todavía no
+// existe como sección separada, así que quedan visibles pero sin destino
+// hasta que se construyan por partes.
 const RESUMEN_SUBMENU: { label: string; to?: string }[] = [
   { label: 'Gastos', to: '/gastos' },
   { label: 'Ingresos', to: '/ingresos' },
   { label: 'Turnos' },
   { label: 'Top tratamientos' },
   { label: 'Top pacientes' },
+  { label: 'Bot WhatsApp' },
+  { label: 'Inventario' },
+  { label: 'Store' },
 ]
 
 // El submenu de "Resumen" se podía desplegar/colapsar tocando la flecha o
 // el nombre estando ya en esa página — Mai concluyó que no tiene sentido
-// que arranque cerrado con solo 5 opciones. Se deja TODO el mecanismo de
+// que arranque cerrado con pocas opciones. Se deja TODO el mecanismo de
 // abrir/cerrar intacto (estado, toggle, animación) detrás de este flag en
-// vez de borrarlo: si en el futuro se agregan más opciones al menú y hace
-// falta poder colapsarlo de nuevo, alcanza con volver esto a `true`.
+// vez de borrarlo: si el menú crece más y hace falta poder colapsarlo de
+// nuevo, alcanza con volver esto a `true`.
 const SUBMENU_COLAPSABLE = false
 
 const NAV_ITEMS = [

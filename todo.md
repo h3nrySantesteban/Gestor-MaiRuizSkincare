@@ -61,5 +61,11 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
 
 17. Turnos con gift card: hoy el toggle se guarda pero no se ve reflejado en ningún lado (sin estadística, sin filtro, sin listado propio) — definir qué hacer con esos turnos (ej. verlos/filtrarlos en Turnos, o una estadística en Resumen)
 
+18. Bot WhatsApp: sección propia en Resumen (hoy el bot corre en api/whatsapp-webhook.ts pero no tiene pantalla — ej. ver conversaciones, estado de conexión, plantillas)
+
+19. Inventario: sección nueva, todavía sin definir alcance (stock de insumos?)
+
+20. Store: sección nueva, todavía sin definir alcance (venta de productos?)
+
 
 
