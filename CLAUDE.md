@@ -57,8 +57,8 @@ functions under `/api`.
   by the frontend. `turno_id` is nullable — an unrecognized sender or an
   unmatched reply still produces a row so nothing silently drops.
 - `gastos`: Mai's own expense log (servicios/insumos), entirely separate from
-  `turnos` — **not** netted against revenue anywhere (Dashboard/Analytics
-  `ingresos` stay untouched), this is expense bookkeeping only, not a P&L
+  `turnos` — **not** netted against revenue anywhere (Dashboard `ingresos`
+  stay untouched), this is expense bookkeeping only, not a P&L
   view. The one deliberate exception is the "Neto" figure in
   [IngresosCarousel](src/components/IngresosCarousel/IngresosCarousel.tsx)
   and [IngresosHistorial](src/pages/IngresosHistorial.tsx) (the month-by-
@@ -66,7 +66,7 @@ functions under `/api`.
   explicitly compute `bruto − gastos del período` — Mai asked for those two
   spots to work as a light P&L view. That subtraction stays local to these
   two; it doesn't change how `ingresos` is computed anywhere else, including
-  `useIngresos.ts`, Dashboard, or Analytics. `es_fijo` +
+  `useIngresos.ts` or Dashboard. `es_fijo` +
   `recurrencia_numero`/`recurrencia_unidad` are
   informational only ("cada 1 mes", shown as a badge in
   [Gastos.tsx](src/pages/Gastos.tsx)) — nothing generates the next
@@ -80,7 +80,7 @@ functions under `/api`.
   `gastos` has it if needed). Same scope as the netting exception above:
   only [IngresosCarousel](src/components/IngresosCarousel/IngresosCarousel.tsx)
   and [IngresosHistorial](src/pages/IngresosHistorial.tsx) fold it into
-  `bruto` (and therefore `neto`) — Dashboard/Analytics/`useIngresos.ts` stay
+  `bruto` (and therefore `neto`) — Dashboard and `useIngresos.ts` stay
   turno-only. In `IngresosHistorial.tsx`'s `calcularSerie`, it's added to
   `bruto` but deliberately **not** to `cantidad`/`ticket promedio` — those
   are a per-turno average, and a subalquiler isn't a turno; mixing it in

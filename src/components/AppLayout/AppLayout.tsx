@@ -10,7 +10,6 @@ import { NuevoIngresoExtraForm } from '../NuevoIngresoExtraForm/NuevoIngresoExtr
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { GoogleCalendarConnectBanner } from '../GoogleCalendarConnectBanner/GoogleCalendarConnectBanner'
 import {
-  BarChartIcon,
   CalendarIcon,
   ChevronDownIcon,
   ClipboardListIcon,
@@ -52,7 +51,6 @@ const NAV_ITEMS = [
   { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false, submenu: [] },
   { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false, submenu: [] },
   { to: '/formularios', label: 'Formularios', icon: ClipboardListIcon, end: false, submenu: [] },
-  { to: '/analytics', label: 'Analytics', icon: BarChartIcon, end: false, submenu: [] },
 ]
 
 interface NavLinksProps {

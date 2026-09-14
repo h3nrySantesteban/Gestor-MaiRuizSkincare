@@ -122,8 +122,8 @@ function totalMismoMesAnioPasado(map: Map<string, MesTotales>, year: number, mon
  * criterio que useIngresos) más los ingresos_extra (subalquiler, etc.)
  * cargados ese mismo mes. Neto = ese bruto menos el total de gastos
  * cargados ese mismo mes — es la ÚNICA cuenta de toda la app que resta
- * gastos contra ingresos (ver CLAUDE.md: en Dashboard/Analytics/Gastos
- * nunca se netean), acá es a propósito porque Mai lo pidió como vista
+ * gastos contra ingresos (ver CLAUDE.md: en Dashboard/Gastos nunca se
+ * netean), acá es a propósito porque Mai lo pidió como vista
  * puntual, no cambia ningún otro cálculo de ingresos existente.
  *
  * La estructura visual (peek, navegación, tarjeta de promedio) vive en

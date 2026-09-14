@@ -20,7 +20,7 @@ queda listo, en vez de esperar a marcar toda la tarea junta al final.
     # 2. Menu lateral: "Dashboard" -> "Resumen", con submenu desplegable (Gastos/Ingresos/Turnos/Top tratamientos/Top pacientes). Tocar el nombre navega o, si ya estas en esa pantalla, despliega el submenu. Estado abierto/cerrado persiste al navegar y al cerrar el drawer mobile. Gastos ya no es item propio del menu, vive solo adentro de este submenu
     3. Gastos e Ingresos ya navegan a pantalla propia (/gastos, /ingresos, cada una con su historial) — Turnos (panel tipo github), Top tratamientos y Top pacientes todavia no tienen pantalla/seccion propia, quedan en el submenu sin destino hasta construirlas por partes
 
-3. Eliminar analitics
+# 3. Eliminar analitics
 
 # 4. Arreglar pantalla de inicio, flashea en pantalla la pagina de inicio vieja que explicaba la app para la verificación de google, y se muestra el login
 

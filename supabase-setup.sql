@@ -506,7 +506,7 @@ select cron.schedule(
 -- tabla hermana de gastos pero sin recurrencia/habitual (no se pidió esa
 -- complejidad acá; si hace falta más adelante se agrega igual que en
 -- gastos). Se suman al Bruto/Neto de IngresosCarousel/IngresosHistorial
--- únicamente — Dashboard/Analytics siguen siendo pura cifra de turnos.
+-- únicamente — Dashboard sigue siendo pura cifra de turnos.
 -- fecha es date (no timestamptz), igual que gastos: no importa la hora.
 -- ============================================================
 create table public.ingresos_extra (

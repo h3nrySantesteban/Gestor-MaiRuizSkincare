@@ -7,8 +7,8 @@ import { Login } from './pages/Login'
 import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { TermsOfService } from './pages/TermsOfService'
 
-// lazy: Dashboard/Analytics arrastran recharts, que es la parte más pesada
-// del bundle — no tiene sentido bajarla antes de loguearse
+// lazy: Dashboard arrastra recharts, que es la parte más pesada del bundle
+// — no tiene sentido bajarla antes de loguearse
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 const Turnos = lazy(() => import('./pages/Turnos').then((m) => ({ default: m.Turnos })))
 const Pacientes = lazy(() => import('./pages/Pacientes').then((m) => ({ default: m.Pacientes })))
@@ -19,7 +19,6 @@ const Gastos = lazy(() => import('./pages/Gastos').then((m) => ({ default: m.Gas
 const GastosHistorial = lazy(() => import('./pages/GastosHistorial').then((m) => ({ default: m.GastosHistorial })))
 const Ingresos = lazy(() => import('./pages/Ingresos').then((m) => ({ default: m.Ingresos })))
 const IngresosHistorial = lazy(() => import('./pages/IngresosHistorial').then((m) => ({ default: m.IngresosHistorial })))
-const Analytics = lazy(() => import('./pages/Analytics').then((m) => ({ default: m.Analytics })))
 
 // en blanco a propósito: el chunk de cada página se descarga rápido (unos
 // pocos KB), y mostrar texto acá se ve como un segundo "cargando" distinto
@@ -126,14 +125,6 @@ function App() {
               element={
                 <Suspense fallback={<PageFallback />}>
                   <IngresosHistorial />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <Suspense fallback={<PageFallback />}>
-                  <Analytics />
                 </Suspense>
               }
             />
