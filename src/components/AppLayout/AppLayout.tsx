@@ -6,6 +6,7 @@ import { useTheme } from '../../hooks/useTheme'
 import { NotificationBell } from '../NotificationBell/NotificationBell'
 import { NuevoTurnoForm } from '../NuevoTurnoForm/NuevoTurnoForm'
 import { NuevoGastoForm } from '../NuevoGastoForm/NuevoGastoForm'
+import { NuevoIngresoExtraForm } from '../NuevoIngresoExtraForm/NuevoIngresoExtraForm'
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { GoogleCalendarConnectBanner } from '../GoogleCalendarConnectBanner/GoogleCalendarConnectBanner'
 import {
@@ -170,6 +171,7 @@ export function AppLayout() {
   const [drawerPhase, setDrawerPhase] = useState<DrawerPhase>('closed')
   const [nuevoTurnoOpen, setNuevoTurnoOpen] = useState(false)
   const [nuevoGastoOpen, setNuevoGastoOpen] = useState(false)
+  const [nuevoIngresoExtraOpen, setNuevoIngresoExtraOpen] = useState(false)
   const [nuevoPacienteOpen, setNuevoPacienteOpen] = useState(false)
   const [fabMenuOpen, setFabMenuOpen] = useState(false)
   const fabRef = useRef<HTMLDivElement>(null)
@@ -207,6 +209,7 @@ export function AppLayout() {
   // FAB por ser la acción más usada.
   const FAB_OPTIONS = [
     { label: 'Nuevo paciente', icon: UsersIcon, onClick: () => setNuevoPacienteOpen(true) },
+    { label: 'Nuevo ingreso extra', icon: HomeIcon, onClick: () => setNuevoIngresoExtraOpen(true) },
     { label: 'Nuevo gasto', icon: DollarSignIcon, onClick: () => setNuevoGastoOpen(true) },
     { label: 'Nuevo turno', icon: CalendarIcon, onClick: () => setNuevoTurnoOpen(true) },
   ]
@@ -426,6 +429,11 @@ export function AppLayout() {
 
       <NuevoTurnoForm open={nuevoTurnoOpen} onClose={() => setNuevoTurnoOpen(false)} />
       <NuevoGastoForm open={nuevoGastoOpen} onClose={() => setNuevoGastoOpen(false)} onSaved={() => {}} />
+      <NuevoIngresoExtraForm
+        open={nuevoIngresoExtraOpen}
+        onClose={() => setNuevoIngresoExtraOpen(false)}
+        onSaved={() => {}}
+      />
       <NuevoPacienteForm open={nuevoPacienteOpen} onClose={() => setNuevoPacienteOpen(false)} onSaved={() => {}} />
     </div>
   )

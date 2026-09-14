@@ -495,3 +495,32 @@ select cron.schedule(
   '0 13 * * 1',
   $$ select public.notificar_turnos_sin_tratamiento(); $$
 );
+
+-- ============================================================
+-- Ingresos extra
+--
+-- Migración incremental — correr solo esto si el resto del schema ya
+-- estaba aplicado.
+--
+-- Ingresos que no vienen de un turno (ej. subalquiler del consultorio) —
+-- tabla hermana de gastos pero sin recurrencia/habitual (no se pidió esa
+-- complejidad acá; si hace falta más adelante se agrega igual que en
+-- gastos). Se suman al Bruto/Neto de IngresosCarousel/IngresosHistorial
+-- únicamente — Dashboard/Analytics siguen siendo pura cifra de turnos.
+-- fecha es date (no timestamptz), igual que gastos: no importa la hora.
+-- ============================================================
+create table public.ingresos_extra (
+  id uuid primary key default gen_random_uuid(),
+  concepto text not null,
+  valor numeric(12, 2) not null,
+  fecha date not null default current_date,
+  descripcion text,
+  created_at timestamptz not null default now()
+);
+
+create index ingresos_extra_fecha_idx on public.ingresos_extra (fecha);
+
+alter table public.ingresos_extra enable row level security;
+
+create policy "auth manage ingresos_extra" on public.ingresos_extra for all
+  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');

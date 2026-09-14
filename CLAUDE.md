@@ -61,11 +61,12 @@ functions under `/api`.
   `ingresos` stay untouched), this is expense bookkeeping only, not a P&L
   view. The one deliberate exception is the "Neto" figure in
   [IngresosCarousel](src/components/IngresosCarousel/IngresosCarousel.tsx)
-  (the month-by-month cards at the top of `/ingresos`), which explicitly
-  computes `bruto − gastos del mes` — Mai asked for that one spot to work as
-  a light P&L view. That subtraction stays local to this component; it
-  doesn't change how `ingresos` is computed anywhere else, including
-  `useIngresos.ts` and `IngresosHistorial.tsx`. `es_fijo` +
+  and [IngresosHistorial](src/pages/IngresosHistorial.tsx) (the month-by-
+  month cards at the top of `/ingresos`, and its table/charts), which
+  explicitly compute `bruto − gastos del período` — Mai asked for those two
+  spots to work as a light P&L view. That subtraction stays local to these
+  two; it doesn't change how `ingresos` is computed anywhere else, including
+  `useIngresos.ts`, Dashboard, or Analytics. `es_fijo` +
   `recurrencia_numero`/`recurrencia_unidad` are
   informational only ("cada 1 mes", shown as a badge in
   [Gastos.tsx](src/pages/Gastos.tsx)) — nothing generates the next
@@ -73,6 +74,18 @@ functions under `/api`.
   `fecha` is a plain `date` (unlike `turnos.fecha`, no time-of-day
   attached). Not added to `supabase_realtime` — nothing external (bot,
   webhook) ever writes to this table, so there's nothing to reflect live.
+- `ingresos_extra`: income that isn't a turno (e.g. Mai subletting part of
+  her office) — sibling table to `gastos`, same `fecha date` convention, no
+  recurrence/`es_fijo` (not asked for; can be added later the same way
+  `gastos` has it if needed). Same scope as the netting exception above:
+  only [IngresosCarousel](src/components/IngresosCarousel/IngresosCarousel.tsx)
+  and [IngresosHistorial](src/pages/IngresosHistorial.tsx) fold it into
+  `bruto` (and therefore `neto`) — Dashboard/Analytics/`useIngresos.ts` stay
+  turno-only. In `IngresosHistorial.tsx`'s `calcularSerie`, it's added to
+  `bruto` but deliberately **not** to `cantidad`/`ticket promedio` — those
+  are a per-turno average, and a subalquiler isn't a turno; mixing it in
+  would skew that number. Not added to `supabase_realtime`, same reasoning
+  as `gastos`.
 - `upsert_turno(...)` Postgres function: creates/updates a turno **and**
   replaces its `turno_tratamientos` rows in one transaction (avoids a turno
   ever existing with a partial line-item set from two sequential client

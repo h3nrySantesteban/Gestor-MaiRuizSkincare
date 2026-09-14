@@ -4,13 +4,16 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useIngresos } from '../hooks/useIngresos'
 import { useGastos } from '../hooks/useGastos'
+import { useIngresosExtra } from '../hooks/useIngresosExtra'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
+import { NuevoIngresoExtraForm } from '../components/NuevoIngresoExtraForm/NuevoIngresoExtraForm'
 import { IngresosCarousel } from '../components/IngresosCarousel/IngresosCarousel'
 import { Skeleton } from '../components/Skeleton/Skeleton'
-import { BarChartIcon } from '../components/icons'
+import { BarChartIcon, HomeIcon } from '../components/icons'
 import { InfoTooltip } from '../components/InfoTooltip/InfoTooltip'
-import { formatCurrency, formatFecha } from '../lib/format'
+import { formatCurrency, formatFecha, formatFechaSolo } from '../lib/format'
 import type { Turno } from '../types/turno'
+import type { IngresoExtra } from '../types/ingresoExtra'
 
 // un turno Cancelado+señado aporta solo el monto de la seña — se marca en la
 // fila para que un importe más chico de lo esperado se entienda
@@ -55,12 +58,25 @@ function agruparPorMes(turnos: Turno[]): GrupoMes[] {
 export function Ingresos() {
   const { turnos, loading, refetch } = useIngresos()
   const { gastos, loading: gastosLoading } = useGastos()
+  const { ingresosExtra, loading: ingresosExtraLoading, refetch: refetchIngresosExtra } = useIngresosExtra()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Turno | null>(null)
+  const [ingresoExtraFormOpen, setIngresoExtraFormOpen] = useState(false)
+  const [editingIngresoExtra, setEditingIngresoExtra] = useState<IngresoExtra | null>(null)
 
   function openEdit(t: Turno) {
     setEditing(t)
     setFormOpen(true)
+  }
+
+  function openNuevoIngresoExtra() {
+    setEditingIngresoExtra(null)
+    setIngresoExtraFormOpen(true)
+  }
+
+  function openEditIngresoExtra(i: IngresoExtra) {
+    setEditingIngresoExtra(i)
+    setIngresoExtraFormOpen(true)
   }
 
   const gruposPorMes = useMemo(() => agruparPorMes(turnos), [turnos])
@@ -73,17 +89,54 @@ export function Ingresos() {
             <h1 className="text-lg font-semibold text-ink">Ingresos</h1>
             <InfoTooltip text="Bruto: suma de lo facturado por los turnos finalizados (o cancelados con seña) de ese período. Neto: Bruto menos el total de gastos cargados en ese mismo período." />
           </div>
-          <Link
-            to="/ingresos/historial"
-            aria-label="Ver gráficos"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
-          >
-            <BarChartIcon className="h-5 w-5" />
-          </Link>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={openNuevoIngresoExtra}
+              aria-label="Agregar ingreso extra"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
+            >
+              <HomeIcon className="h-5 w-5" />
+            </button>
+            <Link
+              to="/ingresos/historial"
+              aria-label="Ver gráficos"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink-muted transition-colors hover:bg-surface-muted"
+            >
+              <BarChartIcon className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
 
-        <IngresosCarousel turnos={turnos} gastos={gastos} loading={loading || gastosLoading} />
+        <IngresosCarousel
+          turnos={turnos}
+          gastos={gastos}
+          ingresosExtra={ingresosExtra}
+          loading={loading || gastosLoading || ingresosExtraLoading}
+        />
       </div>
+
+      {(ingresosExtraLoading || ingresosExtra.length > 0) && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-ink-muted">Otros ingresos</h2>
+            {!ingresosExtraLoading && (
+              <span className="text-sm font-medium text-ink-muted">
+                Total {formatCurrency(ingresosExtra.reduce((sum, i) => sum + i.valor, 0))}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            {ingresosExtraLoading ? (
+              <IngresoRowSkeleton />
+            ) : (
+              ingresosExtra.map((i) => (
+                <IngresoExtraRow key={i.id} ingresoExtra={i} onClick={() => openEditIngresoExtra(i)} />
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-4">
         {loading && (
@@ -125,7 +178,31 @@ export function Ingresos() {
         onSaved={() => refetch()}
         turno={editing}
       />
+
+      <NuevoIngresoExtraForm
+        open={ingresoExtraFormOpen}
+        onClose={() => setIngresoExtraFormOpen(false)}
+        onSaved={() => refetchIngresosExtra()}
+        onDeleted={() => refetchIngresosExtra()}
+        ingresoExtra={editingIngresoExtra}
+      />
     </div>
+  )
+}
+
+function IngresoExtraRow({ ingresoExtra: i, onClick }: { ingresoExtra: IngresoExtra; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:border-primary-300"
+    >
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <p className="font-medium text-ink">{i.concepto}</p>
+        <span className="text-xs text-ink-muted">{formatFechaSolo(i.fecha)}</span>
+      </div>
+      <p className="shrink-0 font-semibold text-ink">{formatCurrency(i.valor)}</p>
+    </button>
   )
 }
 

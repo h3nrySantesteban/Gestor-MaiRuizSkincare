@@ -5,12 +5,14 @@ import { es } from 'date-fns/locale'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useIngresos } from '../hooks/useIngresos'
 import { useGastos } from '../hooks/useGastos'
+import { useIngresosExtra } from '../hooks/useIngresosExtra'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { ArrowLeftIcon } from '../components/icons'
 import { InfoTooltip } from '../components/InfoTooltip/InfoTooltip'
 import { formatCurrency, formatCurrencyCompact, parseFechaSolo } from '../lib/format'
 import type { Turno } from '../types/turno'
 import type { Gasto } from '../types/gasto'
+import type { IngresoExtra } from '../types/ingresoExtra'
 
 // "bruto"/"neto" ya no se eligen por separado: se fusionaron en la opción
 // "ingresos" del selector (ver MetricaSeleccionable), que muestra las dos
@@ -68,6 +70,7 @@ interface Fila {
   /** para la tabla en granularidad "meses": mes + año, evita ambigüedad entre "jul" de un año y otro (el gráfico sigue usando periodoCorto, sin año, para no recargar el eje) */
   periodoTabla: string
   periodoLargo: string
+  /** turnos facturables + ingresos_extra (subalquiler, etc.) del período — mismo criterio que IngresosCarousel */
   bruto: number
   /** bruto − gastos cargados en ese mismo período — mismo criterio que IngresosCarousel */
   neto: number
@@ -89,16 +92,19 @@ function pct(curr: number, prev: number | undefined): number | null {
   return ((curr - prev) / prev) * 100
 }
 
-// una fila por mes/año con al menos un turno facturado o un gasto cargado
-// (no rellena períodos vacíos con ceros) — el % es contra el período
-// anterior CON datos en esta lista, no necesariamente el inmediato
-// anterior del calendario
-function calcularSerie(turnos: Turno[], gastos: Gasto[], granularidad: Granularidad): Fila[] {
-  const porKey = new Map<string, { fechaMuestra: Date; bruto: number; cantidad: number; gastos: number }>()
+// una fila por mes/año con al menos un turno facturado, un ingreso extra o
+// un gasto cargado (no rellena períodos vacíos con ceros) — el % es contra
+// el período anterior CON datos en esta lista, no necesariamente el
+// inmediato anterior del calendario
+function calcularSerie(turnos: Turno[], gastos: Gasto[], ingresosExtra: IngresoExtra[], granularidad: Granularidad): Fila[] {
+  const porKey = new Map<
+    string,
+    { fechaMuestra: Date; brutoTurnos: number; bruto: number; cantidad: number; gastos: number }
+  >()
   function entrada(key: string, fechaMuestra: Date) {
     let e = porKey.get(key)
     if (!e) {
-      e = { fechaMuestra, bruto: 0, cantidad: 0, gastos: 0 }
+      e = { fechaMuestra, brutoTurnos: 0, bruto: 0, cantidad: 0, gastos: 0 }
       porKey.set(key, e)
     }
     return e
@@ -107,8 +113,16 @@ function calcularSerie(turnos: Turno[], gastos: Gasto[], granularidad: Granulari
     const d = new Date(t.fecha)
     const key = granularidad === 'meses' ? format(d, 'yyyy-MM') : format(d, 'yyyy')
     const e = entrada(key, d)
+    e.brutoTurnos += t.precio
     e.bruto += t.precio
     e.cantidad += 1
+  }
+  for (const i of ingresosExtra) {
+    // ingresos_extra.fecha es date-only, igual que gastos.fecha — no suma a
+    // cantidad/ticket (son promedios por turno, esto no es un turno)
+    const d = parseFechaSolo(i.fecha)
+    const key = granularidad === 'meses' ? format(d, 'yyyy-MM') : format(d, 'yyyy')
+    entrada(key, d).bruto += i.valor
   }
   for (const g of gastos) {
     // gastos.fecha es date-only (no timestamptz, a diferencia de
@@ -121,8 +135,10 @@ function calcularSerie(turnos: Turno[], gastos: Gasto[], granularidad: Granulari
   return keys.map((key, i) => {
     const entry = porKey.get(key)!
     const prevEntry = i > 0 ? porKey.get(keys[i - 1]) : undefined
-    const ticket = entry.cantidad > 0 ? entry.bruto / entry.cantidad : 0
-    const prevTicket = prevEntry && prevEntry.cantidad > 0 ? prevEntry.bruto / prevEntry.cantidad : undefined
+    // ticket promedio usa solo lo facturado por turnos, no ingresos_extra
+    // (un subalquiler no es un turno, mezclarlo ahí desvirtuaría el promedio)
+    const ticket = entry.cantidad > 0 ? entry.brutoTurnos / entry.cantidad : 0
+    const prevTicket = prevEntry && prevEntry.cantidad > 0 ? prevEntry.brutoTurnos / prevEntry.cantidad : undefined
     const neto = entry.bruto - entry.gastos
     const prevNeto = prevEntry ? prevEntry.bruto - prevEntry.gastos : undefined
     return {
@@ -204,17 +220,21 @@ function ChipButton({ active, onClick, children }: { active: boolean; onClick: (
 export function IngresosHistorial() {
   const { turnos, loading } = useIngresos()
   const { gastos, loading: gastosLoading } = useGastos()
+  const { ingresosExtra, loading: ingresosExtraLoading } = useIngresosExtra()
   const [granularidad, setGranularidad] = useState<Granularidad>('meses')
   const [vista, setVista] = useState<'tabla' | 'linea' | 'barras'>('tabla')
   const [metrica, setMetrica] = useState<MetricaSeleccionable>('ingresos')
   const [rango, setRango] = useState<RangoTiempo>('6m')
   const [sort, setSort] = useState<Sort>({ column: 'periodo', direction: 'desc' })
 
-  const loadingSerie = loading || gastosLoading
+  const loadingSerie = loading || gastosLoading || ingresosExtraLoading
 
   // los gráficos van siempre de más viejo a más nuevo (izquierda a derecha)
   // — el orden de la tabla es independiente, lo maneja sort
-  const serie = useMemo(() => calcularSerie(turnos, gastos, granularidad), [turnos, gastos, granularidad])
+  const serie = useMemo(
+    () => calcularSerie(turnos, gastos, ingresosExtra, granularidad),
+    [turnos, gastos, ingresosExtra, granularidad],
+  )
 
   // el rango recorta los gráficos (línea y barras, ver selector "Desde
   // cuándo" más abajo) — la tabla sigue mostrando todo el historial
@@ -346,7 +366,7 @@ function TablaHistorial({
             <th className="whitespace-nowrap px-2.5 py-3 text-right font-medium">
               <div className="flex items-center justify-end gap-1">
                 <SortButton label="Ticket" column="ticket" sort={sort} onSort={onSort} />
-                <InfoTooltip text="Ticket promedio: el total Bruto del período dividido por la cantidad de turnos facturados — el monto promedio por turno." />
+                <InfoTooltip text="Ticket promedio: lo facturado por turnos del período (sin contar ingresos extra) dividido por la cantidad de turnos facturados — el monto promedio por turno." />
               </div>
             </th>
           </tr>

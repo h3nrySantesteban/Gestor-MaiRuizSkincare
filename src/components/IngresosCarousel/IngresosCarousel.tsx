@@ -4,10 +4,12 @@ import { claveMes, diasEnMes, mesesAtras, restarMeses } from '../../lib/mesCarou
 import { parseFechaSolo } from '../../lib/format'
 import type { Turno } from '../../types/turno'
 import type { Gasto } from '../../types/gasto'
+import type { IngresoExtra } from '../../types/ingresoExtra'
 
 interface IngresosCarouselProps {
   turnos: Turno[]
   gastos: Gasto[]
+  ingresosExtra: IngresoExtra[]
   loading: boolean
 }
 
@@ -16,10 +18,11 @@ interface MesTotales {
   gastos: number
 }
 
-// un solo recorrido de turnos + gastos arma el mapa mes -> totales; todo lo
-// demás (bruto/neto de un mes puntual, promedios de 6 meses) sale de mirar
-// este mapa, no de volver a filtrar los arrays completos cada vez
-function construirTotalesPorMes(turnos: Turno[], gastos: Gasto[]): Map<string, MesTotales> {
+// un solo recorrido de turnos + ingresos extra + gastos arma el mapa mes ->
+// totales; todo lo demás (bruto/neto de un mes puntual, promedios de 6
+// meses) sale de mirar este mapa, no de volver a filtrar los arrays
+// completos cada vez
+function construirTotalesPorMes(turnos: Turno[], gastos: Gasto[], ingresosExtra: IngresoExtra[]): Map<string, MesTotales> {
   const map = new Map<string, MesTotales>()
   function entrada(key: string): MesTotales {
     let e = map.get(key)
@@ -32,6 +35,12 @@ function construirTotalesPorMes(turnos: Turno[], gastos: Gasto[]): Map<string, M
   for (const t of turnos) {
     const d = new Date(t.fecha)
     entrada(claveMes(d.getFullYear(), d.getMonth() + 1)).bruto += t.precio
+  }
+  for (const i of ingresosExtra) {
+    // ingresos_extra.fecha es date-only, igual que gastos.fecha — no aporta
+    // un tratamiento/paciente, así que para Bruto es un turno más
+    const d = parseFechaSolo(i.fecha)
+    entrada(claveMes(d.getFullYear(), d.getMonth() + 1)).bruto += i.valor
   }
   for (const g of gastos) {
     // gastos.fecha es date-only (no timestamptz, a diferencia de
@@ -71,6 +80,7 @@ function promedios6MesesCerrados(map: Map<string, MesTotales>, anioActual: numbe
 function totalMesAnteriorAEstaAltura(
   turnos: Turno[],
   gastos: Gasto[],
+  ingresosExtra: IngresoExtra[],
   year: number,
   month: number,
   hoy: Date,
@@ -83,6 +93,10 @@ function totalMesAnteriorAEstaAltura(
     const d = new Date(t.fecha)
     if (d.getFullYear() === prevYear && d.getMonth() + 1 === prevMonth && d.getDate() <= hastaDia) bruto += t.precio
   }
+  for (const i of ingresosExtra) {
+    const d = parseFechaSolo(i.fecha)
+    if (d.getFullYear() === prevYear && d.getMonth() + 1 === prevMonth && d.getDate() <= hastaDia) bruto += i.valor
+  }
   let gastosTotal = 0
   for (const g of gastos) {
     const d = parseFechaSolo(g.fecha)
@@ -93,7 +107,8 @@ function totalMesAnteriorAEstaAltura(
 
 /**
  * Bruto = suma de turno.precio de los turnos facturables del mes (mismo
- * criterio que useIngresos). Neto = bruto menos el total de gastos
+ * criterio que useIngresos) más los ingresos_extra (subalquiler, etc.)
+ * cargados ese mismo mes. Neto = ese bruto menos el total de gastos
  * cargados ese mismo mes — es la ÚNICA cuenta de toda la app que resta
  * gastos contra ingresos (ver CLAUDE.md: en Dashboard/Analytics/Gastos
  * nunca se netean), acá es a propósito porque Mai lo pidió como vista
@@ -102,12 +117,12 @@ function totalMesAnteriorAEstaAltura(
  * La estructura visual (peek, navegación, tarjeta de promedio) vive en
  * MesCarousel — esto solo calcula qué números le corresponden a cada mes.
  */
-export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselProps) {
+export function IngresosCarousel({ turnos, gastos, ingresosExtra, loading }: IngresosCarouselProps) {
   const hoy = new Date()
   const anioActual = hoy.getFullYear()
   const mesActual = hoy.getMonth() + 1
 
-  const totalesPorMes = construirTotalesPorMes(turnos, gastos)
+  const totalesPorMes = construirTotalesPorMes(turnos, gastos, ingresosExtra)
 
   // cuántos meses hacia atrás llega el carrusel: hasta el mes más viejo con
   // algún turno o gasto cargado (0 si no hay nada todavía, solo el mes en curso)
@@ -135,7 +150,7 @@ export function IngresosCarousel({ turnos, gastos, loading }: IngresosCarouselPr
 
   function datosMesAnterior(back: number): DatosMes {
     const { year, month } = restarMeses(anioActual, mesActual, back)
-    const r = totalMesAnteriorAEstaAltura(turnos, gastos, year, month, hoy)
+    const r = totalMesAnteriorAEstaAltura(turnos, gastos, ingresosExtra, year, month, hoy)
     return { valor1: r.neto, valor2: r.bruto }
   }
 
