@@ -224,3 +224,19 @@ export const NoteIcon = ({ className }: IconProps) => (
     <line x1="16" y1="17" x2="8" y2="17" />
   </svg>
 )
+
+export const ArchiveIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <polyline points="21 8 21 21 3 21 3 8" />
+    <rect x="1" y="3" width="22" height="5" />
+    <line x1="10" y1="12" x2="14" y2="12" />
+  </svg>
+)
+
+export const ShoppingBagIcon = ({ className }: IconProps) => (
+  <svg {...base} className={className}>
+    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <path d="M16 10a4 4 0 0 1-8 0" />
+  </svg>
+)

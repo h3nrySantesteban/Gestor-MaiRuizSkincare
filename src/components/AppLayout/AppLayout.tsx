@@ -10,6 +10,7 @@ import { NuevoIngresoExtraForm } from '../NuevoIngresoExtraForm/NuevoIngresoExtr
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { GoogleCalendarConnectBanner } from '../GoogleCalendarConnectBanner/GoogleCalendarConnectBanner'
 import {
+  ArchiveIcon,
   CalendarIcon,
   ChevronDownIcon,
   ClipboardListIcon,
@@ -20,25 +21,23 @@ import {
   MoonIcon,
   PackageIcon,
   PlusIcon,
+  ShoppingBagIcon,
   SunIcon,
   UsersIcon,
+  WhatsAppIcon,
   XIcon,
 } from '../icons'
 
 // Submenu de "Resumen" (todo #2): Gastos e Ingresos ya tienen pantalla
 // propia adonde llevar — el resto (Turnos tipo panel github, Top
-// tratamientos, Top pacientes, Bot WhatsApp, Inventario, Store) todavía no
-// existe como sección separada, así que quedan visibles pero sin destino
-// hasta que se construyan por partes.
+// tratamientos, Top pacientes) todavía no existe como sección separada, así
+// que quedan visibles pero sin destino hasta que se construyan por partes.
 const RESUMEN_SUBMENU: { label: string; to?: string }[] = [
   { label: 'Gastos', to: '/gastos' },
   { label: 'Ingresos', to: '/ingresos' },
   { label: 'Turnos' },
   { label: 'Top tratamientos' },
   { label: 'Top pacientes' },
-  { label: 'Bot WhatsApp' },
-  { label: 'Inventario' },
-  { label: 'Store' },
 ]
 
 // El submenu de "Resumen" se podía desplegar/colapsar tocando la flecha o
@@ -49,12 +48,19 @@ const RESUMEN_SUBMENU: { label: string; to?: string }[] = [
 // nuevo, alcanza con volver esto a `true`.
 const SUBMENU_COLAPSABLE = false
 
-const NAV_ITEMS = [
+// Bot WhatsApp/Inventario/Store: sin `to` a propósito — todavía no existe
+// pantalla para ninguna, quedan como items de primer nivel visibles (mismo
+// trato que un ítem sin destino dentro de un submenu, ver el else de más
+// abajo) para mostrar el alcance final del menú sin navegar a nada.
+const NAV_ITEMS: { to?: string; label: string; icon: typeof HomeIcon; end: boolean; submenu: { label: string; to?: string }[] }[] = [
   { to: '/dashboard', label: 'Resumen', icon: HomeIcon, end: true, submenu: RESUMEN_SUBMENU },
   { to: '/turnos', label: 'Turnos', icon: CalendarIcon, end: false, submenu: [] },
   { to: '/pacientes', label: 'Pacientes', icon: UsersIcon, end: false, submenu: [] },
   { to: '/tratamientos', label: 'Tratamientos', icon: PackageIcon, end: false, submenu: [] },
   { to: '/formularios', label: 'Formularios', icon: ClipboardListIcon, end: false, submenu: [] },
+  { label: 'Bot WhatsApp', icon: WhatsAppIcon, end: false, submenu: [] },
+  { label: 'Inventario', icon: ArchiveIcon, end: false, submenu: [] },
+  { label: 'Store', icon: ShoppingBagIcon, end: false, submenu: [] },
 ]
 
 interface NavLinksProps {
@@ -71,6 +77,19 @@ function NavLinks({ onNavigate, openSubmenu, onToggleSubmenu }: NavLinksProps) {
   return (
     <nav className="flex flex-1 flex-col gap-1 px-3">
       {NAV_ITEMS.map(({ to, label, icon: Icon, end, submenu }) => {
+        if (!to) {
+          // sin pantalla propia todavía — mismo trato visual que un ítem
+          // sin destino dentro de un submenu (ver el else más abajo)
+          return (
+            <div
+              key={label}
+              className="flex cursor-default items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-muted/50"
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {label}
+            </div>
+          )
+        }
         const expanded = SUBMENU_COLAPSABLE ? openSubmenu === to : submenu.length > 0
         const isCurrentPage = location.pathname === to
         // ya estando en la página, tocar la palabra no tiene nada nuevo
