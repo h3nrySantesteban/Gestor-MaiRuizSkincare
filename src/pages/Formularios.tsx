@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRespuestasFormulario } from '../hooks/useRespuestasFormulario'
 import { usePacientes } from '../hooks/usePacientes'
@@ -9,13 +9,33 @@ import { primaryBtnClass } from '../components/forms/FormField'
 import { ArrowUpRightIcon, ChevronDownIcon } from '../components/icons'
 import { formatFechaHora } from '../lib/format'
 import { completarContactoDesdeFormulario, contactoDesdeFormulario } from '../lib/formularioContacto'
+import { normalizeSearch } from '../lib/text'
+import type { RespuestaFormulario } from '../types/respuestaFormulario'
 import type { Paciente } from '../types/paciente'
 
 // "Nombre y apellido" es la pregunta del form que mejor identifica de un
 // vistazo quién la completó — se usa como título de la tarjeta mientras no
 // esté asignada a un paciente. Si el form cambia de texto en esa pregunta
-// esto simplemente cae al fallback, no rompe nada.
+// esto simplemente cae al fallback, no rompe nada. Mismos campos que
+// src/lib/formularioContacto.ts (no se importan de ahí porque esas
+// constantes son privadas de ese archivo).
 const CAMPO_NOMBRE = 'Nombre y apellido'
+const CAMPO_TELEFONO = 'Teléfono'
+const CAMPO_EMAIL = 'Dirección de correo electrónico'
+
+// un solo campo de búsqueda en vez de tres — Mai suele acordarse de uno
+// solo (a veces el teléfono, a veces el nombre), no tiene sentido pedirle
+// que elija en cuál buscar. Nombre/email se comparan normalizados (sin
+// tildes/mayúsculas); teléfono solo por dígitos, así "341 555..." matchea
+// "3415551234" tipeado de una
+function matchFormulario(r: RespuestaFormulario, query: string): boolean {
+  const q = normalizeSearch(query)
+  const qDigits = query.replace(/\D/g, '')
+  const nombre = normalizeSearch(r.respuestas[CAMPO_NOMBRE] || '')
+  const email = normalizeSearch(r.respuestas[CAMPO_EMAIL] || '')
+  const telefonoDigits = (r.respuestas[CAMPO_TELEFONO] || '').replace(/\D/g, '')
+  return nombre.includes(q) || email.includes(q) || (qDigits.length > 0 && telefonoDigits.includes(qDigits))
+}
 
 // mismo shape que la card colapsada: título+fecha a la izquierda, badge+flecha a la derecha
 function RespuestaRowSkeleton() {
@@ -47,8 +67,14 @@ export function Formularios() {
   // automático al paciente recién creado en onSaved, ya que crearlo desde
   // acá justamente significa que es la persona de esta respuesta
   const [nuevoPacienteParaId, setNuevoPacienteParaId] = useState<string | null>(null)
+  const [filtroOpen, setFiltroOpen] = useState(false)
+  const [query, setQuery] = useState('')
 
   const sinAsignar = respuestas.filter((r) => !r.pacienteId).length
+  const respuestasFiltradas = useMemo(() => {
+    const q = query.trim()
+    return q ? respuestas.filter((r) => matchFormulario(r, q)) : respuestas
+  }, [respuestas, query])
   const respuestaNuevoPaciente = respuestas.find((r) => r.id === nuevoPacienteParaId) ?? null
   const contactoNuevoPaciente = respuestaNuevoPaciente ? contactoDesdeFormulario(respuestaNuevoPaciente.respuestas) : null
 
@@ -80,6 +106,10 @@ export function Formularios() {
         <h1 className="text-lg font-semibold text-ink">Formularios</h1>
         {loading ? (
           <Skeleton className="mt-1.5 h-4 w-32" />
+        ) : query.trim() ? (
+          <p className="text-sm text-ink-muted">
+            Mostrando {respuestasFiltradas.length} de {respuestas.length} respuesta{respuestas.length === 1 ? '' : 's'}
+          </p>
         ) : (
           <p className="text-sm text-ink-muted">
             {respuestas.length} respuesta{respuestas.length === 1 ? '' : 's'}
@@ -88,10 +118,53 @@ export function Formularios() {
         )}
       </div>
 
+      <div className="flex flex-col rounded-2xl border border-border bg-surface">
+        <button
+          type="button"
+          onClick={() => setFiltroOpen((v) => !v)}
+          className="flex items-center justify-between px-4 py-3"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium text-ink">
+            Filtro
+            {query.trim() && (
+              <span className="rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-semibold text-primary-700">
+                1
+              </span>
+            )}
+          </span>
+          <ChevronDownIcon className={`h-4 w-4 text-ink-muted transition-transform ${filtroOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {filtroOpen && (
+          <div className="flex flex-col gap-2 border-t border-border p-4">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-ink-muted">Nombre, email o teléfono</span>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar..."
+                className="w-full rounded-lg border border-border px-3 py-2 text-base text-ink outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              />
+            </label>
+            {query.trim() && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="text-xs font-medium text-ink-muted hover:text-ink hover:underline"
+                >
+                  Limpiar filtro
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-col gap-2">
         {loading && [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => <RespuestaRowSkeleton key={i} />)}
 
-        {!loading && respuestas.map((r) => {
+        {!loading && respuestasFiltradas.map((r) => {
           const paciente = r.pacienteId ? pacientes.find((p) => p.id === r.pacienteId) : null
           const expanded = expandedId === r.id
           const titulo = r.respuestas[CAMPO_NOMBRE] || 'Respuesta sin nombre'
@@ -211,6 +284,12 @@ export function Formularios() {
         {!loading && respuestas.length === 0 && (
           <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
             Todavía no llegó ninguna respuesta del formulario.
+          </p>
+        )}
+
+        {!loading && respuestas.length > 0 && respuestasFiltradas.length === 0 && (
+          <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-ink-muted">
+            Ninguna respuesta coincide con el filtro.
           </p>
         )}
       </div>

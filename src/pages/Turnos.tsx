@@ -5,6 +5,7 @@ import { useTurnos } from '../hooks/useTurnos'
 import { usePacientes } from '../hooks/usePacientes'
 import { useTratamientos } from '../hooks/useTratamientos'
 import { NuevoTurnoForm } from '../components/NuevoTurnoForm/NuevoTurnoForm'
+import { PacienteCombobox } from '../components/PacienteCombobox/PacienteCombobox'
 import { EstadoBadge } from '../components/EstadoBadge/EstadoBadge'
 import { Skeleton } from '../components/Skeleton/Skeleton'
 import { inputClass, primaryBtnClass } from '../components/forms/FormField'
@@ -157,18 +158,7 @@ export function Turnos() {
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-ink-muted">Paciente</span>
-                <select
-                  value={pacienteId ?? ''}
-                  onChange={(e) => setPacienteId(e.target.value || null)}
-                  className={inputClass}
-                >
-                  <option value="">Todos</option>
-                  {pacientes.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombreCompleto}
-                    </option>
-                  ))}
-                </select>
+                <PacienteCombobox pacientes={pacientes} value={pacienteId} onChange={setPacienteId} allowClear />
               </label>
               {tratamientos.length > 0 && (
                 <TratamientoFilterDropdown

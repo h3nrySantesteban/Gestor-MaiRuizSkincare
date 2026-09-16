@@ -8,6 +8,9 @@ interface PacienteComboboxProps {
   pacientes: Paciente[]
   value: string | null
   onChange: (id: string | null) => void
+  /** true en usos tipo filtro (ej. Turnos): agrega una fila "Todos" arriba de la lista para volver a null. Los usos de formulario (elegir/asignar un paciente puntual) no lo pasan — ahí siempre hace falta elegir a alguien. */
+  allowClear?: boolean
+  placeholder?: string
 }
 
 // Extraído de NuevoTurnoForm.tsx para reusar en Formularios/PacienteDetalle
@@ -18,7 +21,7 @@ interface PacienteComboboxProps {
 // deliberadamente simple (un input que filtra una lista, click para elegir,
 // sin autofocus ni navegación por teclado) para minimizar esa superficie de
 // bugs, pero probar bien en un iPhone real antes de confiar del todo en esto.
-export function PacienteCombobox({ pacientes, value, onChange }: PacienteComboboxProps) {
+export function PacienteCombobox({ pacientes, value, onChange, allowClear = false, placeholder }: PacienteComboboxProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
@@ -41,7 +44,7 @@ export function PacienteCombobox({ pacientes, value, onChange }: PacienteCombobo
   const seleccionado = pacientes.find((p) => p.id === value) ?? null
   const filtrados = pacientes.filter((p) => normalizeSearch(p.nombreCompleto).includes(normalizeSearch(query.trim())))
 
-  function handleSelect(id: string) {
+  function handleSelect(id: string | null) {
     // blur explícito: en iOS, sacar del DOM un input enfocado (acá, al
     // pasar open a false) no siempre alcanza para bajar el teclado solo —
     // hay que sacarle el foco a mano antes de que el input desaparezca
@@ -66,7 +69,9 @@ export function PacienteCombobox({ pacientes, value, onChange }: PacienteCombobo
         onClick={handleTriggerClick}
         className={`${inputClass} flex items-center justify-between gap-2 text-left`}
       >
-        <span className="min-w-0 truncate">{seleccionado?.nombreCompleto ?? 'Seleccionar paciente...'}</span>
+        <span className="min-w-0 truncate">
+          {seleccionado?.nombreCompleto ?? placeholder ?? (allowClear ? 'Todos' : 'Seleccionar paciente...')}
+        </span>
         <ChevronDownIcon className={`h-4 w-4 shrink-0 text-ink-muted transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -85,6 +90,22 @@ export function PacienteCombobox({ pacientes, value, onChange }: PacienteCombobo
             className="border-b border-border px-3 py-2 text-base text-ink outline-none"
           />
           <div className="max-h-48 overflow-y-auto p-1">
+            {allowClear && (
+              // fila fija, no se filtra por query — volver a "todos" tiene
+              // que quedar alcanzable sin importar lo que se haya tipeado
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  handleSelect(null)
+                }}
+                className={`block w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-surface-muted ${
+                  value === null ? 'bg-primary-50 text-primary-700' : 'text-ink'
+                }`}
+              >
+                Todos
+              </button>
+            )}
             {filtrados.length === 0 && <p className="p-2 text-sm text-ink-muted">Sin resultados.</p>}
             {filtrados.map((p) => (
               <button
