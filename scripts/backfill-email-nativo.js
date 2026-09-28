@@ -52,33 +52,15 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistS
 
 const CAMPO_EMAIL = 'Dirección de correo electrónico'
 
-// Pegar acá el JSON que imprimió backfillEmailsFaltantes() en Apps Script:
-// { "<google_response_id>": "<email o null>", ... }
-const EMAILS_POR_RESPUESTA = {
-  '2_ABaOnufLDRO2FUYnt52j5S9jyfQ2CanC8soC11ztkgmrT8enKC4eORUWxpL-fhYv6qsAdmc': 'brendaaguilera161@gmail.com',
-  '2_ABaOnufdnqJDkgUEs2Ze05sZNoIJ9OvgJefgGbgD0hfaBPZHuIfZcsiWygB6gNtbl2qIdnw': 'noguesmariana@gmail.com',
-  '2_ABaOnud5GY3AUMdFiVw2fpy-6AOoDvtQbXge1aFfPOFY43Pa5KIh2uM8tsI21diUDSk-b4U': 'lorenacardozonatalia9@gmail.com',
-  '2_ABaOnucKMwCn8jIRd2m7RmnCF22p7HvneMGFKuHe-rZPz7i_Enjxr2wBn6UoPgfyVVhGRcc': 'fernandaleguizamon.fl@gmail.com',
-  '2_ABaOnufASa-Ui2KPmmPC9xrpXiBNenhUXzPkHeVU8UpZtKzHf-dPZuu3VzShezMWTMRtzlU': 'dia.algacibiurguadalupe@gmail.com',
-  '2_ABaOnufCb46ci2YdJ5D7byDAJyrrk0sxjG3qpUUU6RY0mQYcFQCedlOzzYoMzF37Yg4oMMU': 'camila.m.puentes@gmail.com',
-  '2_ABaOnueM27NJ1Ax22L3L4r_L8Q-U98gczSj5kSHn8TzS-IXgwQ-I9j5SQlcP6Idat3aCLmk': 'ca.suarez06@gmail.com',
-  '2_ABaOnufFyEiMZinzvyTdv0fH2ye47ZPeu8SIHwT8Ap3z5tiUJ4XoQpwoY4Abkrn6Ndatl0o': 'valentinescoda1@gmail.com',
-  '2_ABaOnufisdVLK9EMhprWjUgLOQI-wdr2au_o_Rp9PHwUx8LejshYpIDwNgejQh-fcMUoL5U': 'avrilmacosta74@gmail.com',
-  '2_ABaOnudTYBZHDFx0IIxs2r3jRgyR0yEeQty_5ML-g1lWyZry-gNCm886qmQg6GnaotIvZCk': 'delfifernandez09@gmail.com',
-  '2_ABaOnucJbcb8expxHMeE0-2LO3CpX-YIdgSrmXDhqmhu9SML9noDAu2_jweExTOVYi7NqIg': 'agustinafernandez131@gmail.com',
-  '2_ABaOnucMgV4FavZDEh4jOG0QzIAfEd-TbA2xlNHa9yHBD3pCyWmju_IHa0Maa8E-uzvSkk8': 'agos.gomez2710@gmail.com',
-  '2_ABaOnuexLcrDhHkIJJ50JMnyaJYQbbFrWQKf78dPxuE0NQkphAK1S2h1grifAukhat5NUHI': 'victoriasilberok@gmail.com',
-  '2_ABaOnud_cBFmRoXlr3hC7aiZqsUpIYioJNyw00RUmS704GYcF3ni6dOGPkFby2NhAyWgmyA': 'valeriamartini.rc1979@gmail.com',
-  '2_ABaOnufX4-EWxFTHJSJFhHVj9fP9On6PCKQzml3VwLvSJgD3r-ImKUhSElsWDDmxmQfpUHk': 'camila.ferrini2@gmail.com',
-  '2_ABaOnueybBSZy2ccRu6Hd6mfN3668AJrCwi8d3rx1d8ftN4jsp9iHCoGSUo2ZeBu7jp75K0': 'lariilanero@gmail.com',
-  '2_ABaOnueBMix4W-r2sk_sBC5e7sF512bhhLu4zsIH-7hOKpxAk-0mVmVRKiaAfMXKjuUJQbk': 'giulylanero@gmail.com',
-  '2_ABaOnuf9jj7HvBBS2B9x8rT21rYckULppa36PlOHmSiUef-NsBQsvVmHp4HK4CvNxXe1Qak': 'romiju2017@gmail.com',
-  '2_ABaOnudBHhCHJTRepAZFjjWn8ILjrAuguiDLag_p86Ha3fNNyre37PBubFKuvbd0-Lz9yNc': 'julietananni2020@gmail.com',
-  '2_ABaOnuefmuMZtPvLZr7J3ILxTvqUbtEF-5bVhzqO3_ZuEjKgjUz9PFLDOwAlgqufr5VS1dU': 'lorenastephanii@gmail.com',
-  '2_ABaOnuei-JfXxPS3TOezui8OzLSHtVuNvWCb54sT0sHbz3ZAsBXzzb4X0tyoR-6rMwuZ2n8': 'estefimartinez158@gmail.com',
-  '2_ABaOnueBSiOp1j_rRcltAo88sjL2pZjhvkmzrpH37irUFoSqR9Z3ZWdT9l96Onoy9vNUBgQ': 'longorodriguez@gmail.com',
-  '2_ABaOnuc6ZOou-FCKOzY-grG5RzOAgPl1eoQsOyraQNZFgTr1HDDQ1KTPnrcyI5CxqobDspM': 'aldivictoriazaher@gmail.com',
-}
+// Ya se corrió y aplicó contra Supabase el 2026-09-28 (23 respuestas, 19
+// pacientes completados) — el mapeo real (con mails de pacientes en texto
+// plano) se vació después a propósito para no dejar PII de pacientes
+// permanentemente en el repo/historia de git. Si hace falta re-correr esto
+// para un caso nuevo, pegar de nuevo acá el JSON de
+// backfillEmailsFaltantes() (Apps Script) — ver el bloque de comentarios de
+// arriba — y NO commitear con los valores reales adentro: correr, confirmar
+// con --commit, y recién ahí vaciar el objeto de vuelta antes de commitear.
+const EMAILS_POR_RESPUESTA = {}
 
 async function main() {
   console.log(COMMIT ? '=== Backfill email nativo: modo COMMIT ===' : '=== Backfill email nativo: modo SIMULACIÓN ===')
