@@ -249,7 +249,12 @@ calendar, just without inviting anyone.
   the console, since a turno living in the app but not in Calendar is a far
   smaller problem than losing the turno data over a Google API hiccup.
   `api/whatsapp-webhook.ts` does the same delete-on-cancel when a patient
-  replies "cancelar".
+  replies "cancelar". The one exception to "never blocks" is `handleDelete`
+  when Calendar isn't connected (`CalendarNoConectadoError`): it **aborts**
+  the delete (shows the reconnect banner + an error) instead of proceeding,
+  because deleting the turno loses its `google_event_id` and reconnecting
+  can't find the orphaned event afterwards (live bug, 2026-09-29). Other
+  Google errors still let the delete go through.
 - Deliberately **not** pursuing Google's sensitive-scope verification for
   `calendar.events` — Google itself rejects submitting this app for review
   ("Tu aplicación es solo para uso personal/interno"), since it's a

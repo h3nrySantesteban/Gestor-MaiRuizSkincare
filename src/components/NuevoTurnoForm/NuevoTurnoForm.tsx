@@ -189,15 +189,23 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
     setFormError(null)
     try {
       if (turno.googleEventId) {
-        // si falla, seguimos igual con el borrado — un evento huérfano en
-        // Calendar es mucho menos grave que no poder borrar el turno
-        await syncCalendarDelete(turno.googleEventId).catch((err) => {
+        try {
+          await syncCalendarDelete(turno.googleEventId)
+        } catch (err) {
           if (err instanceof CalendarNoConectadoError) {
+            // no seguimos con el borrado: al borrar el turno se pierde el
+            // google_event_id, y reconectar después no tiene forma de saber
+            // qué evento quedó huérfano. Con el turno todavía en la app,
+            // Mai reconecta y vuelve a borrarlo.
             notifyGoogleCalendarNoConectado()
-          } else {
-            console.error('No se pudo borrar el evento de Google Calendar', err)
+            setFormError('Google Calendar no está conectado. Reconectalo y volvé a borrar el turno.')
+            setConfirmDeleteOpen(false)
+            return
           }
-        })
+          // cualquier otro fallo de Google: seguimos igual con el borrado,
+          // un evento huérfano es menos grave que no poder borrar el turno
+          console.error('No se pudo borrar el evento de Google Calendar', err)
+        }
       }
       await deleteTurno(turno.id)
       onSaved?.()
