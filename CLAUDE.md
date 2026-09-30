@@ -139,6 +139,15 @@ own instance in the `onSaved` callback before selecting the new id — hook
 state isn't shared across instances, so skipping this leaves the picker
 unable to render the just-created item's label.
 
+Fecha y hora use [FechaHoraPicker](src/components/forms/FechaHoraPicker.tsx),
+a hand-rolled picker (month grid + hour buttons 00–23 + minutes every 15),
+always 24h — not the native `datetime-local`, which follows the phone's
+12h/24h setting and showed an AM/PM wheel that was easy to leave wrong
+(Mai reported turnos saved with AM/PM swapped, 2026-09-30). It keeps the same
+`'yyyy-MM-ddTHH:mm'` string contract as the native input. The other forms
+(gastos, ingresos extra, Turnos filters) still use `DateTimeInput`
+with `type="date"`, which has no time-of-day so no AM/PM issue.
+
 Price auto-sums from selected tratamientos until the user edits the price
 field by hand (`precioDirty` flag) — then it stops syncing. This applies the
 same way when editing an *existing* turno: `precioDirty` still starts

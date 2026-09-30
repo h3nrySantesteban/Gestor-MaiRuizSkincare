@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { Modal } from '../Modal/Modal'
 import { ConfirmDialog } from '../ConfirmDialog/ConfirmDialog'
 import { Field, inputClass, primaryBtnClass, secondaryBtnClass } from '../forms/FormField'
-import { DateTimeInput } from '../forms/DateTimeInput'
+import { FechaHoraPicker } from '../forms/FechaHoraPicker'
 import { ToggleSiNo } from '../forms/ToggleSiNo'
 import { NuevoPacienteForm } from '../NuevoPacienteForm/NuevoPacienteForm'
 import { NuevoTratamientoForm } from '../NuevoTratamientoForm/NuevoTratamientoForm'
@@ -278,7 +278,7 @@ function NuevoTurnoFormInner({ onClose, onSaved, turno }: NuevoTurnoFormProps) {
       <Modal open onClose={onClose} title={turno ? 'Editar turno' : 'Nuevo turno'} widthClassName="max-w-xl">
         <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
           <Field label="Fecha y hora" required error={errors.fecha}>
-            <DateTimeInput value={fecha} onChange={setFecha} step={900} />
+            <FechaHoraPicker value={fecha} onChange={setFecha} />
           </Field>
 
           <Field label="Paciente" required error={errors.pacienteId}>
