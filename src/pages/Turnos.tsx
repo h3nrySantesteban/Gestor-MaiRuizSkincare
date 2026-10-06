@@ -49,7 +49,9 @@ export function Turnos() {
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [pacienteId, setPacienteId] = useState<string | null>(null)
-  const [estados, setEstados] = useState<EstadoTurno[]>([])
+  // la notificación habla de turnos *finalizados* sin tratamiento, así que
+  // también llega con "Finalizado" tildado
+  const [estados, setEstados] = useState<EstadoTurno[]>(sinTratamientoInicial ? ['Finalizado'] : [])
   const [tratamientoIds, setTratamientoIds] = useState<string[]>([])
   const [sinTratamiento, setSinTratamiento] = useState(sinTratamientoInicial)
   // abierto de entrada si se llegó con un filtro ya aplicado, así Mai ve por
