@@ -68,6 +68,7 @@ export function Dashboard() {
   const { proximosTurnos, semana, mes, agendadosSemana, agendadosMes, serieSeisMeses, loading } = useDashboardStats()
   const navigate = useNavigate()
   const [infoAgendadosOpen, setInfoAgendadosOpen] = useState(false)
+  const [infoPeriodoOpen, setInfoPeriodoOpen] = useState(false)
 
   if (loading) return <DashboardSkeleton />
 
@@ -143,6 +144,7 @@ export function Dashboard() {
             label: 'Esta semana',
             value: `${semana.cantidad} turno${semana.cantidad === 1 ? '' : 's'}`,
             secondary: formatCurrency(semana.ingresos),
+            onInfoClick: () => setInfoPeriodoOpen(true),
           }}
           right={{
             label: 'Agendados',
@@ -156,6 +158,7 @@ export function Dashboard() {
             label: 'Este mes',
             value: `${mes.cantidad} turno${mes.cantidad === 1 ? '' : 's'}`,
             secondary: formatCurrency(mes.ingresos),
+            onInfoClick: () => setInfoPeriodoOpen(true),
           }}
           right={{
             label: 'Agendados',
@@ -187,6 +190,25 @@ export function Dashboard() {
             promedio de los últimos 10 turnos ya Finalizados (el precio real cobrado, sea de uno o varios
             tratamientos combinados), multiplicado por la cantidad de Agendados. Por eso aparece con el signo{' '}
             <span className="font-medium text-ink">~</span>: es una proyección, no un monto exacto.
+          </p>
+        </div>
+      </Modal>
+
+      <Modal
+        open={infoPeriodoOpen}
+        onClose={() => setInfoPeriodoOpen(false)}
+        title='¿Cómo se calcula "Esta semana" / "Este mes"?'
+        widthClassName="max-w-sm"
+      >
+        <div className="flex flex-col gap-3 text-sm text-ink-muted">
+          <p>
+            <span className="font-medium text-ink">Cantidad:</span> turnos con estado Finalizado cuya fecha cae en la
+            semana en curso (de lunes a domingo) o en el mes en curso. Los Agendados, Cancelados y Otro no se cuentan
+            acá; los Agendados que todavía quedan se ven en la columna de al lado.
+          </p>
+          <p>
+            <span className="font-medium text-ink">Monto:</span> suma del precio de esos turnos Finalizados, más los
+            turnos Cancelados que tenían seña.
           </p>
         </div>
       </Modal>
