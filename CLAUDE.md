@@ -53,8 +53,8 @@ functions under `/api`.
   `precio`/`precio_aplicado` for turnos already `Finalizado` — an `Agendado`
   turno can still be cancelled or no-show, so it doesn't count as revenue yet.
   `cantidad` (activity counts) still includes any non-`Cancelado` turno,
-  except the Dashboard's "Esta semana" card, which counts only `Finalizado`
-  (Mai's request, 2026-11-17; "Este mes" and the chart still use non-`Cancelado`).
+  except the Dashboard's "Esta semana" and "Este mes" cards, which count only
+  `Finalizado` (Mai's request, 2026-11-17; the 6-month chart still uses non-`Cancelado`).
 - `notificaciones`: written only by `api/whatsapp-webhook.ts`, read/marked-read
   by the frontend. `turno_id` is nullable — an unrecognized sender or an
   unmatched reply still produces a row so nothing silently drops.

@@ -161,7 +161,8 @@ export function useDashboardStats() {
       }
       if (isWithinInterval(fecha, mesInterval)) {
         mesAcc = {
-          cantidad: mesAcc.cantidad + (cuentaComoActividad ? 1 : 0),
+          // "Este mes" cuenta solo turnos ya Finalizados, igual que "Esta semana"
+          cantidad: mesAcc.cantidad + (turno.estado === 'Finalizado' ? 1 : 0),
           ingresos: mesAcc.ingresos + (facturable ? turno.precio : 0),
         }
       }
