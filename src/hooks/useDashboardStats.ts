@@ -154,7 +154,8 @@ export function useDashboardStats() {
       }
       if (isWithinInterval(fecha, semanaInterval)) {
         semanaAcc = {
-          cantidad: semanaAcc.cantidad + (cuentaComoActividad ? 1 : 0),
+          // "Esta semana" cuenta solo turnos ya Finalizados (los Agendados van en su propia columna)
+          cantidad: semanaAcc.cantidad + (turno.estado === 'Finalizado' ? 1 : 0),
           ingresos: semanaAcc.ingresos + (facturable ? turno.precio : 0),
         }
       }
